@@ -1,0 +1,11 @@
+{
+  "name": "@cityrnng/web",
+  "version": "0.0.1",
+  "private": true,
+  "scripts": {
+    "build": "echo build:web",
+    "lint": "echo lint:web",
+    "test": "echo test:web",
+    "typecheck": "echo typecheck:web"
+  }
+}

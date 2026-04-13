@@ -1,0 +1,11 @@
+{
+  "name": "@cityrnng/ui",
+  "version": "0.0.1",
+  "private": true,
+  "scripts": {
+    "build": "echo build:ui",
+    "lint": "echo lint:ui",
+    "test": "echo test:ui",
+    "typecheck": "echo typecheck:ui"
+  }
+}

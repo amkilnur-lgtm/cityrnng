@@ -1,0 +1,11 @@
+{
+  "name": "@cityrnng/types",
+  "version": "0.0.1",
+  "private": true,
+  "scripts": {
+    "build": "echo build:types",
+    "lint": "echo lint:types",
+    "test": "echo test:types",
+    "typecheck": "echo typecheck:types"
+  }
+}

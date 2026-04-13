@@ -1,0 +1,11 @@
+{
+  "name": "@cityrnng/api",
+  "version": "0.0.1",
+  "private": true,
+  "scripts": {
+    "build": "echo build:api",
+    "lint": "echo lint:api",
+    "test": "echo test:api",
+    "typecheck": "echo typecheck:api"
+  }
+}

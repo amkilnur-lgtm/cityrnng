@@ -1,0 +1,11 @@
+{
+  "name": "cityrnng",
+  "private": true,
+  "packageManager": "pnpm@9.15.4",
+  "scripts": {
+    "build": "echo build:root",
+    "lint": "echo lint:root",
+    "test": "echo test:root",
+    "typecheck": "echo typecheck:root"
+  }
+}
