@@ -21,8 +21,18 @@ Monorepo for the CITYRNNG platform.
 
 ## Scripts
 
-- pnpm install
-- pnpm -r build
-- pnpm -r lint
-- pnpm -r test
-- pnpm -r typecheck
+- `pnpm install`
+- `pnpm -r build`
+- `pnpm -r lint`
+- `pnpm -r test`
+- `pnpm -r typecheck`
+
+## Local dev
+
+Copy `.env.example` to `.env` at the repo root, then:
+
+- API (NestJS, http://localhost:4000): `pnpm --filter @cityrnng/api dev`
+  - Health: `GET http://localhost:4000/api/v1/health` → `{"status":"ok"}`
+- Web (Next.js, http://localhost:3000): `pnpm --filter @cityrnng/web dev`
+
+Build everything: `pnpm -r build`. Typecheck: `pnpm -r typecheck`.
