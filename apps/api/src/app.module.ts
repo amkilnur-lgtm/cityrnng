@@ -8,6 +8,8 @@ import { HealthModule } from "./health/health.module";
 import { AuthModule } from "./auth/auth.module";
 import { UsersModule } from "./users/users.module";
 import { MeModule } from "./me/me.module";
+import { EventsModule } from "./events/events.module";
+import { AttendancesModule } from "./attendances/attendances.module";
 import { JwtAuthGuard } from "./auth/guards/jwt-auth.guard";
 
 // Load .env from the monorepo root regardless of cwd. In production, env vars
@@ -27,6 +29,8 @@ const monorepoRootEnv = resolve(__dirname, "..", "..", "..", ".env");
     AuthModule,
     UsersModule,
     MeModule,
+    EventsModule,
+    AttendancesModule,
   ],
   providers: [{ provide: APP_GUARD, useClass: JwtAuthGuard }],
 })
