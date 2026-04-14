@@ -3,9 +3,25 @@
   "version": "0.0.1",
   "private": true,
   "scripts": {
-    "build": "echo build:api",
-    "lint": "echo lint:api",
-    "test": "echo test:api",
-    "typecheck": "echo typecheck:api"
+    "dev": "nest start --watch",
+    "build": "nest build",
+    "start": "node dist/main.js",
+    "lint": "echo lint:api:noop",
+    "test": "echo test:api:noop",
+    "typecheck": "tsc --noEmit -p tsconfig.json"
+  },
+  "dependencies": {
+    "@nestjs/common": "^10.4.15",
+    "@nestjs/core": "^10.4.15",
+    "@nestjs/platform-express": "^10.4.15",
+    "reflect-metadata": "^0.2.2",
+    "rxjs": "^7.8.1"
+  },
+  "devDependencies": {
+    "@nestjs/cli": "^10.4.9",
+    "@nestjs/schematics": "^10.2.3",
+    "@types/node": "^20.17.14",
+    "ts-node": "^10.9.2",
+    "typescript": "^5.7.3"
   }
 }
