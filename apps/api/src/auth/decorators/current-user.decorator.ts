@@ -1,0 +1,12 @@
+import { ExecutionContext, createParamDecorator } from "@nestjs/common";
+import type { AuthenticatedUser } from "../types";
+
+export const CurrentUser = createParamDecorator(
+  (_data: unknown, ctx: ExecutionContext): AuthenticatedUser => {
+    const req = ctx.switchToHttp().getRequest<{ user?: AuthenticatedUser }>();
+    if (!req.user) {
+      throw new Error("CurrentUser used on a route without an authenticated user");
+    }
+    return req.user;
+  },
+);
