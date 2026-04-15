@@ -1,0 +1,20 @@
+import { Module } from "@nestjs/common";
+import { JwtModule } from "@nestjs/jwt";
+import { StravaApiClient } from "./strava-api.client";
+import { StravaAccountsService } from "./strava-accounts.service";
+import { StravaActivitiesService } from "./strava-activities.service";
+import { StravaController } from "./strava.controller";
+import { StravaOAuthService } from "./strava-oauth.service";
+
+@Module({
+  imports: [JwtModule.register({})],
+  controllers: [StravaController],
+  providers: [
+    StravaApiClient,
+    StravaOAuthService,
+    StravaAccountsService,
+    StravaActivitiesService,
+  ],
+  exports: [StravaAccountsService, StravaActivitiesService],
+})
+export class StravaModule {}

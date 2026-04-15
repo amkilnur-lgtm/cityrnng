@@ -13,6 +13,19 @@ export const envSchema = z.object({
     .union([z.boolean(), z.string()])
     .transform((v) => v === true || v === "true" || v === "1")
     .default(false),
+  TOKEN_ENCRYPTION_KEY: z
+    .string()
+    .refine((v) => {
+      try {
+        return Buffer.from(v, "base64").length === 32;
+      } catch {
+        return false;
+      }
+    }, "TOKEN_ENCRYPTION_KEY must be a 32-byte base64 string"),
+  STRAVA_CLIENT_ID: z.string().min(1),
+  STRAVA_CLIENT_SECRET: z.string().min(1),
+  STRAVA_REDIRECT_URI: z.string().url(),
+  STRAVA_SCOPES: z.string().default("read,activity:read"),
 });
 
 export type Env = z.infer<typeof envSchema>;
