@@ -5,6 +5,7 @@ import type { StravaActivity, StravaAthlete, StravaTokenResponse } from "./types
 
 const STRAVA_BASE = "https://www.strava.com/api/v3";
 const STRAVA_OAUTH_BASE = "https://www.strava.com";
+const USER_AGENT = "CityRNNG/1.0 (+https://cityrnng.app)";
 
 export interface TokenExchangeParams {
   code: string;
@@ -52,7 +53,10 @@ export class StravaApiClient {
     try {
       const res = await fetch(`${STRAVA_OAUTH_BASE}/oauth/deauthorize`, {
         method: "POST",
-        headers: { authorization: `Bearer ${accessToken}` },
+        headers: {
+          authorization: `Bearer ${accessToken}`,
+          "user-agent": USER_AGENT,
+        },
         signal: AbortSignal.timeout(5000),
       });
       if (!res.ok) {
@@ -79,7 +83,11 @@ export class StravaApiClient {
   private async postForm<T>(url: string, body: URLSearchParams): Promise<T> {
     const res = await fetch(url, {
       method: "POST",
-      headers: { "content-type": "application/x-www-form-urlencoded" },
+      headers: {
+        "content-type": "application/x-www-form-urlencoded",
+        accept: "application/json",
+        "user-agent": USER_AGENT,
+      },
       body,
     });
     if (!res.ok) {
@@ -92,7 +100,11 @@ export class StravaApiClient {
 
   private async getJson<T>(url: string, accessToken: string): Promise<T> {
     const res = await fetch(url, {
-      headers: { authorization: `Bearer ${accessToken}` },
+      headers: {
+        authorization: `Bearer ${accessToken}`,
+        accept: "application/json",
+        "user-agent": USER_AGENT,
+      },
     });
     if (!res.ok) {
       const detail = await safeText(res);
