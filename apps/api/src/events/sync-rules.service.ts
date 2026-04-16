@@ -1,5 +1,5 @@
 import { BadRequestException, Injectable, NotFoundException } from "@nestjs/common";
-import { SyncProvider } from "@prisma/client";
+import { CityLocationStatus, SyncProvider } from "@prisma/client";
 import { PrismaService } from "../prisma/prisma.service";
 import { UpsertSyncRuleDto } from "./dto/upsert-sync-rule.dto";
 
@@ -20,6 +20,21 @@ export class SyncRulesService {
     assertOptionalRange(dto.minDurationSeconds, dto.maxDurationSeconds, "DURATION");
     assertGeofence(dto);
 
+    const locationIds = dto.locationIds ?? [];
+    if (locationIds.length > 0) {
+      const found = await this.prisma.cityLocation.findMany({
+        where: { id: { in: locationIds } },
+        select: { id: true, status: true },
+      });
+      if (found.length !== locationIds.length) {
+        throw new BadRequestException({ code: "SYNC_RULE_LOCATION_NOT_FOUND" });
+      }
+      const archived = found.filter((l) => l.status !== CityLocationStatus.active);
+      if (archived.length > 0) {
+        throw new BadRequestException({ code: "SYNC_RULE_LOCATION_ARCHIVED" });
+      }
+    }
+
     const data = {
       provider: dto.provider ?? SyncProvider.strava,
       activityType: dto.activityType ?? null,
@@ -35,10 +50,26 @@ export class SyncRulesService {
       autoApprove: dto.autoApprove ?? false,
     };
 
-    return this.prisma.eventSyncRule.upsert({
-      where: { eventId },
-      create: { eventId, ...data },
-      update: data,
+    return this.prisma.$transaction(async (tx) => {
+      const rule = await tx.eventSyncRule.upsert({
+        where: { eventId },
+        create: { eventId, ...data },
+        update: data,
+      });
+
+      if (dto.locationIds !== undefined) {
+        await tx.eventSyncRuleLocation.deleteMany({ where: { syncRuleId: rule.id } });
+        if (locationIds.length > 0) {
+          await tx.eventSyncRuleLocation.createMany({
+            data: locationIds.map((locationId) => ({ syncRuleId: rule.id, locationId })),
+          });
+        }
+      }
+
+      return tx.eventSyncRule.findUniqueOrThrow({
+        where: { id: rule.id },
+        include: { locations: { include: { location: true } } },
+      });
     });
   }
 }

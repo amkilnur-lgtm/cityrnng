@@ -4,7 +4,7 @@ import {
   Injectable,
   NotFoundException,
 } from "@nestjs/common";
-import { Prisma, Event, EventStatus } from "@prisma/client";
+import { CityLocationStatus, EventStatus, Prisma } from "@prisma/client";
 import { PrismaService } from "../prisma/prisma.service";
 import { CreateEventDto } from "./dto/create-event.dto";
 import { UpdateEventDto } from "./dto/update-event.dto";
@@ -14,7 +14,7 @@ import { ListEventsQuery } from "./dto/list-events.query";
 export class EventsService {
   constructor(private readonly prisma: PrismaService) {}
 
-  async listPublic(query: ListEventsQuery): Promise<Event[]> {
+  async listPublic(query: ListEventsQuery) {
     const where: Prisma.EventWhereInput = {};
     where.status = query.status ?? EventStatus.published;
     if (query.type) where.type = query.type;
@@ -23,18 +23,25 @@ export class EventsService {
       if (query.from) where.startsAt.gte = new Date(query.from);
       if (query.to) where.startsAt.lte = new Date(query.to);
     }
-    return this.prisma.event.findMany({
+    const rows = await this.prisma.event.findMany({
       where,
       orderBy: { startsAt: "asc" },
-      include: { syncRule: true },
+      include: { syncRule: { include: publicSyncRuleInclude.include } },
     });
+    return rows.map(mapEventPublic);
   }
 
   async getByIdOrThrow(id: string) {
     const event = await this.prisma.event.findUnique({
       where: { id },
-      include: { syncRule: true },
+      include: { syncRule: { include: publicSyncRuleInclude.include } },
     });
+    if (!event) throw new NotFoundException({ code: "EVENT_NOT_FOUND" });
+    return mapEventPublic(event);
+  }
+
+  async getAdminByIdOrThrow(id: string) {
+    const event = await this.prisma.event.findUnique({ where: { id } });
     if (!event) throw new NotFoundException({ code: "EVENT_NOT_FOUND" });
     return event;
   }
@@ -76,7 +83,7 @@ export class EventsService {
   }
 
   async update(id: string, dto: UpdateEventDto) {
-    const existing = await this.getByIdOrThrow(id);
+    const existing = await this.getAdminByIdOrThrow(id);
     const startsAt = dto.startsAt ? new Date(dto.startsAt) : existing.startsAt;
     const endsAt = dto.endsAt ? new Date(dto.endsAt) : existing.endsAt;
     if (startsAt.getTime() >= endsAt.getTime()) {
@@ -130,4 +137,50 @@ function isUniqueViolation(err: unknown, field: string): boolean {
   if (Array.isArray(target)) return target.includes(field);
   if (typeof target === "string") return target.includes(field);
   return false;
+}
+
+const publicSyncRuleInclude = Prisma.validator<Prisma.EventSyncRuleDefaultArgs>()({
+  include: {
+    locations: {
+      where: { location: { status: CityLocationStatus.active } },
+      select: {
+        location: {
+          select: {
+            id: true,
+            name: true,
+            city: true,
+            lat: true,
+            lng: true,
+            radiusMeters: true,
+          },
+        },
+      },
+    },
+  },
+});
+
+type EventWithPublicSyncRule = Prisma.EventGetPayload<{
+  include: {
+    syncRule: typeof publicSyncRuleInclude;
+  };
+}>;
+
+function mapEventPublic(event: EventWithPublicSyncRule) {
+  const { syncRule, ...rest } = event;
+  if (!syncRule) return { ...rest, syncRule: null };
+  const { locations, geofenceLat, geofenceLng, geofenceRadiusMeters, autoApprove, createdAt, updatedAt, ...publicRule } =
+    syncRule;
+  void geofenceLat;
+  void geofenceLng;
+  void geofenceRadiusMeters;
+  void autoApprove;
+  void createdAt;
+  void updatedAt;
+  return {
+    ...rest,
+    syncRule: {
+      ...publicRule,
+      locations: locations.map((l) => l.location),
+    },
+  };
 }

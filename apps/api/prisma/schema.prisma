@@ -51,6 +51,11 @@ enum AttendanceSource {
   manual_admin
 }
 
+enum CityLocationStatus {
+  active
+  archived
+}
+
 model User {
   id        String     @id @default(uuid()) @db.Uuid
   email     String     @unique
@@ -191,7 +196,8 @@ model EventSyncRule {
   createdAt            DateTime     @default(now()) @map("created_at")
   updatedAt            DateTime     @updatedAt @map("updated_at")
 
-  event Event @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  event     Event                   @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  locations EventSyncRuleLocation[]
 
   @@map("event_sync_rules")
 }
@@ -265,4 +271,36 @@ model EventAttendance {
   @@index([eventId, status])
   @@index([userId])
   @@map("event_attendances")
+}
+
+model CityLocation {
+  id            String             @id @default(uuid()) @db.Uuid
+  name          String
+  slug          String             @unique
+  city          String
+  lat           Float
+  lng           Float
+  radiusMeters  Int?               @map("radius_meters")
+  status        CityLocationStatus @default(active)
+  createdAt     DateTime           @default(now()) @map("created_at")
+  updatedAt     DateTime           @updatedAt @map("updated_at")
+
+  syncRules EventSyncRuleLocation[]
+
+  @@index([city])
+  @@index([status])
+  @@map("city_locations")
+}
+
+model EventSyncRuleLocation {
+  syncRuleId String   @map("sync_rule_id") @db.Uuid
+  locationId String   @map("location_id") @db.Uuid
+  createdAt  DateTime @default(now()) @map("created_at")
+
+  syncRule EventSyncRule @relation(fields: [syncRuleId], references: [id], onDelete: Cascade)
+  location CityLocation  @relation(fields: [locationId], references: [id], onDelete: Restrict)
+
+  @@id([syncRuleId, locationId])
+  @@index([locationId])
+  @@map("event_sync_rule_locations")
 }

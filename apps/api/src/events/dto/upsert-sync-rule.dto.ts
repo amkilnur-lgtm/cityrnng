@@ -1,5 +1,8 @@
 import { Type } from "class-transformer";
 import {
+  ArrayMaxSize,
+  ArrayUnique,
+  IsArray,
   IsBoolean,
   IsDateString,
   IsEnum,
@@ -8,6 +11,7 @@ import {
   IsLongitude,
   IsOptional,
   IsString,
+  IsUUID,
   MaxLength,
   Min,
 } from "class-validator";
@@ -72,4 +76,11 @@ export class UpsertSyncRuleDto {
   @IsOptional()
   @IsBoolean()
   autoApprove?: boolean;
+
+  @IsOptional()
+  @IsArray()
+  @ArrayMaxSize(25)
+  @ArrayUnique()
+  @IsUUID("4", { each: true })
+  locationIds?: string[];
 }

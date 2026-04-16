@@ -2,12 +2,20 @@ import { Injectable } from "@nestjs/common";
 import {
   AttendanceSource,
   AttendanceStatus,
+  CityLocation,
+  CityLocationStatus,
   EventSyncRule,
   ExternalActivity,
   Prisma,
   SyncProvider,
 } from "@prisma/client";
 import { PrismaService } from "../prisma/prisma.service";
+
+const DEFAULT_LOCATION_RADIUS_METERS = 500;
+
+type SyncRuleWithLocations = EventSyncRule & {
+  locations: Array<{ location: CityLocation }>;
+};
 
 export interface MatchOptions {
   after?: Date;
@@ -54,6 +62,12 @@ export class AttendanceMatcherService {
         windowStartsAt: { lte: maxStart },
       },
       orderBy: [{ windowStartsAt: "asc" }, { eventId: "asc" }],
+      include: {
+        locations: {
+          where: { location: { status: CityLocationStatus.active } },
+          include: { location: true },
+        },
+      },
     });
 
     const candidates: Prisma.EventAttendanceCreateManyInput[] = [];
@@ -88,7 +102,7 @@ export class AttendanceMatcherService {
     };
   }
 
-  ruleMatchesActivity(rule: EventSyncRule, activity: ExternalActivity): boolean {
+  ruleMatchesActivity(rule: SyncRuleWithLocations, activity: ExternalActivity): boolean {
     const activityEnd = new Date(activity.startedAt.getTime() + activity.elapsedSeconds * 1000);
     if (activity.startedAt < rule.windowStartsAt) return false;
     if (activityEnd > rule.windowEndsAt) return false;
@@ -105,19 +119,22 @@ export class AttendanceMatcherService {
     if (rule.minDurationSeconds != null && activity.elapsedSeconds < rule.minDurationSeconds) return false;
     if (rule.maxDurationSeconds != null && activity.elapsedSeconds > rule.maxDurationSeconds) return false;
 
-    if (rule.geofenceLat != null && rule.geofenceLng != null && rule.geofenceRadiusMeters != null) {
-      if (!passesGeofence(rule, activity)) return false;
+    const activeLocations = rule.locations.map((l) => l.location);
+    if (activeLocations.length > 0) {
+      if (!passesLocations(activeLocations, activity)) return false;
+    } else if (
+      rule.geofenceLat != null &&
+      rule.geofenceLng != null &&
+      rule.geofenceRadiusMeters != null
+    ) {
+      if (!passesLegacyGeofence(rule, activity)) return false;
     }
 
     return true;
   }
 }
 
-function passesGeofence(rule: EventSyncRule, activity: ExternalActivity): boolean {
-  const lat = rule.geofenceLat!;
-  const lng = rule.geofenceLng!;
-  const radius = rule.geofenceRadiusMeters!;
-
+function activityPoints(activity: ExternalActivity): Array<[number, number]> {
   const points: Array<[number, number]> = [];
   if (activity.startLat != null && activity.startLng != null) {
     points.push([activity.startLat, activity.startLng]);
@@ -125,6 +142,24 @@ function passesGeofence(rule: EventSyncRule, activity: ExternalActivity): boolea
   if (activity.endLat != null && activity.endLng != null) {
     points.push([activity.endLat, activity.endLng]);
   }
+  return points;
+}
+
+function passesLocations(locations: CityLocation[], activity: ExternalActivity): boolean {
+  const points = activityPoints(activity);
+  if (points.length === 0) return false;
+  return locations.some((loc) => {
+    const radius = loc.radiusMeters ?? DEFAULT_LOCATION_RADIUS_METERS;
+    return points.some(([lat, lng]) => haversineMeters(loc.lat, loc.lng, lat, lng) <= radius);
+  });
+}
+
+function passesLegacyGeofence(rule: EventSyncRule, activity: ExternalActivity): boolean {
+  const lat = rule.geofenceLat!;
+  const lng = rule.geofenceLng!;
+  const radius = rule.geofenceRadiusMeters!;
+
+  const points = activityPoints(activity);
   if (points.length === 0) return false;
 
   return points.some(([plat, plng]) => haversineMeters(lat, lng, plat, plng) <= radius);
