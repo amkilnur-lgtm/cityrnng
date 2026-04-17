@@ -66,3 +66,23 @@ All Prisma CLI scripts preload the monorepo-root `.env` via `dotenv-cli`, so no 
 - `pnpm --filter @cityrnng/api prisma:migrate:deploy` — apply pending migrations (staging/prod)
 - `pnpm --filter @cityrnng/api prisma:migrate:reset` — drop and re-apply all migrations (dev only)
 - `pnpm --filter @cityrnng/api prisma:studio` — open Prisma Studio
+- `pnpm --filter @cityrnng/api prisma:seed` — seed core roles (also runs automatically on `prisma:migrate:reset`)
+
+### Seeding roles
+
+The seed is idempotent and only manages the role baseline. Safe to run on any environment, any number of times.
+
+- Ensures the three core roles exist: `runner`, `admin`, `partner`.
+- Optional: promote a known user to `admin` by setting `SEED_ADMIN_EMAIL` in the root `.env` before running the seed.
+  - The user must already exist (create it by logging in once through the magic-link flow). If the email has no user, the seed logs a warning and makes no changes.
+  - Unset by default; production runs just upsert roles.
+
+Typical local bootstrap:
+
+```
+pnpm --filter @cityrnng/api prisma:migrate:dev
+pnpm --filter @cityrnng/api prisma:seed
+# log in as you@example.com through /api/v1/auth/*
+SEED_ADMIN_EMAIL=you@example.com pnpm --filter @cityrnng/api prisma:seed
+# re-log in — the new access token now carries the admin role
+```
