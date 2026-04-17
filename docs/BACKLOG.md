@@ -6,6 +6,22 @@
 
 ## 2. Эпики
 
+Статусы: ✅ done · 🔄 partial · ⭕ pending
+
+| Эпик | Статус | Комментарий |
+|---|---|---|
+| 0. Foundation | ✅ | монорепо, docker-compose, CI, env loader |
+| 1. Auth & Profiles | 🔄 | API: magic-link, sessions, `/me`, profiles, roles + seed. Пока нет: `/auth/refresh`, `/auth/logout`, редактирование профиля, UI |
+| 2. Events | 🔄 | API: admin CRUD + sync-rules + список attendances. Пользовательский registration-flow **сознательно заменён** на Strava-matching (см. Epic 3). UI пока нет |
+| 3. Check-in | 🔄 заменён | QR-поток отменён. Вместо него: Strava connect → ingestion → `AttendanceMatcherService` → `event_attendances` (auto_approve или ручной approve админом) |
+| 4. Points Engine | 🔄 | Ledger (`point_accounts`, `point_transactions`) + idempotency, `signup_bonus`, `event_attendance_*`, `manual_adjustment`, `/points/balance`, `/points/history`, admin adjust. Пока нет: first-run / streak / milestone / returning / campaign / partner bonus'ов, reversal flow, `point_rules` как таблица |
+| 5. Rewards & Partners | ⭕ | не начинался |
+| 6. Admin Panel | ⭕ | backend-эндпоинты частично готовы, UI в `apps/web` отсутствует |
+| 7. Marketing Site | ⭕ | `apps/web` пустой (layout + page) |
+| 8. Notifications & Analytics | ⭕ | не начинался |
+
+Дополнительно влито: идемпотентный Prisma seed для ролей `runner/admin/partner` + опциональное повышение known-email в admin (`SEED_ADMIN_EMAIL`). Это prerequisite для admin-protected flows, не самостоятельный эпик.
+
 ## Epic 0. Foundation
 
 Цель:

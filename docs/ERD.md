@@ -1,6 +1,8 @@
 # ERD and Data Model: CITYRNNG
 
-## 1. Основные сущности
+Документ описывает фактическую модель данных в `apps/api/prisma/schema.prisma` на момент последней синхронизации. Таблицы, находящиеся в продуктовом roadmap, но ещё не реализованные, вынесены в отдельную секцию `Planned`, чтобы не путать текущее состояние схемы с будущими планами.
+
+## 1. Реализованные сущности
 
 ### Users and identity
 
@@ -8,46 +10,34 @@
 - `profiles`
 - `roles`
 - `user_roles`
-- `auth_identities`
+- `login_challenges`
 - `sessions`
 
-### Events
+### Events and attendance
 
 - `events`
-- `event_routes`
-- `event_registrations`
-- `checkins`
-- `checkin_tokens`
+- `event_sync_rules`
+- `event_sync_rule_locations`
+- `event_attendances`
+- `city_locations`
+
+### External integrations
+
+- `user_provider_accounts`
+- `external_activities`
 
 ### Loyalty
 
 - `point_accounts`
 - `point_transactions`
-- `point_rules`
 
-### Rewards and partners
-
-- `partners`
-- `partner_contacts`
-- `rewards`
-- `reward_inventory`
-- `reward_redemptions`
-- `reward_redemption_events`
-
-### Platform
-
-- `notifications`
-- `media_files`
-- `audit_logs`
-- `feature_flags`
-
-## 2. Таблицы и ключевые поля
+## 2. Реализованные таблицы
 
 ## `users`
 
 - `id`
-- `email`
-- `phone` nullable
+- `email` unique
+- `phone` unique nullable
 - `status` active|blocked|pending
 - `created_at`
 - `updated_at`
@@ -57,285 +47,311 @@
 - `id`
 - `user_id` unique
 - `display_name`
-- `first_name`
-- `last_name`
-- `city`
+- `first_name` nullable
+- `last_name` nullable
+- `city` nullable
 - `birth_date` nullable
-- `avatar_media_id` nullable
+- `avatar_media_id` nullable (поле зарезервировано, хранилище медиа ещё не реализовано)
 - `instagram_handle` nullable
 - `telegram_handle` nullable
-- `consent_personal_data_at`
+- `consent_personal_data_at` nullable
 - `consent_marketing_at` nullable
 
 ## `roles`
 
 - `id`
-- `code`
+- `code` unique (`runner` | `admin` | `partner`)
 - `name`
+
+Посев ролей выполняется идемпотентным скриптом `apps/api/prisma/seed.ts` (`pnpm --filter @cityrnng/api prisma:seed`).
 
 ## `user_roles`
 
 - `user_id`
 - `role_id`
+- primary key (`user_id`, `role_id`)
+
+## `login_challenges`
+
+Короткоживущие токены magic-link логина.
+
+- `id`
+- `email` (индекс)
+- `token_hash` unique
+- `expires_at`
+- `consumed_at` nullable
+- `created_at`
+
+## `sessions`
+
+- `id`
+- `user_id` (индекс)
+- `refresh_token_hash` unique
+- `status` active|revoked|expired
+- `user_agent` nullable
+- `ip_address` nullable
+- `expires_at`
+- `created_at`
+- `revoked_at` nullable
 
 ## `events`
 
 - `id`
 - `title`
-- `slug`
-- `description`
+- `slug` unique
+- `description` nullable
 - `type` regular|special|partner
 - `status` draft|published|started|finished|cancelled
 - `starts_at`
 - `ends_at`
-- `location_name`
-- `location_address`
-- `location_lat`
-- `location_lng`
+- `location_name` nullable
+- `location_address` nullable
+- `location_lat` nullable
+- `location_lng` nullable
 - `capacity` nullable
-- `registration_open_at`
-- `registration_close_at`
-- `checkin_mode` qr|manual
+- `registration_open_at` nullable
+- `registration_close_at` nullable
 - `is_points_eligible`
 - `base_points_award`
-- `created_by`
+- `created_by` (user)
+- индексы: (`status`, `starts_at`), (`type`)
 
-## `event_routes`
+## `event_sync_rules`
 
-- `id`
-- `event_id`
-- `title`
-- `distance_km`
-- `pace_from` nullable
-- `pace_to` nullable
-- `notes`
-
-## `event_registrations`
+Конфигурация сопоставления активности из внешних провайдеров (сейчас — Strava) с событием.
 
 - `id`
-- `event_id`
-- `user_id`
-- `status` registered|waitlist|cancelled|attended|missed
-- `registered_at`
-- `cancelled_at` nullable
-- unique(`event_id`, `user_id`)
-
-## `checkin_tokens`
-
-- `id`
-- `event_id`
-- `token_hash`
-- `expires_at`
-- `created_by`
+- `event_id` unique
+- `provider` strava
+- `activity_type` nullable
+- `min_distance_meters` nullable
+- `max_distance_meters` nullable
+- `min_duration_seconds` nullable
+- `max_duration_seconds` nullable
+- `window_starts_at`
+- `window_ends_at`
+- `geofence_lat` nullable (устаревший inline-геофенс)
+- `geofence_lng` nullable
+- `geofence_radius_meters` nullable
+- `auto_approve`
 - `created_at`
-- `status` active|expired|revoked
+- `updated_at`
 
-## `checkins`
+## `event_sync_rule_locations`
+
+Связь правила синхронизации с набором именованных локаций (современный способ геофенса).
+
+- `sync_rule_id`
+- `location_id` (индекс)
+- `created_at`
+- primary key (`sync_rule_id`, `location_id`)
+
+## `city_locations`
+
+- `id`
+- `name`
+- `slug` unique
+- `city` (индекс)
+- `lat`
+- `lng`
+- `radius_meters` nullable
+- `status` active|archived (индекс)
+- `created_at`
+- `updated_at`
+
+## `event_attendances`
+
+Замена классической пары `event_registrations` + `checkins`. Запись создаётся либо автоматически при матчинге Strava-активности, либо вручную администратором.
 
 - `id`
 - `event_id`
 - `user_id`
-- `registration_id` nullable
-- `token_id` nullable
-- `source` qr|manual|admin
-- `status` pending|confirmed|rejected
-- `checked_in_at`
-- `confirmed_at` nullable
-- `confirmed_by` nullable
+- `external_activity_id` nullable (FK на `external_activities`, `on delete SET NULL`)
+- `status` pending|approved|rejected
+- `source` sync|manual_admin
+- `matched_at` nullable
+- `reviewed_at` nullable
+- `reviewed_by` nullable (user)
+- `rejection_reason` nullable
+- `created_at`
+- `updated_at`
 - unique(`event_id`, `user_id`)
+- индексы: (`event_id`, `status`), (`user_id`)
+
+## `user_provider_accounts`
+
+Подключение пользователя к внешнему провайдеру. Токены хранятся в зашифрованном виде (`TOKEN_ENCRYPTION_KEY`, AES-GCM).
+
+- `id`
+- `user_id`
+- `provider` strava
+- `provider_user_id`
+- `access_token_encrypted` nullable
+- `refresh_token_encrypted` nullable
+- `token_expires_at` nullable
+- `scope` nullable
+- `connected_at`
+- `disconnected_at` nullable
+- unique(`user_id`, `provider`)
+- unique(`provider`, `provider_user_id`)
+
+## `external_activities`
+
+Нормализованные записи активностей, полученных от провайдера.
+
+- `id`
+- `user_provider_account_id`
+- `user_id`
+- `provider`
+- `external_id`
+- `activity_type` nullable
+- `started_at`
+- `elapsed_seconds`
+- `distance_meters`
+- `start_lat` nullable
+- `start_lng` nullable
+- `end_lat` nullable
+- `end_lng` nullable
+- `payload_json` (сырой ответ провайдера)
+- `ingested_at`
+- unique(`provider`, `external_id`)
+- индекс: (`user_id`, `started_at`)
 
 ## `point_accounts`
 
 - `id`
 - `user_id` unique
 - `status` active|blocked
+- `balance` int (снэпшот для быстрых запросов; истина — `point_transactions`)
 - `created_at`
+- `updated_at`
 
 ## `point_transactions`
+
+Главный источник истины для баллов. Все операции идут через сервис `PointsService.post` с обязательным `idempotency_key`.
 
 - `id`
 - `account_id`
 - `user_id`
 - `direction` credit|debit
-- `amount`
-- `balance_after`
-- `status` pending|posted|reversed
+- `amount` int positive
+- `balance_after` int
+- `status` posted|reversed
 - `reason_type`
-- `reason_id` nullable
+- `reason_ref` nullable (ссылка на доменную сущность, например `attendance.id`)
 - `idempotency_key` unique
 - `comment` nullable
-- `created_by_type` system|user|admin
-- `created_by_id` nullable
+- `created_by_type` system|admin
+- `created_by_id` nullable (user)
 - `created_at`
+- индексы: (`user_id`, `created_at DESC`, `id DESC`), (`account_id`, `created_at DESC`, `id DESC`), (`reason_type`)
 
-`reason_type` примеры:
+Значения `reason_type` из enum `PointReasonType`:
 
 - `signup_bonus`
-- `first_run_bonus`
-- `event_attendance`
-- `special_event_bonus`
-- `referral_bonus`
-- `reward_redemption`
+- `event_attendance_regular`
+- `event_attendance_special`
+- `event_attendance_partner` (reason-type зарезервирован, авто-начисление пока отключено)
+- `first_run_bonus` (зарезервирован)
+- `streak_bonus` (зарезервирован)
+- `milestone_bonus` (зарезервирован)
+- `returning_user_bonus` (зарезервирован)
+- `campaign_bonus` (зарезервирован)
+- `partner_bonus` (зарезервирован)
 - `manual_adjustment`
 - `reversal`
-
-## `point_rules`
-
-- `id`
-- `code`
-- `name`
-- `status`
-- `config_json`
-- `effective_from`
-- `effective_to` nullable
-
-## `partners`
-
-- `id`
-- `name`
-- `slug`
-- `description`
-- `status` draft|active|inactive
-- `logo_media_id` nullable
-- `website_url` nullable
-- `instagram_url` nullable
-- `city`
-
-## `partner_contacts`
-
-- `id`
-- `partner_id`
-- `name`
-- `email`
-- `phone`
-- `role`
-
-## `rewards`
-
-- `id`
-- `partner_id`
-- `title`
-- `slug`
-- `description`
-- `status` draft|active|inactive|archived
-- `points_cost`
-- `redemption_mode` code|qr|manual
-- `validity_days`
-- `terms_text`
-- `starts_at` nullable
-- `ends_at` nullable
-- `per_user_limit` nullable
-- `daily_limit` nullable
-- `total_limit` nullable
-- `cover_media_id` nullable
-
-## `reward_inventory`
-
-- `id`
-- `reward_id`
-- `available_qty`
-- `reserved_qty`
-- `used_qty`
-
-## `reward_redemptions`
-
-- `id`
-- `reward_id`
-- `partner_id`
-- `user_id`
-- `point_transaction_id`
-- `status` created|reserved|redeemed|cancelled|expired
-- `code`
-- `qr_payload` nullable
-- `reserved_at`
-- `redeemed_at` nullable
-- `expires_at` nullable
-
-## `reward_redemption_events`
-
-- `id`
-- `redemption_id`
-- `event_type`
-- `payload_json`
-- `created_at`
-
-## `notifications`
-
-- `id`
-- `user_id`
-- `channel` email|telegram|push|internal
-- `template_code`
-- `status` queued|sent|failed
-- `payload_json`
-- `sent_at` nullable
-
-## `audit_logs`
-
-- `id`
-- `actor_type`
-- `actor_id`
-- `action`
-- `entity_type`
-- `entity_id`
-- `payload_json`
-- `created_at`
 
 ## 3. Ключевые связи
 
 - `users 1:1 profiles`
 - `users 1:N sessions`
-- `users N:M roles`
-- `users 1:N event_registrations`
-- `users 1:N checkins`
+- `users N:M roles` (через `user_roles`)
 - `users 1:1 point_accounts`
 - `users 1:N point_transactions`
-- `partners 1:N rewards`
-- `rewards 1:N reward_redemptions`
-- `events 1:N event_routes`
-- `events 1:N event_registrations`
-- `events 1:N checkins`
+- `users 1:N user_provider_accounts`
+- `users 1:N external_activities`
+- `users 1:N event_attendances` (с ролями автор / ревьюер)
+- `events 1:1 event_sync_rules` (optional)
+- `events 1:N event_attendances`
+- `event_sync_rules N:M city_locations` (через `event_sync_rule_locations`)
+- `user_provider_accounts 1:N external_activities`
+- `external_activities 1:N event_attendances`
 
 ## 4. Транзакционная модель баллов
 
 Баллы нельзя хранить только как вычисляемое поле в `users`.
 
-Правильная схема:
+Правила реализации:
 
-- основной источник истины: `point_transactions`;
-- `point_accounts` хранит статус счета;
-- `balance_after` фиксирует итог после каждой операции;
-- списание возможно только внутри транзакции БД с проверкой достаточности баланса;
-- все отмены выполняются отдельной обратной записью.
+- источник истины — `point_transactions`;
+- `point_accounts.balance` обновляется атомарно внутри транзакции вместе с записью в `point_transactions`;
+- каждая запись `point_transactions` содержит `balance_after` (снэпшот баланса после операции);
+- списание (`direction=debit`) возможно только внутри транзакции БД с проверкой достаточности баланса;
+- каждая операция обязана иметь `idempotency_key`; повторная попытка с тем же ключом возвращает существующую запись;
+- все отмены выполняются отдельной обратной записью с `reason_type=reversal`, сама запись не удаляется.
 
 ## 5. Правила целостности
 
-- один пользователь не может дважды зарегистрироваться на одно и то же событие;
-- один пользователь не может получить два подтвержденных check-in на одно событие;
-- одна и та же причина начисления не должна выполняться дважды при одинаковом `idempotency_key`;
-- redemption не может быть создан, если баллов недостаточно;
-- redemption не может быть переведен в `redeemed` повторно;
-- ручная корректировка баллов только для ролей `admin` и `superadmin`.
+- Один пользователь не может иметь более одной записи `event_attendances` на одно событие (unique `event_id, user_id`).
+- Strava-активность не может быть импортирована дважды (unique `provider, external_id`).
+- Один пользователь может быть подключён к одному провайдеру только один раз (unique `user_id, provider`) и один внешний аккаунт не может быть подключён к двум пользователям (unique `provider, provider_user_id`).
+- Одна и та же причина начисления не должна выполняться дважды при одинаковом `idempotency_key`.
+- Ручные корректировки баллов доступны только ролям `admin` / `superadmin`; запись обязана содержать `created_by_id`.
 
 ## 6. Событийная модель
 
-Стоит логировать важные доменные события:
+Фактические доменные события, которые имеет смысл логировать (audit log — в секции `Planned`):
 
 - `user_signed_up`
+- `user_magic_link_requested`
 - `event_created`
-- `runner_registered_for_event`
-- `runner_checked_in`
-- `checkin_confirmed`
+- `event_sync_rule_upserted`
+- `strava_account_connected`
+- `strava_account_disconnected`
+- `external_activity_ingested`
+- `attendance_matched`
+- `attendance_approved`
+- `attendance_rejected`
 - `points_awarded`
-- `reward_redeemed`
-- `reward_used`
 - `manual_points_adjusted`
-
-Это упростит аналитику и отладку.
 
 ## 7. Что важно для Prisma schema
 
-- использовать `@@unique` для доменных ограничений;
-- вынести enum в Prisma;
-- аудируемые поля добавлять во все критичные таблицы;
-- для денежных/балльных значений использовать `Int`;
-- мягкое удаление лучше через `status`, а не hard delete.
+- `@@unique` для всех доменных инвариантов (см. раздел "Правила целостности");
+- enum держим в Prisma, никаких `String` с магическими значениями;
+- аудируемые поля (`created_at`, `updated_at`, `created_by_*`) обязательны на всех критичных таблицах;
+- балльные и денежные значения — `Int`, не `Float`;
+- мягкое удаление через поле `status`, hard delete только там, где нет истории (например, `login_challenges`, `external_activities` по ретенции).
+
+## 8. Planned (ещё не реализовано)
+
+Секция описывает сущности из продуктового roadmap, которые не существуют в текущей схеме. Перенесены сюда, чтобы сохранить продуктовое видение без смешивания с реальностью.
+
+### Rewards and partners (Epic 5)
+
+- `partners`
+- `partner_contacts`
+- `rewards`
+- `reward_inventory`
+- `reward_redemptions`
+- `reward_redemption_events`
+
+### Notifications (Epic 8)
+
+- `notifications`
+
+### Platform
+
+- `media_files` (поле `profiles.avatar_media_id` зарезервировано заранее, само хранилище не реализовано)
+- `audit_logs`
+- `feature_flags`
+- `event_routes`
+- `point_rules` (сейчас правила начисления захардкожены в `PointsAwardsService` + env fallback; вынесение в таблицу — отдельная задача)
+
+### Устаревшие решения (не реализуются в текущем виде)
+
+Эти сущности были в ранней версии документа, но сознательно не реализованы в пользу другого подхода:
+
+- `event_registrations` — пользователи не регистрируются на событие заранее; присутствие подтверждается через Strava-matching или ручной ввод администратором.
+- `checkins` / `checkin_tokens` — QR-поток заменён на `event_attendances` + matcher (см. раздел 2).
+- `auth_identities` — вынесено в `user_provider_accounts` + email-based magic-link, отдельная таблица для идентичностей не понадобилась.
