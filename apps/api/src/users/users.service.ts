@@ -2,6 +2,7 @@ import { Injectable } from "@nestjs/common";
 import { Prisma, User } from "@prisma/client";
 import { PrismaService } from "../prisma/prisma.service";
 import { ROLE_RUNNER } from "../auth/types";
+import { PointsAwardsService } from "../points/points-awards.service";
 
 export type UserWithRelations = Prisma.UserGetPayload<{
   include: { profile: true; roles: { include: { role: true } } };
@@ -9,7 +10,10 @@ export type UserWithRelations = Prisma.UserGetPayload<{
 
 @Injectable()
 export class UsersService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly pointsAwards: PointsAwardsService,
+  ) {}
 
   async findByIdWithRelations(id: string): Promise<UserWithRelations | null> {
     return this.prisma.user.findUnique({
@@ -27,6 +31,7 @@ export class UsersService {
       });
 
       const existing = await tx.user.findUnique({ where: { email } });
+      const isFirstActivation = !existing || existing.status === "pending";
       const user: User = existing
         ? existing.status === "pending"
           ? await tx.user.update({ where: { id: existing.id }, data: { status: "active" } })
@@ -44,6 +49,10 @@ export class UsersService {
         update: {},
         create: { userId: user.id, roleId: runnerRole.id },
       });
+
+      if (isFirstActivation) {
+        await this.pointsAwards.awardSignupBonus(user.id, tx);
+      }
 
       return tx.user.findUniqueOrThrow({
         where: { id: user.id },

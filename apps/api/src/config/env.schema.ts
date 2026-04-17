@@ -26,6 +26,9 @@ export const envSchema = z.object({
   STRAVA_CLIENT_SECRET: z.string().min(1),
   STRAVA_REDIRECT_URI: z.string().url(),
   STRAVA_SCOPES: z.string().default("read,activity:read"),
+  WELCOME_BONUS_POINTS: z.coerce.number().int().nonnegative().default(100),
+  EVENT_ATTENDANCE_REGULAR_POINTS_FALLBACK: z.coerce.number().int().nonnegative().default(0),
+  EVENT_ATTENDANCE_SPECIAL_POINTS_FALLBACK: z.coerce.number().int().nonnegative().default(0),
 });
 
 export type Env = z.infer<typeof envSchema>;

@@ -1,19 +1,22 @@
-import { Injectable } from "@nestjs/common";
+import { Injectable, Logger } from "@nestjs/common";
 import {
   AttendanceSource,
   AttendanceStatus,
   CityLocation,
   CityLocationStatus,
+  Event,
   EventSyncRule,
   ExternalActivity,
   Prisma,
   SyncProvider,
 } from "@prisma/client";
+import { PointsAwardsService } from "../points/points-awards.service";
 import { PrismaService } from "../prisma/prisma.service";
 
 const DEFAULT_LOCATION_RADIUS_METERS = 500;
 
-type SyncRuleWithLocations = EventSyncRule & {
+type SyncRuleWithContext = EventSyncRule & {
+  event: Event;
   locations: Array<{ location: CityLocation }>;
 };
 
@@ -27,11 +30,17 @@ export interface MatchSummary {
   rulesConsidered: number;
   candidatesAttempted: number;
   attendancesCreated: number;
+  awardsPosted: number;
 }
 
 @Injectable()
 export class AttendanceMatcherService {
-  constructor(private readonly prisma: PrismaService) {}
+  private readonly logger = new Logger(AttendanceMatcherService.name);
+
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly pointsAwards: PointsAwardsService,
+  ) {}
 
   async matchForUser(userId: string, options: MatchOptions = {}): Promise<MatchSummary> {
     const activityWhere: Prisma.ExternalActivityWhereInput = {
@@ -46,16 +55,22 @@ export class AttendanceMatcherService {
 
     const activities = await this.prisma.externalActivity.findMany({
       where: activityWhere,
-      orderBy: { startedAt: "asc" },
+      orderBy: [{ startedAt: "asc" }, { id: "asc" }],
     });
     if (activities.length === 0) {
-      return { activitiesEvaluated: 0, rulesConsidered: 0, candidatesAttempted: 0, attendancesCreated: 0 };
+      return {
+        activitiesEvaluated: 0,
+        rulesConsidered: 0,
+        candidatesAttempted: 0,
+        attendancesCreated: 0,
+        awardsPosted: 0,
+      };
     }
 
     const minStart = activities[0]!.startedAt;
     const maxStart = activities[activities.length - 1]!.startedAt;
 
-    const rules = await this.prisma.eventSyncRule.findMany({
+    const rules = (await this.prisma.eventSyncRule.findMany({
       where: {
         provider: SyncProvider.strava,
         windowEndsAt: { gte: minStart },
@@ -63,46 +78,84 @@ export class AttendanceMatcherService {
       },
       orderBy: [{ windowStartsAt: "asc" }, { eventId: "asc" }],
       include: {
+        event: true,
         locations: {
           where: { location: { status: CityLocationStatus.active } },
           include: { location: true },
         },
       },
-    });
+    })) as SyncRuleWithContext[];
 
-    const candidates: Prisma.EventAttendanceCreateManyInput[] = [];
+    let candidatesAttempted = 0;
+    let attendancesCreated = 0;
+    let awardsPosted = 0;
 
     for (const activity of activities) {
       for (const rule of rules) {
         if (!this.ruleMatchesActivity(rule, activity)) continue;
-        const status = rule.autoApprove ? AttendanceStatus.approved : AttendanceStatus.pending;
-        const now = new Date();
-        candidates.push({
-          eventId: rule.eventId,
-          userId,
-          externalActivityId: activity.id,
-          source: AttendanceSource.sync,
-          status,
-          matchedAt: now,
-          reviewedAt: rule.autoApprove ? now : null,
-        });
+        candidatesAttempted += 1;
+
+        const outcome = await this.createAttendanceAndAward(userId, activity, rule);
+        if (outcome.created) attendancesCreated += 1;
+        if (outcome.awarded) awardsPosted += 1;
       }
     }
-
-    const result = await this.prisma.eventAttendance.createMany({
-      data: candidates,
-      skipDuplicates: true,
-    });
 
     return {
       activitiesEvaluated: activities.length,
       rulesConsidered: rules.length,
-      candidatesAttempted: candidates.length,
-      attendancesCreated: result.count,
+      candidatesAttempted,
+      attendancesCreated,
+      awardsPosted,
     };
   }
 
-  ruleMatchesActivity(rule: SyncRuleWithLocations, activity: ExternalActivity): boolean {
+  private async createAttendanceAndAward(
+    userId: string,
+    activity: ExternalActivity,
+    rule: SyncRuleWithContext,
+  ): Promise<{ created: boolean; awarded: boolean }> {
+    try {
+      return await this.prisma.$transaction(async (tx) => {
+        const status = rule.autoApprove ? AttendanceStatus.approved : AttendanceStatus.pending;
+        const now = new Date();
+        const attendance = await tx.eventAttendance.create({
+          data: {
+            eventId: rule.eventId,
+            userId,
+            externalActivityId: activity.id,
+            source: AttendanceSource.sync,
+            status,
+            matchedAt: now,
+            reviewedAt: rule.autoApprove ? now : null,
+          },
+        });
+
+        let awarded = false;
+        if (rule.autoApprove) {
+          const award = await this.pointsAwards.awardEventAttendance(attendance, rule.event, tx);
+          if (award) awarded = true;
+        }
+        return { created: true, awarded };
+      });
+    } catch (err) {
+      if (
+        err instanceof Prisma.PrismaClientKnownRequestError &&
+        err.code === "P2002" &&
+        uniqueTargetIncludes(err, "event_id") &&
+        uniqueTargetIncludes(err, "user_id")
+      ) {
+        // Another attendance already exists for this (event, user) — preserve it, no duplicate.
+        return { created: false, awarded: false };
+      }
+      this.logger.error(
+        `Attendance insert failed for user=${userId} event=${rule.eventId} activity=${activity.id}: ${(err as Error).message}`,
+      );
+      throw err;
+    }
+  }
+
+  ruleMatchesActivity(rule: SyncRuleWithContext, activity: ExternalActivity): boolean {
     const activityEnd = new Date(activity.startedAt.getTime() + activity.elapsedSeconds * 1000);
     if (activity.startedAt < rule.windowStartsAt) return false;
     if (activityEnd > rule.windowEndsAt) return false;
@@ -174,4 +227,14 @@ function haversineMeters(lat1: number, lng1: number, lat2: number, lng2: number)
     Math.sin(dLat / 2) ** 2 +
     Math.cos(toRad(lat1)) * Math.cos(toRad(lat2)) * Math.sin(dLng / 2) ** 2;
   return 2 * R * Math.asin(Math.min(1, Math.sqrt(a)));
+}
+
+function uniqueTargetIncludes(
+  err: Prisma.PrismaClientKnownRequestError,
+  field: string,
+): boolean {
+  const target = err.meta?.target;
+  if (Array.isArray(target)) return target.includes(field);
+  if (typeof target === "string") return target.includes(field);
+  return false;
 }

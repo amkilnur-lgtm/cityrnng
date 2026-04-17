@@ -56,6 +56,41 @@ enum CityLocationStatus {
   archived
 }
 
+enum PointAccountStatus {
+  active
+  blocked
+}
+
+enum PointDirection {
+  credit
+  debit
+}
+
+enum PointTransactionStatus {
+  posted
+  reversed
+}
+
+enum PointActorType {
+  system
+  admin
+}
+
+enum PointReasonType {
+  signup_bonus
+  event_attendance_regular
+  event_attendance_special
+  event_attendance_partner
+  manual_adjustment
+  first_run_bonus
+  streak_bonus
+  milestone_bonus
+  returning_user_bonus
+  campaign_bonus
+  partner_bonus
+  reversal
+}
+
 model User {
   id        String     @id @default(uuid()) @db.Uuid
   email     String     @unique
@@ -72,6 +107,9 @@ model User {
   externalActivities ExternalActivity[]
   attendances       EventAttendance[]       @relation("AttendanceUser")
   attendanceReviews EventAttendance[]       @relation("AttendanceReviewer")
+  pointAccount      PointAccount?
+  pointTransactions PointTransaction[]      @relation("PointTransactionUser")
+  createdPointTransactions PointTransaction[] @relation("PointTransactionCreatedBy")
 
   @@map("users")
 }
@@ -303,4 +341,44 @@ model EventSyncRuleLocation {
   @@id([syncRuleId, locationId])
   @@index([locationId])
   @@map("event_sync_rule_locations")
+}
+
+model PointAccount {
+  id        String             @id @default(uuid()) @db.Uuid
+  userId    String             @unique @map("user_id") @db.Uuid
+  status    PointAccountStatus @default(active)
+  balance   Int                @default(0)
+  createdAt DateTime           @default(now()) @map("created_at")
+  updatedAt DateTime           @updatedAt @map("updated_at")
+
+  user         User               @relation(fields: [userId], references: [id], onDelete: Cascade)
+  transactions PointTransaction[]
+
+  @@map("point_accounts")
+}
+
+model PointTransaction {
+  id              String                 @id @default(uuid()) @db.Uuid
+  accountId       String                 @map("account_id") @db.Uuid
+  userId          String                 @map("user_id") @db.Uuid
+  direction       PointDirection
+  amount          Int
+  balanceAfter    Int                    @map("balance_after")
+  status          PointTransactionStatus @default(posted)
+  reasonType      PointReasonType        @map("reason_type")
+  reasonRef       String?                @map("reason_ref")
+  idempotencyKey  String                 @unique @map("idempotency_key")
+  comment         String?
+  createdByType   PointActorType         @map("created_by_type")
+  createdById     String?                @map("created_by_id") @db.Uuid
+  createdAt       DateTime               @default(now()) @map("created_at")
+
+  account   PointAccount @relation(fields: [accountId], references: [id], onDelete: Restrict)
+  user      User         @relation("PointTransactionUser", fields: [userId], references: [id], onDelete: Cascade)
+  createdBy User?        @relation("PointTransactionCreatedBy", fields: [createdById], references: [id], onDelete: SetNull)
+
+  @@index([userId, createdAt(sort: Desc), id(sort: Desc)])
+  @@index([accountId, createdAt(sort: Desc), id(sort: Desc)])
+  @@index([reasonType])
+  @@map("point_transactions")
 }
