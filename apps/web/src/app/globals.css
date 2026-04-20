@@ -1,3 +1,36 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+@layer base {
+  :root {
+    /* Neutrals */
+    --ink: 0 0% 4%;              /* #0A0A0A */
+    --paper: 0 0% 100%;          /* #FFFFFF */
+    --paper-warm: 36 47% 97%;    /* #FAF7F2 */
+    --muted: 0 0% 42%;           /* #6B6B6B */
+    --line: 0 0% 90%;            /* #E5E5E5 */
+
+    /* Brand — exact values extracted from the music-flower SVG source */
+    --brand-red: 358 85% 52%;       /* #ED1C24 — poppy red from brand pack */
+    --brand-red-ink: 358 85% 42%;   /* #C8151C — darker for hover/active */
+    --brand-peach: 19 86% 70%;      /* #F7966B — warm peach accent */
+    --brand-yellow: 49 88% 60%;     /* #F4D03F — character heads */
+  }
+
+  html {
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    text-rendering: optimizeLegibility;
+  }
+
+  body {
+    @apply bg-paper text-ink font-sans;
+    font-size: 0.9375rem;
+    line-height: 1.55;
+  }
+
+  ::selection {
+    @apply bg-brand-red/25 text-ink;
+  }
+}
