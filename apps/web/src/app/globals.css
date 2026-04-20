@@ -2,20 +2,28 @@
 @tailwind components;
 @tailwind utilities;
 
+/* =========================================================
+   CITYRNNG design v0 — C3 · Светлый
+   Token values are the single source of truth for Tailwind
+   (see tailwind.config.ts — it references these CSS vars).
+   ========================================================= */
+
 @layer base {
   :root {
     /* Neutrals */
-    --ink: 0 0% 4%;              /* #0A0A0A */
+    --ink: 30 6% 6%;             /* #0F0E0C */
+    --graphite: 34 5% 21%;       /* #3A3833 */
     --paper: 0 0% 100%;          /* #FFFFFF */
-    --paper-warm: 36 47% 97%;    /* #FAF7F2 */
-    --muted: 0 0% 42%;           /* #6B6B6B */
-    --line: 0 0% 90%;            /* #E5E5E5 */
+    --paper-2: 60 5% 95%;        /* #F4F4F2 */
+    --paper-3: 60 4% 91%;        /* #E9E9E6 */
+    --muted: 40 4% 40%;          /* #6B6862 */
+    --muted-2: 38 10% 69%;       /* #B4B0A8 */
+    --line: 30 6% 6%;            /* use with alpha utility (bg-line/10) */
 
-    /* Brand — exact values extracted from the music-flower SVG source */
-    --brand-red: 358 85% 52%;       /* #ED1C24 — poppy red from brand pack */
-    --brand-red-ink: 358 85% 42%;   /* #C8151C — darker for hover/active */
-    --brand-peach: 19 86% 70%;      /* #F7966B — warm peach accent */
-    --brand-yellow: 49 88% 60%;     /* #F4D03F — character heads */
+    /* Brand — C3 poppy red */
+    --brand-red: 3 79% 53%;      /* #E63025 */
+    --brand-red-ink: 4 69% 42%;  /* #B8251C — hover/active */
+    --brand-tint: 5 100% 94%;    /* #FFE2DF — red-on-paper wash */
   }
 
   html {
@@ -26,7 +34,7 @@
 
   body {
     @apply bg-paper text-ink font-sans;
-    font-size: 0.9375rem;
+    font-size: 15px;
     line-height: 1.55;
   }
 
