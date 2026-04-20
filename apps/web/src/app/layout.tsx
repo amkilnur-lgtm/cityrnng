@@ -1,19 +1,16 @@
 import type { Metadata } from "next";
 import type { ReactNode } from "react";
-import { Manrope, Unbounded } from "next/font/google";
+import { Manrope } from "next/font/google";
 import "./globals.css";
 
+/**
+ * Root sans font — also serves as Cyrillic fallback for Space Grotesk,
+ * which is loaded locally by the C3 foundation reference page.
+ */
 const sans = Manrope({
   subsets: ["latin", "cyrillic"],
   variable: "--font-sans",
   display: "swap",
-});
-
-const display = Unbounded({
-  subsets: ["latin", "cyrillic"],
-  variable: "--font-display",
-  display: "swap",
-  weight: ["500", "600", "700"],
 });
 
 export const metadata: Metadata = {
@@ -23,7 +20,7 @@ export const metadata: Metadata = {
 
 export default function RootLayout({ children }: { children: ReactNode }) {
   return (
-    <html lang="ru" className={`${sans.variable} ${display.variable}`}>
+    <html lang="ru" className={sans.variable}>
       <body>{children}</body>
     </html>
   );
