@@ -42,3 +42,65 @@
     @apply bg-brand-red/25 text-ink;
   }
 }
+
+/* =========================================================
+   Typography roles (C3 v0)
+   Hero/H2 = Space Grotesk. Data/eyebrows = JetBrains Mono.
+   Body = Manrope (default via body base).
+   ========================================================= */
+@layer components {
+  .type-hero {
+    @apply font-display font-bold text-ink;
+    font-size: 88px;
+    line-height: 0.9;
+    letter-spacing: -0.035em;
+    text-wrap: balance;
+  }
+  @media (max-width: 800px) {
+    .type-hero {
+      font-size: 44px;
+    }
+  }
+
+  .type-h2 {
+    @apply font-display font-bold text-ink;
+    font-size: 48px;
+    line-height: 0.95;
+    letter-spacing: -0.03em;
+    text-wrap: balance;
+  }
+  @media (max-width: 800px) {
+    .type-h2 {
+      font-size: 32px;
+    }
+  }
+
+  .type-h3 {
+    @apply font-sans font-semibold text-ink;
+    font-size: 20px;
+    line-height: 1.3;
+  }
+
+  .type-lede {
+    @apply font-sans text-graphite;
+    font-size: 18px;
+    line-height: 1.55;
+  }
+
+  .type-label {
+    @apply font-sans font-medium text-ink;
+    font-size: 13px;
+  }
+
+  .type-mono-caps {
+    @apply font-mono font-medium uppercase text-muted;
+    font-size: 11px;
+    letter-spacing: 0.14em;
+  }
+
+  .type-data {
+    @apply font-mono font-medium text-ink;
+    font-size: 14px;
+    letter-spacing: 0.04em;
+  }
+}
