@@ -9,16 +9,21 @@ import { ShopPreview } from "@/components/home/shop-preview";
 import { DevStateToggle } from "@/components/site/dev-state-toggle";
 import { SiteFooter } from "@/components/site/footer";
 import { SiteNav } from "@/components/site/nav";
-import { resolveSiteState } from "@/lib/home-mock";
+import { resolveSiteState, sessionToSiteState } from "@/lib/home-mock";
+import { getSession } from "@/lib/session";
 
 type SearchParams = { state?: string };
 
-export default function HomePage({
+export default async function HomePage({
   searchParams,
 }: {
   searchParams: SearchParams;
 }) {
-  const state = resolveSiteState(searchParams.state);
+  const session = await getSession();
+  // Real session wins; URL param is dev-only fallback for unauthed users.
+  const state = session
+    ? sessionToSiteState(session)
+    : resolveSiteState(searchParams.state);
 
   return (
     <>
@@ -45,7 +50,7 @@ export default function HomePage({
         )}
       </main>
       <SiteFooter />
-      <DevStateToggle />
+      {!session ? <DevStateToggle /> : null}
     </>
   );
 }

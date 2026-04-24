@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { LogoutButton } from "@/components/site/logout-button";
 import { CLUB } from "@/lib/club";
 import type { SiteState } from "@/lib/home-mock";
 import { cn } from "@/lib/utils";
@@ -74,20 +75,23 @@ function GuestCta() {
 
 function AuthedPill({ user }: { user: { name: string; initial: string; points: number } }) {
   return (
-    <Link
-      href="/app"
-      aria-label="Мой профиль"
-      className="flex h-11 items-center border border-ink text-ink hover:bg-paper-2"
-    >
-      <span className="flex h-11 w-11 items-center justify-center bg-ink font-display text-[16px] font-bold leading-none tracking-tight text-paper">
-        {user.initial}
-      </span>
-      <span className="flex h-full items-center border-l border-ink px-3.5 font-sans text-[14px] font-semibold">
-        {user.name}
-      </span>
-      <span className="flex h-full items-center gap-1.5 border-l border-ink px-3.5 font-mono text-[13px] font-medium tracking-[0.04em] text-brand-red">
-        {user.points}&nbsp;Б
-      </span>
-    </Link>
+    <div className="flex h-11 items-center border border-ink text-ink">
+      <Link
+        href="/app"
+        aria-label="Мой профиль"
+        className="flex h-full items-center hover:bg-paper-2"
+      >
+        <span className="flex h-11 w-11 items-center justify-center bg-ink font-display text-[16px] font-bold leading-none tracking-tight text-paper">
+          {user.initial}
+        </span>
+        <span className="flex h-full items-center border-l border-ink px-3.5 font-sans text-[14px] font-semibold">
+          {user.name}
+        </span>
+        <span className="flex h-full items-center gap-1.5 border-l border-ink px-3.5 font-mono text-[13px] font-medium tracking-[0.04em] text-brand-red">
+          {user.points}&nbsp;Б
+        </span>
+      </Link>
+      <LogoutButton />
+    </div>
   );
 }
