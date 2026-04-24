@@ -28,7 +28,9 @@ export type CityLocation = {
   landmark?: string;
 };
 
-export const LOCATIONS: Record<string, CityLocation> = {
+export type LocationSlug = "centr" | "prospekt" | "chernikovka";
+
+export const LOCATIONS: Record<LocationSlug, CityLocation> = {
   centr: { slug: "centr", district: "Центр" },
   prospekt: { slug: "prospekt", district: "Проспект" },
   chernikovka: { slug: "chernikovka", district: "Черниковка" },
@@ -50,7 +52,7 @@ export const UPCOMING_EVENTS: EventCard[] = [
     id: "w-22",
     dateBig: "22",
     dayOfWeek: `${CLUB.runDayShort} · АПР`,
-    location: LOCATIONS.khamovniki,
+    location: LOCATIONS.centr,
     time: CLUB.runTime,
     distances: CLUB.distances,
     typicalTurnout: "12–15",
@@ -59,7 +61,7 @@ export const UPCOMING_EVENTS: EventCard[] = [
     id: "w-29",
     dateBig: "29",
     dayOfWeek: `${CLUB.runDayShort} · АПР`,
-    location: LOCATIONS.zamoskvorechye,
+    location: LOCATIONS.prospekt,
     time: CLUB.runTime,
     distances: CLUB.distances,
     typicalTurnout: "10–14",
@@ -68,7 +70,7 @@ export const UPCOMING_EVENTS: EventCard[] = [
     id: "w-06",
     dateBig: "06",
     dayOfWeek: `${CLUB.runDayShort} · МАЙ`,
-    location: LOCATIONS.presnya,
+    location: LOCATIONS.chernikovka,
     time: CLUB.runTime,
     distances: CLUB.distances,
     typicalTurnout: "8–12",
