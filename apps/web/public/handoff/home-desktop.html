@@ -1,0 +1,903 @@
+<!doctype html>
+<html lang="ru"><head><meta charset="utf-8"/>
+<title>Ситираннинг · Главная (Desktop)</title>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&family=Space+Grotesk:wght@600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --paper:#FFFFFF;--paper-2:#F4F4F2;--paper-3:#E9E9E6;
+    --ink:#0F0E0C;--graphite:#3A3833;--muted:#6B6862;--muted-2:#B4B0A8;
+    --red:#E63025;--red-ink:#B8251C;--tint:#FFE2DF;
+    --line:var(--ink);--line-soft:#0F0E0C33;
+    --fs:'Manrope',sans-serif;--fd:'Space Grotesk',sans-serif;--fm:'JetBrains Mono',monospace;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;padding:0;min-width:1280px;background:var(--paper);color:var(--ink);font-family:var(--fs);-webkit-font-smoothing:antialiased}
+  body{font-size:15px;line-height:1.55}
+  a{color:inherit}
+  img{display:block;max-width:100%}
+
+  /* ==== TYPE ==== */
+  .mono{font-family:var(--fm)}
+  .mono-caps{font-family:var(--fm);font-size:11px;font-weight:500;letter-spacing:0.14em;text-transform:uppercase;color:var(--muted)}
+  .mono-caps.red{color:var(--red)}
+  .mono-caps.ink{color:var(--ink)}
+  .lbl{font-family:var(--fs);font-size:13px;font-weight:500;color:var(--ink)}
+
+  /* ==== BUTTONS ==== */
+  .btn{font-family:var(--fs);font-weight:600;font-size:14px;border:1px solid var(--ink);background:var(--paper);color:var(--ink);cursor:pointer;padding:0 18px;height:44px;display:inline-flex;align-items:center;gap:10px;justify-content:center;transition:background .12s,color .12s,border-color .12s;line-height:1;text-decoration:none}
+  .btn:hover{background:var(--ink);color:#fff}
+  .btn-sm{height:32px;font-size:13px;padding:0 14px}
+  .btn-lg{height:56px;font-size:15px;padding:0 24px}
+  .btn-primary{background:var(--red);border-color:var(--red);color:#fff}
+  .btn-primary:hover{background:var(--red-ink);border-color:var(--red-ink);color:#fff}
+  .btn-primary:disabled{background:var(--muted-2);border-color:var(--muted-2);color:#fff;cursor:not-allowed}
+  .btn-ink{background:var(--ink);color:#fff}
+  .btn-ink:hover{background:var(--graphite)}
+  .btn-ghost{border-color:transparent;background:transparent}
+  .btn-ghost:hover{background:var(--paper-2);color:var(--ink);border-color:transparent}
+
+  /* ==== NAV ==== */
+  .nav{padding:20px 48px;display:flex;align-items:center;justify-content:space-between;gap:24px;border-bottom:1px solid var(--ink);background:var(--paper);position:sticky;top:0;z-index:10}
+  .nav .wm{display:flex;align-items:center;gap:14px;text-decoration:none;color:var(--ink)}
+  .nav .wm img{height:30px}
+  .nav-links{display:flex;gap:32px;align-items:center}
+  .nav-links a{font-family:var(--fs);font-weight:500;font-size:14px;color:var(--ink);text-decoration:none}
+  .nav-links a:hover{color:var(--red)}
+  .nav-links a[aria-current="page"]{color:var(--red)}
+  .nav .actions{display:flex;gap:10px;align-items:center}
+
+  /* avatar pill (authed) */
+  .me{display:none;border:1px solid var(--ink);background:var(--paper);align-items:stretch;cursor:pointer;height:44px;padding:0;text-decoration:none}
+  .me .av{width:44px;height:44px;background:var(--ink);color:#fff;display:flex;align-items:center;justify-content:center;font-family:var(--fd);font-weight:700;font-size:16px;letter-spacing:-0.02em}
+  .me .nm{padding:0 14px;display:flex;align-items:center;font-family:var(--fs);font-weight:600;font-size:14px;color:var(--ink);border-left:1px solid var(--ink)}
+  .me .pts{padding:0 14px 0 10px;display:flex;align-items:center;gap:6px;font-family:var(--fm);font-weight:500;font-size:13px;color:var(--red);border-left:1px solid var(--ink);letter-spacing:0.04em}
+  .me .pts::before{content:"";width:6px;height:6px;background:var(--red)}
+
+  body.s-authed .guest-only{display:none!important}
+  body.s-authed .authed-only{display:revert}
+  body.s-guest .authed-only{display:none!important}
+  .authed-only{display:none}
+  body.s-authed .me{display:inline-flex}
+  body.s-authed .nav-cta{display:none}
+
+  /* burger */
+  .burger{display:none;height:40px;width:40px;border:1px solid var(--ink);background:transparent;align-items:center;justify-content:center;cursor:pointer;padding:0}
+  .burger i{display:block;width:16px;height:1px;background:var(--ink);position:relative}
+  .burger i::before,.burger i::after{content:"";position:absolute;left:0;width:16px;height:1px;background:var(--ink)}
+  .burger i::before{top:-5px}.burger i::after{top:5px}
+
+  /* ==== SHARED LAYOUT ==== */
+  .wrap{max-width:1280px;margin:0 auto;padding:0 48px}
+  section{border-top:1px solid var(--ink)}
+  section:first-of-type{border-top:0}
+  .sec-head{display:flex;align-items:flex-end;justify-content:space-between;gap:24px;padding:64px 0 32px;flex-wrap:wrap}
+  .sec-head .lt{display:flex;flex-direction:column;gap:10px}
+  .sec-head h2{font-family:var(--fd);font-weight:700;font-size:48px;line-height:0.95;letter-spacing:-0.03em;margin:0;color:var(--ink);text-wrap:balance}
+  .sec-head h2 em{font-style:normal;color:var(--red)}
+  .sec-head .rt{display:flex;gap:10px;align-items:center}
+  .sec-body{padding:0 0 96px}
+
+  /* ==== HERO (shared container) ==== */
+  .hero{padding:72px 0 88px;position:relative}
+  .hero-grid{display:grid;grid-template-columns:minmax(0,1fr) 460px;gap:80px;align-items:start}
+
+  /* GUEST HERO */
+  .hero-col .eyebrow{display:flex;align-items:center;gap:10px;margin-bottom:22px}
+  .hero-col .eyebrow .bar{width:36px;height:1px;background:var(--ink)}
+  h1.hero-title{font-family:var(--fd);font-weight:700;font-size:88px;line-height:0.9;letter-spacing:-0.035em;margin:0;color:var(--ink);text-wrap:balance}
+  h1.hero-title em{font-style:normal;color:var(--red)}
+  h1.hero-title .dash{color:var(--muted-2);font-weight:600}
+
+  .lede{font-family:var(--fs);font-size:18px;line-height:1.55;color:var(--graphite);margin:28px 0 0;max-width:520px}
+  .lede b{color:var(--ink);font-weight:600}
+  .lede .bx{background:var(--tint);padding:1px 8px;color:var(--red-ink);font-weight:600;white-space:nowrap}
+
+  /* inline guest form */
+  .hero-form{margin-top:36px;max-width:520px;display:flex;flex-direction:column;gap:14px}
+  .hero-form .inp-row{display:flex;border:1px solid var(--ink);background:var(--paper)}
+  .hero-form .inp{flex:1;height:56px;border:0;padding:0 16px;font-family:var(--fs);font-size:15px;outline:0;background:transparent;color:var(--ink);min-width:0}
+  .hero-form .inp::placeholder{color:var(--muted-2)}
+  .hero-form .inp-row:focus-within{box-shadow:0 0 0 3px var(--tint);border-color:var(--red)}
+  .hero-form .sub{border:0;border-left:1px solid var(--ink);height:56px;padding:0 22px;background:var(--red);color:#fff;font-family:var(--fs);font-weight:600;font-size:15px;cursor:pointer;display:inline-flex;align-items:center;gap:10px}
+  .hero-form .sub:hover{background:var(--red-ink)}
+  .hero-form .msg{font-family:var(--fs);font-size:13px;color:var(--muted);display:flex;align-items:center;gap:8px;min-height:18px}
+  .hero-form .msg::before{content:"";width:6px;height:6px;background:var(--ink);display:inline-block}
+  .hero-form .or-oauth{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-top:4px}
+  .hero-form .or-oauth .mono-caps{margin-right:6px}
+  .hero-form .or-oauth .btn{height:40px;padding:0 14px;font-size:13px;font-weight:500}
+  .hero-form .or-oauth .btn svg{width:16px;height:16px}
+
+  /* hero side (shared) — illust + upcoming card */
+  .hero-side{display:flex;flex-direction:column;gap:-1px;position:sticky;top:88px}
+  .card{border:1px solid var(--ink);background:var(--paper)}
+  .card + .card{border-top:0}
+  .illust{background:var(--paper-2);aspect-ratio:5/4;display:flex;align-items:center;justify-content:center;padding:28px;position:relative;overflow:hidden}
+  .illust img{width:100%;height:100%;object-fit:contain}
+  .illust .ix{position:absolute;left:16px;top:16px;display:flex;flex-direction:column;gap:4px}
+  .illust .ix .k{font-family:var(--fm);font-size:10px;letter-spacing:0.14em;text-transform:uppercase;color:var(--muted)}
+  .illust .ix .n{font-family:var(--fd);font-weight:700;font-size:14px;color:var(--ink)}
+
+  .card-head{padding:14px 20px;border-bottom:1px solid var(--ink);display:flex;align-items:center;justify-content:space-between;gap:12px}
+  .card-head .t{font-family:var(--fs);font-weight:600;font-size:14px;color:var(--ink)}
+  .card-body{padding:20px;display:flex;flex-direction:column;gap:14px}
+
+  .evt-row{display:flex;align-items:baseline;gap:10px;flex-wrap:wrap}
+  .evt-row .d{font-family:var(--fm);font-weight:500;font-size:14px;letter-spacing:0.04em;color:var(--ink)}
+  .evt-row .d.red{color:var(--red)}
+  .evt-row .sep{color:var(--muted-2)}
+  .evt-row .place{font-family:var(--fs);font-weight:600;font-size:15px;color:var(--ink)}
+
+  .evt-meta{display:flex;justify-content:space-between;align-items:center;padding-top:14px;border-top:1px solid var(--line-soft);gap:12px}
+  .evt-meta .seats{font-family:var(--fs);font-size:14px;color:var(--graphite)}
+  .evt-meta .seats b{color:var(--ink);font-weight:600;font-family:var(--fm)}
+  .evt-meta a{font-family:var(--fs);font-weight:600;font-size:14px;color:var(--ink);text-decoration:none;border-bottom:1px solid var(--ink);padding-bottom:1px}
+  .evt-meta a:hover{color:var(--red);border-color:var(--red)}
+
+  /* ==== AUTHED HERO DASH ==== */
+  .dash{padding:48px 0 64px;border-bottom:1px solid var(--ink);display:none}
+  body.s-authed .dash{display:block}
+  body.s-authed .hero.guest-hero{display:none}
+
+  .dash-top{display:flex;align-items:flex-end;justify-content:space-between;gap:24px;margin-bottom:32px;flex-wrap:wrap}
+  .dash-hello{display:flex;flex-direction:column;gap:10px;max-width:720px}
+  .dash-hello .eyebrow{display:flex;gap:10px;align-items:center}
+  .dash-hello .eyebrow .bar{width:36px;height:1px;background:var(--ink)}
+  .dash-hello h1{font-family:var(--fd);font-weight:700;font-size:72px;line-height:0.95;letter-spacing:-0.035em;margin:0;color:var(--ink)}
+  .dash-hello h1 em{font-style:normal;color:var(--red)}
+  .dash-hello p{font-family:var(--fs);font-size:17px;color:var(--graphite);margin:0;max-width:560px}
+  .dash-hello p b{color:var(--ink);font-weight:600}
+
+  /* big stat row */
+  .dash-stats{display:grid;grid-template-columns:1.2fr 1fr 1fr;border:1px solid var(--ink);background:var(--paper)}
+  .dash-stats .st{padding:24px 28px;border-left:1px solid var(--ink);display:flex;flex-direction:column;gap:6px;min-width:0}
+  .dash-stats .st:first-child{border-left:0}
+  .dash-stats .st .k{font-family:var(--fm);font-size:11px;letter-spacing:0.14em;text-transform:uppercase;color:var(--muted)}
+  .dash-stats .st .v{font-family:var(--fd);font-weight:700;font-size:56px;line-height:1;letter-spacing:-0.02em;color:var(--ink);margin-top:4px}
+  .dash-stats .st .v em{font-style:normal;color:var(--red)}
+  .dash-stats .st .s{font-family:var(--fs);font-size:13px;color:var(--graphite)}
+
+  /* featured event (authed) */
+  .dash-feat{margin-top:24px;display:grid;grid-template-columns:1.4fr 1fr;border:1px solid var(--ink)}
+  .dash-feat .l{padding:32px;display:flex;flex-direction:column;gap:14px;justify-content:space-between;min-width:0}
+  .dash-feat .l .eyebrow{display:flex;gap:10px;align-items:center}
+  .dash-feat .l .eyebrow .dot{width:8px;height:8px;background:var(--red);animation:blink 1.4s infinite}
+  @keyframes blink{50%{opacity:0.25}}
+  .dash-feat .l h3{font-family:var(--fd);font-weight:700;font-size:42px;line-height:1;letter-spacing:-0.03em;margin:0;color:var(--ink)}
+  .dash-feat .l h3 em{font-style:normal;color:var(--red)}
+  .dash-feat .l .row{display:flex;flex-wrap:wrap;gap:24px;align-items:center}
+  .dash-feat .l .row .k{font-family:var(--fm);font-size:11px;letter-spacing:0.14em;text-transform:uppercase;color:var(--muted);display:block;margin-bottom:4px}
+  .dash-feat .l .row .v{font-family:var(--fm);font-size:15px;color:var(--ink)}
+  .dash-feat .l .acts{display:flex;gap:10px;flex-wrap:wrap;margin-top:8px}
+  .dash-feat .r{background:var(--paper-2);display:flex;align-items:center;justify-content:center;padding:24px;border-left:1px solid var(--ink);min-height:260px;position:relative}
+  .dash-feat .r img{width:100%;height:100%;object-fit:contain}
+  .dash-feat .r .ix{position:absolute;left:16px;top:16px}
+
+  /* ==== HOW IT WORKS (guest) ==== */
+  .how{display:grid;grid-template-columns:repeat(3,1fr);border:1px solid var(--ink)}
+  .how .step{padding:32px;border-left:1px solid var(--ink);display:flex;flex-direction:column;gap:14px;min-height:280px}
+  .how .step:first-child{border-left:0}
+  .how .step .n{font-family:var(--fm);font-weight:500;font-size:12px;color:var(--muted);letter-spacing:0.14em}
+  .how .step h3{font-family:var(--fd);font-weight:700;font-size:30px;line-height:1;letter-spacing:-0.02em;margin:0;color:var(--ink)}
+  .how .step h3 em{font-style:normal;color:var(--red)}
+  .how .step p{font-family:var(--fs);font-size:15px;color:var(--graphite);margin:0;line-height:1.55}
+  .how .step p b{color:var(--ink);font-weight:600}
+  .how .step .meta{margin-top:auto;padding-top:18px;border-top:1px solid var(--line-soft);display:flex;justify-content:space-between;align-items:center;font-family:var(--fm);font-size:12px;letter-spacing:0.04em;color:var(--muted)}
+  .how .step .meta b{color:var(--ink);font-weight:500}
+
+  /* ==== EVENTS GRID ==== */
+  .events{display:grid;grid-template-columns:repeat(3,1fr);gap:-1px}
+  .evt{border:1px solid var(--ink);background:var(--paper);display:flex;flex-direction:column;margin-left:-1px}
+  .evt:first-child{margin-left:0}
+  .evt-top{padding:18px 20px;border-bottom:1px solid var(--ink);display:flex;justify-content:space-between;align-items:center;gap:12px}
+  .evt-top .km{font-family:var(--fd);font-weight:700;font-size:20px;letter-spacing:-0.02em;color:var(--ink)}
+  .evt-top .km em{font-style:normal;color:var(--red)}
+  .evt-top .day{font-family:var(--fm);font-size:11px;letter-spacing:0.14em;text-transform:uppercase;color:var(--muted)}
+  .evt-body{padding:28px 20px 22px;display:flex;flex-direction:column;gap:16px;flex:1}
+  .evt-body .ttl{font-family:var(--fd);font-weight:700;font-size:24px;line-height:1.05;letter-spacing:-0.02em;color:var(--ink)}
+  .evt-body .ttl em{font-style:normal;color:var(--red)}
+  .evt-body .lines{display:flex;flex-direction:column;gap:8px;font-family:var(--fs);font-size:14px;color:var(--graphite)}
+  .evt-body .lines div{display:flex;justify-content:space-between;gap:12px}
+  .evt-body .lines .k{color:var(--muted);font-family:var(--fm);font-size:12px;letter-spacing:0.04em;text-transform:uppercase}
+  .evt-body .lines .v{font-family:var(--fm);font-size:14px;color:var(--ink)}
+  .evt-body .bar{margin-top:auto;display:flex;align-items:center;gap:10px}
+  .evt-body .bar .track{flex:1;height:6px;background:var(--paper-2);border:1px solid var(--ink);position:relative}
+  .evt-body .bar .fill{position:absolute;left:0;top:0;bottom:0;background:var(--ink)}
+  .evt-body .bar .fill.red{background:var(--red)}
+  .evt-body .bar .seats{font-family:var(--fm);font-size:13px;color:var(--ink)}
+  .evt-foot{padding:14px 20px;border-top:1px solid var(--ink);display:flex;justify-content:space-between;align-items:center;gap:12px}
+  .evt-foot a{font-family:var(--fs);font-weight:600;font-size:14px;color:var(--ink);text-decoration:none;border-bottom:1px solid var(--ink);padding-bottom:1px}
+  .evt-foot a:hover{color:var(--red);border-color:var(--red)}
+  .evt-foot .dist{font-family:var(--fm);font-size:12px;letter-spacing:0.04em;color:var(--muted)}
+
+  /* recommended badge (authed-only on evt) */
+  .evt.rec{background:var(--paper-2)}
+  .evt .rec-tag{display:none;font-family:var(--fm);font-size:11px;letter-spacing:0.14em;text-transform:uppercase;color:var(--red)}
+  body.s-authed .evt.rec .rec-tag{display:inline}
+
+  /* ==== POINTS + SHOP (authed) ==== */
+  .pts-block{display:grid;grid-template-columns:1.3fr 1fr;border:1px solid var(--ink)}
+  .pts-block .l{padding:32px;display:flex;flex-direction:column;gap:24px;border-right:1px solid var(--ink);min-width:0}
+  .pts-block .l .k{font-family:var(--fm);font-size:11px;letter-spacing:0.14em;text-transform:uppercase;color:var(--muted)}
+  .pts-block .l .v{font-family:var(--fd);font-weight:700;font-size:96px;line-height:0.9;letter-spacing:-0.04em;color:var(--ink)}
+  .pts-block .l .v em{font-style:normal;color:var(--red)}
+  .pts-block .l .bar{display:flex;flex-direction:column;gap:10px;margin-top:auto}
+  .pts-block .l .bar .top{display:flex;justify-content:space-between;font-family:var(--fm);font-size:12px;letter-spacing:0.04em}
+  .pts-block .l .bar .top .lv{color:var(--muted);text-transform:uppercase}
+  .pts-block .l .bar .top .rv{color:var(--ink)}
+  .pts-block .l .bar .track{height:8px;background:var(--paper-2);border:1px solid var(--ink);position:relative}
+  .pts-block .l .bar .fill{position:absolute;left:0;top:0;bottom:0;background:var(--red)}
+  .pts-block .l .bar .cap{font-family:var(--fs);font-size:13px;color:var(--graphite)}
+  .pts-block .l .bar .cap b{color:var(--ink);font-weight:600}
+
+  .pts-block .r{padding:24px;display:flex;flex-direction:column;gap:0;min-width:0}
+  .pts-block .r .head{display:flex;justify-content:space-between;align-items:center;padding-bottom:16px;border-bottom:1px solid var(--line-soft)}
+  .pts-block .r .head .t{font-family:var(--fs);font-weight:600;font-size:14px}
+  .pts-block .r .head a{font-family:var(--fs);font-weight:600;font-size:13px;color:var(--ink);text-decoration:none;border-bottom:1px solid var(--ink);padding-bottom:1px}
+  .pts-block .r .itm{display:grid;grid-template-columns:1fr auto;gap:8px;padding:14px 0;border-bottom:1px solid var(--line-soft);align-items:baseline}
+  .pts-block .r .itm:last-of-type{border-bottom:0}
+  .pts-block .r .itm .nm{font-family:var(--fs);font-size:14px;color:var(--ink);line-height:1.4}
+  .pts-block .r .itm .nm .sub{display:block;color:var(--muted);font-size:12px;margin-top:2px}
+  .pts-block .r .itm .px{font-family:var(--fm);font-weight:500;font-size:14px;color:var(--red);letter-spacing:0.04em;white-space:nowrap}
+
+  /* ==== STATS (authed) ==== */
+  .stats{display:grid;grid-template-columns:1fr 2fr;border:1px solid var(--ink)}
+  .stats .side{padding:28px;border-right:1px solid var(--ink);display:flex;flex-direction:column;gap:12px}
+  .stats .side .k{font-family:var(--fm);font-size:11px;letter-spacing:0.14em;text-transform:uppercase;color:var(--muted)}
+  .stats .side h3{font-family:var(--fd);font-weight:700;font-size:40px;line-height:0.95;letter-spacing:-0.03em;margin:0;color:var(--ink)}
+  .stats .side h3 em{font-style:normal;color:var(--red)}
+  .stats .side p{font-family:var(--fs);font-size:14px;color:var(--graphite);margin:0}
+  .stats .side .big-nums{display:grid;grid-template-columns:repeat(2,1fr);gap:16px;margin-top:12px}
+  .stats .side .big-nums .n{display:flex;flex-direction:column;gap:4px}
+  .stats .side .big-nums .n .v{font-family:var(--fd);font-weight:700;font-size:32px;line-height:1;color:var(--ink)}
+  .stats .side .big-nums .n .v em{font-style:normal;color:var(--red)}
+  .stats .side .big-nums .n .s{font-family:var(--fm);font-size:11px;letter-spacing:0.14em;text-transform:uppercase;color:var(--muted)}
+
+  /* chart: 5-week bars */
+  .chart{padding:32px;display:flex;flex-direction:column;gap:16px;min-width:0}
+  .chart .chart-head{display:flex;justify-content:space-between;align-items:baseline;gap:12px}
+  .chart .chart-head .t{font-family:var(--fs);font-weight:600;font-size:14px;color:var(--ink)}
+  .chart .bars{display:grid;grid-template-columns:repeat(5,1fr);gap:14px;align-items:end;height:200px;padding-top:8px;border-top:1px solid var(--line-soft)}
+  .chart .bars .b{display:flex;flex-direction:column;align-items:center;gap:10px;height:100%;justify-content:flex-end}
+  .chart .bars .b .bar{width:100%;background:var(--ink);position:relative;display:flex;align-items:flex-start;justify-content:center}
+  .chart .bars .b.now .bar{background:var(--red)}
+  .chart .bars .b .bar .val{font-family:var(--fm);font-size:11px;color:#fff;padding:6px 0;letter-spacing:0.04em}
+  .chart .bars .b .wk{font-family:var(--fm);font-size:11px;color:var(--muted);letter-spacing:0.14em;text-transform:uppercase}
+  .chart .bars .b.now .wk{color:var(--red)}
+  .chart .chart-foot{display:flex;gap:24px;padding-top:12px;border-top:1px solid var(--line-soft);font-family:var(--fs);font-size:13px;color:var(--graphite);flex-wrap:wrap}
+  .chart .chart-foot b{color:var(--ink);font-weight:600}
+
+  /* ==== DISTRICTS MAP (guest) ==== */
+  .map{display:grid;grid-template-columns:1fr 1.2fr;border:1px solid var(--ink);background:var(--paper)}
+  .map .l{padding:32px;display:flex;flex-direction:column;gap:16px;border-right:1px solid var(--ink);min-width:0}
+  .map .l .k{font-family:var(--fm);font-size:11px;letter-spacing:0.14em;text-transform:uppercase;color:var(--muted)}
+  .map .l h3{font-family:var(--fd);font-weight:700;font-size:36px;line-height:1;letter-spacing:-0.02em;margin:0;color:var(--ink)}
+  .map .l h3 em{font-style:normal;color:var(--red)}
+  .map .l p{font-family:var(--fs);font-size:14px;color:var(--graphite);margin:0}
+  .map .l .dl{margin-top:auto;display:flex;flex-direction:column}
+  .map .l .dl .r{display:grid;grid-template-columns:1fr auto auto;gap:12px;padding:10px 0;border-top:1px solid var(--line-soft);font-family:var(--fs);font-size:14px;align-items:baseline}
+  .map .l .dl .r:first-child{border-top:1px solid var(--ink)}
+  .map .l .dl .r .nm{font-weight:600;color:var(--ink)}
+  .map .l .dl .r .ct{font-family:var(--fm);font-size:12px;color:var(--muted);letter-spacing:0.04em}
+  .map .l .dl .r .kf{font-family:var(--fm);font-size:12px;color:var(--red);letter-spacing:0.04em}
+  .map .r{background:var(--paper-2);padding:32px;position:relative;min-height:340px;overflow:hidden}
+  .map .r svg{width:100%;height:100%;display:block}
+
+  /* ==== PARTNERS (guest) ==== */
+  .partners{display:grid;grid-template-columns:repeat(4,1fr);border:1px solid var(--ink)}
+  .partners .p{padding:24px;border-left:1px solid var(--ink);border-top:1px solid var(--ink);display:flex;flex-direction:column;gap:8px;min-height:160px;justify-content:space-between}
+  .partners .p:nth-child(4n+1){border-left:0}
+  .partners .p:nth-child(-n+4){border-top:0}
+  .partners .p .lg{font-family:var(--fd);font-weight:700;font-size:22px;color:var(--ink);letter-spacing:-0.01em}
+  .partners .p .cat{font-family:var(--fm);font-size:11px;letter-spacing:0.14em;text-transform:uppercase;color:var(--muted)}
+  .partners .p .perk{font-family:var(--fs);font-size:13px;color:var(--graphite);line-height:1.45}
+  .partners .p .perk b{color:var(--red);font-weight:600;font-family:var(--fm);font-size:13px;letter-spacing:0.04em}
+
+  /* ==== NEWS ==== */
+  .news{display:grid;grid-template-columns:1.2fr 1fr 1fr;gap:-1px}
+  .nw{border:1px solid var(--ink);background:var(--paper);padding:24px;display:flex;flex-direction:column;gap:14px;margin-left:-1px;min-height:260px}
+  .nw:first-child{margin-left:0}
+  .nw .mt{display:flex;align-items:center;gap:10px;font-family:var(--fm);font-size:11px;letter-spacing:0.14em;text-transform:uppercase;color:var(--muted)}
+  .nw .mt .cat{color:var(--red)}
+  .nw h3{font-family:var(--fd);font-weight:700;font-size:24px;line-height:1.1;letter-spacing:-0.02em;margin:0;color:var(--ink)}
+  .nw.big h3{font-size:34px;line-height:1}
+  .nw p{font-family:var(--fs);font-size:14px;color:var(--graphite);margin:0;line-height:1.55}
+  .nw .rd{margin-top:auto;font-family:var(--fs);font-weight:600;font-size:13px;color:var(--ink);text-decoration:none;border-bottom:1px solid var(--ink);padding-bottom:1px;align-self:flex-start}
+  .nw .rd:hover{color:var(--red);border-color:var(--red)}
+
+  /* ==== FINAL CTA (guest) ==== */
+  .cta-final{background:var(--ink);color:#fff;padding:80px 48px;display:grid;grid-template-columns:minmax(0,1fr) auto;gap:48px;align-items:center;border-top:1px solid var(--ink)}
+  .cta-final h2{font-family:var(--fd);font-weight:700;font-size:64px;line-height:0.95;letter-spacing:-0.03em;margin:0;color:#fff;text-wrap:balance}
+  .cta-final h2 em{font-style:normal;color:var(--red)}
+  .cta-final .sub{font-family:var(--fs);font-size:16px;color:#B4B0A8;margin:16px 0 0;max-width:560px}
+  .cta-final .acts{display:flex;gap:12px}
+  .cta-final .btn{background:#fff;color:var(--ink);border-color:#fff}
+  .cta-final .btn:hover{background:var(--red);border-color:var(--red);color:#fff}
+  .cta-final .btn.btn-ghost{background:transparent;color:#fff;border:1px solid #3A3833}
+  .cta-final .btn.btn-ghost:hover{background:#3A3833;color:#fff;border-color:#3A3833}
+
+  /* ==== FOOTER ==== */
+  footer{border-top:1px solid var(--ink);padding:48px 48px 32px;display:grid;grid-template-columns:1.4fr repeat(3,1fr);gap:32px;font-family:var(--fs);font-size:13px;color:var(--muted);background:var(--paper)}
+  footer .col h4{font-family:var(--fm);font-size:11px;letter-spacing:0.14em;text-transform:uppercase;color:var(--ink);margin:0 0 14px}
+  footer .col a{display:block;color:var(--muted);text-decoration:none;padding:4px 0}
+  footer .col a:hover{color:var(--ink)}
+  footer .col .wm-mini{font-family:var(--fm);font-size:11px;letter-spacing:0.14em;text-transform:uppercase;color:var(--ink);margin-bottom:14px;display:block}
+  footer .col p{margin:0;line-height:1.55;color:var(--graphite)}
+  footer .bot{grid-column:1/-1;border-top:1px solid var(--line-soft);padding-top:20px;display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap;color:var(--muted);font-size:12px}
+
+  /* ==== DEV BAR ==== */
+  .dev-bar{position:fixed;top:12px;right:12px;z-index:9999;display:flex;gap:6px;background:var(--paper);border:1px solid var(--ink);padding:6px;font-family:var(--fm);font-size:11px;letter-spacing:0.08em}
+  .dev-bar .grp{display:flex}
+  .dev-bar .grp + .grp{margin-left:8px;padding-left:8px;border-left:1px solid var(--line-soft)}
+  .dev-bar button{font-family:var(--fm);font-size:11px;letter-spacing:0.08em;text-transform:uppercase;border:1px solid var(--ink);background:var(--paper);color:var(--ink);padding:6px 10px;cursor:pointer}
+  .dev-bar button.on{background:var(--ink);color:#fff}
+</style><script src="https://mcp.figma.com/mcp/html-to-design/capture.js" async></script></head>
+<body class="s-guest">
+
+<!-- DEV BAR -->
+<div class="dev-bar" role="toolbar" aria-label="Dev">
+  <div class="grp">
+    <button data-st="guest" class="on">GUEST</button>
+    <button data-st="authed">AUTHED</button>
+  </div>
+</div>
+
+<!-- NAV -->
+<nav class="nav" aria-label="Primary">
+  <a href="#" class="wm" aria-label="Ситираннинг"><img src="/brand/wordmark.png" alt="ситираннинг"/></a>
+  <div class="nav-links">
+    <a href="#" aria-current="page">Главная</a>
+    <a href="#">События</a>
+    <a href="#">Магазин</a>
+    <a href="#">Журнал</a>
+    <a href="#">Партнёрам</a>
+  </div>
+  <div class="actions">
+    <button class="burger" aria-label="Меню"><i></i></button>
+    <a href="#" class="btn btn-sm nav-cta guest-only">Войти</a>
+    <a href="#" class="me authed-only" aria-label="Мой профиль">
+      <span class="av">М</span>
+      <span class="nm">Маша</span>
+      <span class="pts">350 Б</span>
+    </a>
+  </div>
+</nav>
+
+<!-- AUTHED HERO (dash) -->
+<div class="dash wrap" aria-label="Привет, Маша">
+  <div class="dash-top">
+    <div class="dash-hello">
+      <div class="eyebrow"><span class="bar"></span><span class="mono-caps">Вторник · 21 апреля · Москва</span></div>
+      <h1>Привет, <em>Маша</em>.<br/>До&nbsp;среды 1&nbsp;день.</h1>
+      <p>В&nbsp;прошлую среду ты&nbsp;пробежала <b>3&nbsp;км</b> и&nbsp;получила <b>+30 баллов</b>. Ещё один старт — и&nbsp;хватит на&nbsp;капучино у&nbsp;Маши.</p>
+    </div>
+  </div>
+
+  <div class="dash-stats">
+    <div class="st">
+      <span class="k">Мои баллы</span>
+      <span class="v"><em>350</em> <span style="color:var(--muted-2)">/</span> 500</span>
+      <span class="s">до&nbsp;следующего уровня «Сосед со&nbsp;стажем»</span>
+    </div>
+    <div class="st">
+      <span class="k">Сред в&nbsp;этом месяце</span>
+      <span class="v">3</span>
+      <span class="s">из&nbsp;4 · 9&nbsp;км за&nbsp;месяц</span>
+    </div>
+    <div class="st">
+      <span class="k">Рядом соседей</span>
+      <span class="v">27</span>
+      <span class="s">в&nbsp;Хамовниках придут в&nbsp;среду</span>
+    </div>
+  </div>
+
+  <div class="dash-feat">
+    <div class="l">
+      <div>
+        <div class="eyebrow"><span class="dot"></span><span class="mono-caps red">Завтра · ты&nbsp;записана</span></div>
+        <h3 style="margin-top:10px">Парк&nbsp;Горького <span style="color:var(--muted-2)">·</span> <em>3&nbsp;км</em></h3>
+      </div>
+      <div class="row">
+        <div><span class="k">Старт</span><span class="v">СР 19:30</span></div>
+        <div><span class="k">Темп</span><span class="v">6:30/км</span></div>
+        <div><span class="k">Соседей</span><span class="v">12/20</span></div>
+        <div><span class="k">Погода</span><span class="v">+11° ясно</span></div>
+      </div>
+      <div class="acts">
+        <a href="#" class="btn btn-primary">Посмотреть маршрут →</a>
+        <a href="#" class="btn btn-ghost">Отменить</a>
+      </div>
+    </div>
+    <div class="r">
+      <div class="ix">
+        <span class="mono-caps">№ 047</span>
+      </div>
+      <img src="/brand/runner-red.png" alt=""/>
+    </div>
+  </div>
+</div>
+
+<!-- GUEST HERO -->
+<section class="hero guest-hero">
+  <div class="wrap">
+    <div class="hero-grid">
+      <div class="hero-col">
+        <div class="eyebrow">
+          <span class="bar"></span>
+          <span class="mono-caps">Москва · район Хамовники · с&nbsp;2024</span>
+        </div>
+        <h1 class="hero-title">Бегаешь по&nbsp;городу <span class="dash">—</span> меняешь у&nbsp;соседа на&nbsp;<em>кофе</em>.</h1>
+        <p class="lede">Соседи, кофейни, маршрут по&nbsp;средам вечером. Без&nbsp;гонки, без&nbsp;секундомера. <b>+50&nbsp;баллов</b> за&nbsp;регистрацию — хватит на&nbsp;первый <span class="bx">капучино у&nbsp;Маши</span>.</p>
+
+        <form class="hero-form" id="heroForm" novalidate>
+          <label class="lbl" for="heroEmail">Войти или&nbsp;зарегистрироваться</label>
+          <div class="inp-row">
+            <input type="email" id="heroEmail" class="inp" placeholder="you@example.com" autocomplete="email"/>
+            <button type="submit" class="sub">Получить ссылку →</button>
+          </div>
+          <div class="msg">Пришлём ссылку на&nbsp;email — без пароля</div>
+          <div class="or-oauth">
+            <span class="mono-caps">или через</span>
+            <button type="button" class="btn">
+              <svg viewBox="0 0 24 24" fill="currentColor"><path d="M16.4 12.7c0-2.5 2-3.7 2.1-3.8-1.1-1.7-2.9-1.9-3.5-1.9-1.5-.2-2.9.9-3.7.9-.8 0-2-.9-3.2-.9-1.7 0-3.2 1-4.1 2.5-1.7 3-.4 7.5 1.3 9.9.8 1.2 1.8 2.5 3.1 2.5 1.2-.1 1.7-.8 3.2-.8 1.4 0 1.9.8 3.2.8 1.3 0 2.2-1.2 3-2.4.9-1.4 1.3-2.7 1.3-2.8-.1 0-2.7-1-2.7-4zM14 5c.7-.8 1.1-1.9 1-3-.9 0-2.1.6-2.8 1.4-.6.7-1.2 1.8-1 2.9 1 .1 2-.5 2.8-1.3z"/></svg>
+              Apple
+            </button>
+            <button type="button" class="btn">
+              <svg viewBox="0 0 24 24"><path fill="#4285F4" d="M22 12.3c0-.8-.1-1.5-.2-2.2H12v4.2h5.6c-.2 1.3-1 2.4-2.1 3.1v2.6h3.4c2-1.8 3.1-4.5 3.1-7.7z"/><path fill="#34A853" d="M12 22c2.8 0 5.2-.9 6.9-2.5l-3.4-2.6c-.9.6-2.1 1-3.5 1-2.7 0-5-1.8-5.8-4.3H2.7v2.7C4.4 19.5 7.9 22 12 22z"/><path fill="#FBBC05" d="M6.2 13.6C6 13 5.9 12.5 5.9 12s.1-1 .3-1.6V7.7H2.7C2.2 8.8 2 10.1 2 11.5c0 1.4.3 2.6.7 3.8l3.5-2.7z"/><path fill="#EA4335" d="M12 5.8c1.5 0 2.9.5 4 1.5l3-3C17.2 2.7 14.7 2 12 2 7.9 2 4.4 4.5 2.7 7.7l3.5 2.7C7 7.6 9.3 5.8 12 5.8z"/></svg>
+              Google
+            </button>
+          </div>
+        </form>
+      </div>
+
+      <aside class="hero-side">
+        <div class="card">
+          <div class="illust" style="aspect-ratio:1">
+            <div class="ix"><span class="k">Маршрут</span><span class="n">Хамовники · 3&nbsp;км</span></div>
+            <img src="/brand/runner-red.png" alt="Бегун Ситираннинг"/>
+          </div>
+        </div>
+        <div class="card">
+          <div class="card-head">
+            <span class="t">Ближайший забег</span>
+            <span class="mono-caps">3&nbsp;КМ</span>
+          </div>
+          <div class="card-body">
+            <div class="evt-row">
+              <span class="d red">СР&nbsp;19:30</span>
+              <span class="sep">·</span>
+              <span class="place">Парк&nbsp;Горького</span>
+            </div>
+            <div class="evt-meta">
+              <div class="seats"><b>12/20</b> соседей записались</div>
+              <a href="#">Посмотреть →</a>
+            </div>
+          </div>
+        </div>
+      </aside>
+    </div>
+  </div>
+</section>
+
+<!-- HOW IT WORKS (guest only) -->
+<section class="guest-only">
+  <div class="wrap">
+    <div class="sec-head">
+      <div class="lt">
+        <span class="mono-caps">как это работает</span>
+        <h2>Три шага между <em>кроссовками</em> и&nbsp;капучино.</h2>
+      </div>
+      <div class="rt"><a href="#" class="btn">FAQ →</a></div>
+    </div>
+    <div class="sec-body">
+      <div class="how">
+        <div class="step">
+          <span class="n">01</span>
+          <h3>Записываешься на&nbsp;<em>забег</em></h3>
+          <p>Каждую <b>среду в&nbsp;19:30</b> встречаемся в&nbsp;парке после работы. Один старт в&nbsp;неделю — удобно, ничего не&nbsp;пропустишь.</p>
+          <div class="meta"><span>каждую среду</span><b>бесплатно</b></div>
+        </div>
+        <div class="step">
+          <span class="n">02</span>
+          <h3>Добегаешь до&nbsp;<em>финиша</em></h3>
+          <p>Бежишь в&nbsp;комфортном темпе. На&nbsp;финише — штамп в&nbsp;приложение и&nbsp;<b>+30 баллов</b> за&nbsp;участие.</p>
+          <div class="meta"><span>темп любой</span><b>+30&nbsp;Б</b></div>
+        </div>
+        <div class="step">
+          <span class="n">03</span>
+          <h3>Меняешь на&nbsp;<em>кофе</em></h3>
+          <p>Заходишь в&nbsp;любую кофейню-партнёра, показываешь QR — получаешь <b>капучино, круассан или&nbsp;книгу</b>.</p>
+          <div class="meta"><span>37&nbsp;партнёров</span><b>−50&nbsp;Б</b></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- EVENTS -->
+<section>
+  <div class="wrap">
+    <div class="sec-head">
+      <div class="lt">
+        <span class="mono-caps guest-only">ближайшие забеги</span>
+        <span class="mono-caps authed-only">для&nbsp;тебя · рекомендуем</span>
+        <h2 class="guest-only">Каждую среду в&nbsp;19:30 — один <em>старт</em>.</h2>
+        <h2 class="authed-only">Ближайшие среды — <em>записывайся</em>.</h2>
+      </div>
+      <div class="rt"><a href="#" class="btn">Весь календарь →</a></div>
+    </div>
+    <div class="sec-body">
+      <div class="events">
+        <article class="evt rec">
+          <div class="evt-top">
+            <span class="day">Ср · 22 апр · завтра</span>
+            <span class="km"><em>3</em>&nbsp;КМ</span>
+          </div>
+          <div class="evt-body">
+            <div class="ttl">Парк&nbsp;Горького <em>—</em> вечерний</div>
+            <div class="lines">
+              <div><span class="k">Старт</span><span class="v">19:30</span></div>
+              <div><span class="k">Темп</span><span class="v">6:30 / км</span></div>
+              <div><span class="k">Погода</span><span class="v">+11° ясно</span></div>
+            </div>
+            <div class="bar">
+              <div class="track"><div class="fill red" style="width:60%"></div></div>
+              <span class="seats">12/20</span>
+            </div>
+          </div>
+          <div class="evt-foot">
+            <span class="rec-tag">для&nbsp;тебя</span>
+            <span class="dist guest-only">ХАМОВНИКИ</span>
+            <a href="#">Записаться →</a>
+          </div>
+        </article>
+
+        <article class="evt">
+          <div class="evt-top">
+            <span class="day">Ср · 29 апр</span>
+            <span class="km"><em>3</em>&nbsp;КМ</span>
+          </div>
+          <div class="evt-body">
+            <div class="ttl">Патриаршие <em>—</em> по&nbsp;пруду</div>
+            <div class="lines">
+              <div><span class="k">Старт</span><span class="v">19:30</span></div>
+              <div><span class="k">Темп</span><span class="v">6:30 / км</span></div>
+              <div><span class="k">До&nbsp;старта</span><span class="v">8 дней</span></div>
+            </div>
+            <div class="bar">
+              <div class="track"><div class="fill" style="width:40%"></div></div>
+              <span class="seats">8/20</span>
+            </div>
+          </div>
+          <div class="evt-foot">
+            <span class="dist">ПРЕСНЯ</span>
+            <a href="#">Записаться →</a>
+          </div>
+        </article>
+
+        <article class="evt">
+          <div class="evt-top">
+            <span class="day">Ср · 6 мая</span>
+            <span class="km"><em>3</em>&nbsp;КМ</span>
+          </div>
+          <div class="evt-body">
+            <div class="ttl">Воробьёвы&nbsp;горы <em>—</em> вдоль&nbsp;реки</div>
+            <div class="lines">
+              <div><span class="k">Старт</span><span class="v">19:30</span></div>
+              <div><span class="k">Темп</span><span class="v">свободный</span></div>
+              <div><span class="k">До&nbsp;старта</span><span class="v">15 дней</span></div>
+            </div>
+            <div class="bar">
+              <div class="track"><div class="fill" style="width:20%"></div></div>
+              <span class="seats">4/20</span>
+            </div>
+          </div>
+          <div class="evt-foot">
+            <span class="dist">РАМЕНКИ</span>
+            <a href="#">Записаться →</a>
+          </div>
+        </article>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- POINTS + SHOP (authed only) -->
+<section class="authed-only">
+  <div class="wrap">
+    <div class="sec-head">
+      <div class="lt">
+        <span class="mono-caps">мои баллы</span>
+        <h2>350&nbsp;баллов — хватит на&nbsp;<em>вот&nbsp;это</em>.</h2>
+      </div>
+      <div class="rt"><a href="#" class="btn">Весь магазин →</a></div>
+    </div>
+    <div class="sec-body">
+      <div class="pts-block">
+        <div class="l">
+          <span class="k">Накопила</span>
+          <span class="v"><em>350</em></span>
+          <div class="bar">
+            <div class="top"><span class="lv">Сосед со&nbsp;стажем · 500&nbsp;Б</span><span class="rv">350 / 500</span></div>
+            <div class="track"><div class="fill" style="width:70%"></div></div>
+            <p class="cap">Ещё <b>150 баллов</b> — и&nbsp;откроются закрытые забеги и&nbsp;двойные сборы.</p>
+          </div>
+        </div>
+        <div class="r">
+          <div class="head">
+            <span class="t">Что&nbsp;можно взять сейчас</span>
+            <a href="#">Все 47 →</a>
+          </div>
+          <div class="itm">
+            <div class="nm">Капучино у&nbsp;Маши<span class="sub">Кафе «Рябина» · Пречистенка, 12</span></div>
+            <span class="px">50&nbsp;Б</span>
+          </div>
+          <div class="itm">
+            <div class="nm">Круассан с&nbsp;миндалём<span class="sub">Пекарня «Хлеб&Соль» · Остоженка, 4</span></div>
+            <span class="px">80&nbsp;Б</span>
+          </div>
+          <div class="itm">
+            <div class="nm">Фильтр + завтрак<span class="sub">Кофейня «Север» · Льва Толстого, 16</span></div>
+            <span class="px">180&nbsp;Б</span>
+          </div>
+          <div class="itm">
+            <div class="nm">Пара беговых носков<span class="sub">Магазин «Марафон» · Зубовский, 4</span></div>
+            <span class="px">240&nbsp;Б</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- STATS (authed only) -->
+<section class="authed-only">
+  <div class="wrap">
+    <div class="sec-head">
+      <div class="lt">
+        <span class="mono-caps">прогресс · апрель</span>
+        <h2>За&nbsp;месяц ты&nbsp;пробежала <em>18&nbsp;км</em>.</h2>
+      </div>
+      <div class="rt"><a href="#" class="btn">Все мои забеги →</a></div>
+    </div>
+    <div class="sec-body">
+      <div class="stats">
+        <div class="side">
+          <span class="k">этот месяц</span>
+          <h3>+1&nbsp;забег к&nbsp;<em>марту</em>.</h3>
+          <p>Темп стабильный, темп улучшается. В&nbsp;мае четыре среды — четыре старта.</p>
+          <div class="big-nums">
+            <div class="n"><span class="v">3</span><span class="s">среды</span></div>
+            <div class="n"><span class="v"><em>9</em></span><span class="s">километров</span></div>
+            <div class="n"><span class="v">1:02</span><span class="s">часа в&nbsp;пути</span></div>
+            <div class="n"><span class="v">6:38</span><span class="s">ср. темп</span></div>
+          </div>
+        </div>
+        <div class="chart">
+          <div class="chart-head">
+            <span class="t">Километры по&nbsp;неделям</span>
+            <span class="mono-caps">апрель 2026</span>
+          </div>
+          <div class="bars">
+            <div class="b"><div class="bar" style="height:70%"><span class="val">3</span></div><span class="wk">1 апр</span></div>
+            <div class="b"><div class="bar" style="height:0%"></div><span class="wk">8 апр · пропустила</span></div>
+            <div class="b"><div class="bar" style="height:70%"><span class="val">3</span></div><span class="wk">15 апр</span></div>
+            <div class="b now"><div class="bar" style="height:70%"><span class="val">3</span></div><span class="wk">22 апр · завтра</span></div>
+            <div class="b"><div class="bar" style="height:0%"></div><span class="wk">29 апр</span></div>
+          </div>
+          <div class="chart-foot">
+            <span>Пропустила <b>1&nbsp;среду</b> из&nbsp;4.</span>
+            <span>До&nbsp;цели на&nbsp;апрель — <b>3 км</b> (завтра).</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- DISTRICTS MAP (guest only) -->
+<section class="guest-only">
+  <div class="wrap">
+    <div class="sec-head">
+      <div class="lt">
+        <span class="mono-caps">карта районов</span>
+        <h2>Мы&nbsp;уже бегаем в&nbsp;<em>7&nbsp;районах</em> Москвы.</h2>
+      </div>
+      <div class="rt"><a href="#" class="btn">Все районы →</a></div>
+    </div>
+    <div class="sec-body">
+      <div class="map">
+        <div class="l">
+          <span class="k">активных районов</span>
+          <h3>2&nbsp;140&nbsp;соседей, 37&nbsp;кофеен, <em>7&nbsp;парков</em>.</h3>
+          <p>Начали с&nbsp;Хамовников в&nbsp;2024-м. К&nbsp;лету открываемся в&nbsp;ВАО и&nbsp;Митино.</p>
+          <div class="dl">
+            <div class="r"><span class="nm">Хамовники</span><span class="ct">842 соседа</span><span class="kf">12 кофеен</span></div>
+            <div class="r"><span class="nm">Раменки</span><span class="ct">410 соседей</span><span class="kf">6 кофеен</span></div>
+            <div class="r"><span class="nm">Пресня</span><span class="ct">388 соседей</span><span class="kf">8 кофеен</span></div>
+            <div class="r"><span class="nm">Якиманка</span><span class="ct">210 соседей</span><span class="kf">4 кофейни</span></div>
+            <div class="r"><span class="nm">Арбат</span><span class="ct">186 соседей</span><span class="kf">5 кофеен</span></div>
+            <div class="r"><span class="nm">Таганский</span><span class="ct">104 соседа</span><span class="kf">2 кофейни</span></div>
+          </div>
+        </div>
+        <div class="r">
+          <svg viewBox="0 0 400 340" preserveAspectRatio="xMidYMid meet" aria-label="Карта районов">
+            <!-- background river -->
+            <path d="M-20 210 C 40 170, 110 240, 180 200 S 320 160, 430 220" fill="none" stroke="#B4B0A8" stroke-width="18" stroke-linecap="round" opacity="0.6"/>
+            <path d="M-20 210 C 40 170, 110 240, 180 200 S 320 160, 430 220" fill="none" stroke="#E9E9E6" stroke-width="10" stroke-linecap="round"/>
+            <!-- garden ring -->
+            <circle cx="200" cy="170" r="95" fill="none" stroke="#0F0E0C" stroke-width="1" stroke-dasharray="3 3"/>
+            <circle cx="200" cy="170" r="150" fill="none" stroke="#0F0E0C" stroke-width="1" stroke-dasharray="2 6" opacity="0.4"/>
+            <!-- districts as squares -->
+            <g font-family="JetBrains Mono" font-size="10" letter-spacing="1">
+              <rect x="150" y="200" width="12" height="12" fill="#E63025"/>
+              <text x="166" y="210" fill="#0F0E0C" font-weight="600">Хамовники · 842</text>
+
+              <rect x="95" y="170" width="10" height="10" fill="#0F0E0C"/>
+              <text x="109" y="179" fill="#0F0E0C">Раменки · 410</text>
+
+              <rect x="188" y="110" width="10" height="10" fill="#0F0E0C"/>
+              <text x="202" y="119" fill="#0F0E0C">Пресня · 388</text>
+
+              <rect x="220" y="220" width="8" height="8" fill="#0F0E0C"/>
+              <text x="232" y="228" fill="#0F0E0C">Якиманка · 210</text>
+
+              <rect x="158" y="148" width="8" height="8" fill="#0F0E0C"/>
+              <text x="170" y="156" fill="#0F0E0C">Арбат · 186</text>
+
+              <rect x="280" y="180" width="8" height="8" fill="#0F0E0C"/>
+              <text x="292" y="188" fill="#0F0E0C">Таганский · 104</text>
+
+              <rect x="310" y="80" width="6" height="6" fill="none" stroke="#0F0E0C" stroke-dasharray="2 2"/>
+              <text x="320" y="87" fill="#6B6862">Митино · скоро</text>
+
+              <rect x="340" y="260" width="6" height="6" fill="none" stroke="#0F0E0C" stroke-dasharray="2 2"/>
+              <text x="350" y="267" fill="#6B6862">ВАО · скоро</text>
+            </g>
+            <!-- compass -->
+            <g transform="translate(30 30)" font-family="JetBrains Mono" font-size="10" fill="#6B6862">
+              <line x1="0" y1="0" x2="0" y2="24" stroke="#0F0E0C"/>
+              <polygon points="0,0 -4,8 4,8" fill="#0F0E0C"/>
+              <text x="7" y="6">N</text>
+            </g>
+            <text x="380" y="330" font-family="JetBrains Mono" font-size="9" fill="#6B6862" text-anchor="end" letter-spacing="1">МОСКВА · 1 : 90 000</text>
+          </svg>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- PARTNERS (guest only) -->
+<section class="guest-only">
+  <div class="wrap">
+    <div class="sec-head">
+      <div class="lt">
+        <span class="mono-caps">партнёры</span>
+        <h2>37 кофеен, пекарен и&nbsp;<em>магазинов</em> — наши соседи.</h2>
+      </div>
+      <div class="rt"><a href="#" class="btn">Стать партнёром →</a></div>
+    </div>
+    <div class="sec-body">
+      <div class="partners">
+        <div class="p"><span class="cat">кофейня</span><span class="lg">Рябина</span><span class="perk">Капучино · <b>50&nbsp;Б</b></span></div>
+        <div class="p"><span class="cat">кофейня</span><span class="lg">Север</span><span class="perk">Фильтр + завтрак · <b>180&nbsp;Б</b></span></div>
+        <div class="p"><span class="cat">пекарня</span><span class="lg">Хлеб&nbsp;&&nbsp;Соль</span><span class="perk">Круассан миндаль · <b>80&nbsp;Б</b></span></div>
+        <div class="p"><span class="cat">спорт</span><span class="lg">Марафон</span><span class="perk">Носки / гели · <b>от&nbsp;240&nbsp;Б</b></span></div>
+        <div class="p"><span class="cat">кофейня</span><span class="lg">Пёс&nbsp;и&nbsp;Кофе</span><span class="perk">Раф миндаль · <b>70&nbsp;Б</b></span></div>
+        <div class="p"><span class="cat">книги</span><span class="lg">Фаланстер</span><span class="perk">Книга на&nbsp;выбор · <b>320&nbsp;Б</b></span></div>
+        <div class="p"><span class="cat">завтраки</span><span class="lg">Овсянка,&nbsp;сэр</span><span class="perk">Каша + чай · <b>120&nbsp;Б</b></span></div>
+        <div class="p"><span class="cat">пекарня</span><span class="lg">Корица</span><span class="perk">Булка с&nbsp;корицей · <b>60&nbsp;Б</b></span></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- NEWS -->
+<section>
+  <div class="wrap">
+    <div class="sec-head">
+      <div class="lt">
+        <span class="mono-caps">журнал клуба</span>
+        <h2>Что&nbsp;<em>нового</em> у&nbsp;соседей.</h2>
+      </div>
+      <div class="rt"><a href="#" class="btn">Весь журнал →</a></div>
+    </div>
+    <div class="sec-body">
+      <div class="news">
+        <article class="nw big">
+          <div class="mt"><span class="cat">Апдейт</span><span>·</span><span>22 апр</span></div>
+          <h3>Открываем Митино и&nbsp;ВАО — ищем <em>смотрителей</em> парков.</h3>
+          <p>Летом запускаем ещё два района. Ищем соседей, которые знают местные маршруты и&nbsp;любят утро в&nbsp;кроссовках. Пишите — расскажем, что&nbsp;делать.</p>
+          <a class="rd" href="#">Читать →</a>
+        </article>
+        <article class="nw">
+          <div class="mt"><span class="cat">История</span><span>·</span><span>18 апр</span></div>
+          <h3>Как Маша&nbsp;Р. за&nbsp;3 месяца добежала до&nbsp;уровня «Сосед со&nbsp;стажем».</h3>
+          <a class="rd" href="#">Читать →</a>
+        </article>
+        <article class="nw">
+          <div class="mt"><span class="cat">Партнёр</span><span>·</span><span>14 апр</span></div>
+          <h3>«Фаланстер» теперь принимает баллы за&nbsp;книги.</h3>
+          <a class="rd" href="#">Читать →</a>
+        </article>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- FINAL CTA (guest only) -->
+<section class="guest-only" style="border-top:0">
+  <div class="cta-final">
+    <div>
+      <h2>Пора надеть кроссовки и&nbsp;<em>идти вниз</em>.</h2>
+      <p class="sub">Один старт в&nbsp;неделю — среда в&nbsp;19:30, после работы. +50&nbsp;баллов и&nbsp;хорошая компания гарантированы.</p>
+    </div>
+    <div class="acts">
+      <a href="#" class="btn btn-lg">Записаться →</a>
+      <a href="#" class="btn btn-ghost btn-lg">О&nbsp;проекте</a>
+    </div>
+  </div>
+</section>
+
+<!-- FOOTER -->
+<footer>
+  <div class="col">
+    <span class="wm-mini">CITYRNNG · МОСКВА · 2026</span>
+    <p>Соседский беговой клуб. Бесплатно, без&nbsp;секундомера, с&nbsp;кофе на&nbsp;финише.</p>
+  </div>
+  <div class="col">
+    <h4>Продукт</h4>
+    <a href="#">События</a>
+    <a href="#">Магазин</a>
+    <a href="#">Карта районов</a>
+    <a href="#">Партнёрам</a>
+  </div>
+  <div class="col">
+    <h4>Клуб</h4>
+    <a href="#">О&nbsp;проекте</a>
+    <a href="#">Журнал</a>
+    <a href="#">FAQ</a>
+    <a href="#">Контакты</a>
+  </div>
+  <div class="col">
+    <h4>Связь</h4>
+    <a href="mailto:hello@cityrnng.ru">hello@cityrnng.ru</a>
+    <a href="#">Telegram-канал</a>
+    <a href="#">Instagram</a>
+  </div>
+  <div class="bot">
+    <span>© 2026 Ситираннинг</span>
+    <span><a href="#">Условия</a> · <a href="#">Приватность</a> · <a href="#">Соглашение</a></span>
+  </div>
+</footer>
+
+<script>
+(function(){
+  const body=document.body;
+  document.querySelectorAll('.dev-bar [data-st]').forEach(b=>{
+    b.addEventListener('click',()=>{
+      const s=b.dataset.st;
+      body.classList.toggle('s-authed', s==='authed');
+      body.classList.toggle('s-guest', s==='guest');
+      document.querySelectorAll('.dev-bar [data-st]').forEach(x=>x.classList.toggle('on',x===b));
+    });
+  });
+
+  // guest hero form (demo)
+  const hf=document.getElementById('heroForm');
+  if(hf){
+    hf.addEventListener('submit',e=>{
+      e.preventDefault();
+      const email=document.getElementById('heroEmail').value.trim();
+      if(!/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(email)){
+        alert('Проверь адрес');
+        return;
+      }
+      window.location.href='auth-desktop.html';
+    });
+  }
+})();
+</script>
+</body></html>

@@ -1,0 +1,525 @@
+<!doctype html>
+<html lang="ru"><head><meta charset="utf-8"/>
+<title>Ситираннинг · Вход</title>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700&family=Space+Grotesk:wght@600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root{
+    /* C3 Светлый v0 */
+    --paper:#FFFFFF;
+    --paper-2:#F4F4F2;
+    --paper-3:#E9E9E6;
+    --ink:#0F0E0C;
+    --graphite:#3A3833;
+    --muted:#6B6862;
+    --muted-2:#B4B0A8;
+    --red:#E63025;
+    --red-ink:#B8251C;
+    --tint:#FFE2DF;
+
+    --ink-20:#0F0E0C33;
+    --line:var(--ink);
+    --line-soft:var(--ink-20);
+
+    --fs:'Manrope',sans-serif;
+    --fd:'Space Grotesk',sans-serif;
+    --fm:'JetBrains Mono',monospace;
+
+    --c-gap:24px;
+  }
+
+  *{box-sizing:border-box}
+  html,body{margin:0;padding:0;background:var(--paper);color:var(--ink);font-family:var(--fs);-webkit-font-smoothing:antialiased}
+  body{font-size:15px;line-height:1.55}
+  a{color:inherit}
+
+  body.m-desktop .only-mob{display:none!important}
+  body.m-mobile  .only-desk{display:none!important}
+  body.m-mobile{background:#E9E9E6}
+  body.m-mobile .mob-stage{min-height:100vh;display:flex;align-items:center;justify-content:center;padding:26px 0 80px}
+  body.m-mobile .mob-frame{width:390px;max-width:100%;background:var(--paper);border:1px solid var(--ink);overflow:hidden}
+
+  /* ===== TYPE UTILS ===== */
+  .mono{font-family:var(--fm)}
+  .mono-caps{font-family:var(--fm);font-size:11px;font-weight:500;letter-spacing:0.14em;text-transform:uppercase;color:var(--muted)}
+  .lbl{font-family:var(--fs);font-size:13px;font-weight:500;color:var(--ink)}
+
+  /* ===== NAV ===== */
+  .nav{padding:20px 48px;display:flex;align-items:center;justify-content:space-between;gap:24px;border-bottom:1px solid var(--ink);background:var(--paper)}
+  .nav .wm{display:flex;align-items:center;gap:14px;text-decoration:none;color:var(--ink)}
+  .nav .wm img{height:30px;display:block}
+  .nav-links{display:flex;gap:32px;align-items:center}
+  .nav-links a{font-family:var(--fs);font-weight:500;font-size:14px;color:var(--ink);text-decoration:none}
+  .nav-links a:hover{color:var(--red)}
+  .nav-links a[aria-current="page"]{color:var(--red)}
+  .nav .actions{display:flex;gap:8px;align-items:center}
+
+  /* ===== BUTTONS ===== */
+  .btn{font-family:var(--fs);font-weight:600;font-size:14px;border:1px solid var(--ink);background:var(--paper);color:var(--ink);cursor:pointer;padding:0 18px;height:44px;display:inline-flex;align-items:center;gap:10px;justify-content:center;transition:background .12s,color .12s,border-color .12s;line-height:1}
+  .btn:hover{background:var(--ink);color:#fff}
+  .btn-sm{height:32px;font-size:13px;padding:0 14px}
+  .btn-lg{height:56px;font-size:15px;padding:0 24px}
+  .btn-primary{background:var(--red);border-color:var(--red);color:#fff}
+  .btn-primary:hover{background:var(--red-ink);border-color:var(--red-ink);color:#fff}
+  .btn-primary:disabled{background:var(--muted-2);border-color:var(--muted-2);color:#fff;cursor:not-allowed}
+  .btn-ink{background:var(--ink);color:#fff}
+  .btn-ink:hover{background:var(--graphite)}
+  .btn-ghost{border-color:transparent;background:transparent}
+  .btn-ghost:hover{background:var(--paper-2);color:var(--ink);border-color:transparent}
+
+  /* ===== LAYOUT ===== */
+  .page{max-width:1200px;margin:0 auto;padding:56px 48px}
+  .grid{display:grid;grid-template-columns:minmax(0,1fr) 440px;gap:96px;align-items:start}
+
+  .hero-col{max-width:560px}
+
+  h1.hero{font-family:var(--fd);font-weight:700;font-size:76px;line-height:0.9;letter-spacing:-0.035em;margin:0;color:var(--ink);text-wrap:balance}
+  h1.hero em{font-style:normal;color:var(--red)}
+  h1.hero .dash{color:var(--muted-2);font-weight:600}
+
+  .lede{font-family:var(--fs);font-size:17px;line-height:1.55;color:var(--graphite);margin:24px 0 0;max-width:480px}
+  .lede b{color:var(--ink);font-weight:600}
+  .lede .bx{background:var(--tint);padding:1px 8px;color:var(--red-ink);font-weight:600;white-space:nowrap}
+
+  /* ===== FORM ===== */
+  .form{margin-top:40px;max-width:480px;display:flex;flex-direction:column;gap:20px}
+  .row{display:flex;flex-direction:column;gap:8px}
+
+  .inp-wrap{position:relative}
+  .inp{width:100%;height:56px;padding:0 44px 0 16px;border:1px solid var(--ink);background:var(--paper);color:var(--ink);font-family:var(--fs);font-size:15px;outline:0;transition:border-color .12s,box-shadow .12s}
+  .inp::placeholder{color:var(--muted-2)}
+  .inp:focus{border-color:var(--red);box-shadow:0 0 0 3px var(--tint)}
+  .inp.err{border-color:var(--red);box-shadow:0 0 0 3px var(--tint)}
+  .inp-wrap .clear{position:absolute;right:10px;top:50%;transform:translateY(-50%);background:transparent;border:0;color:var(--muted);cursor:pointer;padding:8px;display:none;line-height:0}
+  .inp-wrap.filled .clear{display:inline-flex}
+
+  .msg{font-family:var(--fs);font-size:13px;color:var(--muted);min-height:18px;display:flex;align-items:center;gap:8px}
+  .msg.err{color:var(--red)}
+  .msg.ok{color:var(--ink)}
+  .msg .dot{width:6px;height:6px;background:currentColor;display:inline-block;flex:0 0 6px}
+
+  /* checkbox */
+  .check{display:flex;gap:12px;align-items:flex-start;font-family:var(--fs);font-size:14px;color:var(--graphite);cursor:pointer;user-select:none;line-height:1.5}
+  .check input{appearance:none;-webkit-appearance:none;width:18px;height:18px;margin:0;border:1px solid var(--ink);background:var(--paper);cursor:pointer;flex:0 0 18px;margin-top:1px;position:relative}
+  .check input:checked{background:var(--ink)}
+  .check input:checked::after{content:"";position:absolute;left:4px;top:1px;width:6px;height:11px;border:solid #fff;border-width:0 2px 2px 0;transform:rotate(45deg)}
+  .check input:focus-visible{box-shadow:0 0 0 3px var(--tint)}
+  .check a{color:var(--ink);text-decoration:underline;text-underline-offset:2px;text-decoration-thickness:1px}
+
+  /* submit row — dual button */
+  .submit-row{display:flex;gap:10px;flex-wrap:wrap}
+  .submit-row .btn-primary{flex:0 1 220px}
+  .submit-row .btn{flex:0 1 auto}
+
+  .sub-hint{margin-top:4px;font-family:var(--fs);font-size:13px;color:var(--muted);line-height:1.5}
+  .sub-hint b{color:var(--ink);font-weight:600}
+
+  /* divider */
+  .or{display:flex;align-items:center;gap:14px;margin:8px 0 0}
+  .or::before,.or::after{content:"";flex:1;height:1px;background:var(--line-soft)}
+
+  /* OAuth alternatives */
+  .oauth{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+  .oauth .btn{height:48px;font-weight:500;font-size:14px;background:var(--paper);color:var(--ink)}
+  .oauth .btn svg{width:18px;height:18px}
+
+  .switch{font-family:var(--fs);font-size:14px;color:var(--graphite);padding-top:4px}
+  .switch a{color:var(--red);text-decoration:none;font-weight:600;border-bottom:1px solid var(--red)}
+
+  /* ===== RIGHT COLUMN — side card ===== */
+  .side{position:sticky;top:24px;display:flex;flex-direction:column;gap:-1px}
+  .card{border:1px solid var(--ink);background:var(--paper)}
+  .card + .card{border-top:0}
+
+  .illust{background:var(--paper-2);aspect-ratio:1;display:flex;align-items:center;justify-content:center;padding:28px}
+  .illust img{width:100%;height:100%;object-fit:contain;display:block}
+
+  .card-head{padding:16px 20px;border-bottom:1px solid var(--ink);display:flex;align-items:center;justify-content:space-between;gap:12px}
+  .card-head .t{font-family:var(--fs);font-weight:600;font-size:14px;color:var(--ink)}
+  .card-body{padding:20px;display:flex;flex-direction:column;gap:14px}
+
+  .evt-row{display:flex;align-items:baseline;gap:10px;flex-wrap:wrap}
+  .evt-row .d{font-family:var(--fm);font-weight:500;font-size:14px;letter-spacing:0.04em;color:var(--ink)}
+  .evt-row .d.red{color:var(--red)}
+  .evt-row .sep{color:var(--muted-2)}
+  .evt-row .place{font-family:var(--fs);font-weight:600;font-size:15px;color:var(--ink)}
+
+  .evt-meta{display:flex;justify-content:space-between;align-items:center;padding-top:14px;border-top:1px solid var(--line-soft);gap:12px}
+  .evt-meta .seats{font-family:var(--fs);font-size:14px;color:var(--graphite)}
+  .evt-meta .seats b{color:var(--ink);font-weight:600;font-family:var(--fm);font-weight:500}
+  .evt-meta a{font-family:var(--fs);font-weight:600;font-size:14px;color:var(--ink);text-decoration:none;border-bottom:1px solid var(--ink);padding-bottom:1px}
+  .evt-meta a:hover{color:var(--red);border-color:var(--red)}
+
+  /* "what's next" list card */
+  .next-list{list-style:none;margin:0;padding:0;display:flex;flex-direction:column}
+  .next-list li{display:grid;grid-template-columns:28px 1fr auto;gap:14px;align-items:baseline;padding:14px 0;border-top:1px solid var(--line-soft)}
+  .next-list li:first-child{border-top:0;padding-top:0}
+  .next-list li:last-child{padding-bottom:0}
+  .next-list .n{font-family:var(--fm);font-size:12px;color:var(--muted);letter-spacing:0.04em}
+  .next-list .t{font-family:var(--fs);font-size:14px;color:var(--ink);line-height:1.5}
+  .next-list .t b{font-weight:600}
+  .next-list .v{font-family:var(--fm);font-size:13px;font-weight:500;color:var(--red);letter-spacing:0.04em}
+
+  /* trust strip */
+  .trust{margin-top:48px;padding-top:32px;border-top:1px solid var(--ink);display:grid;grid-template-columns:repeat(3,1fr);gap:32px;max-width:560px}
+  .trust .k{font-family:var(--fm);font-size:11px;font-weight:500;letter-spacing:0.14em;text-transform:uppercase;color:var(--muted)}
+  .trust .v{font-family:var(--fd);font-weight:700;font-size:32px;letter-spacing:-0.02em;margin-top:6px;line-height:1;color:var(--ink)}
+  .trust .v .a{color:var(--red)}
+  .trust .s{font-family:var(--fs);font-size:13px;color:var(--graphite);margin-top:4px}
+
+  /* why */
+  .why{margin-top:8px;padding:20px;background:var(--paper-2);border:1px solid var(--line-soft);display:flex;flex-direction:column;gap:10px}
+  .why .hd{font-family:var(--fs);font-weight:600;font-size:14px;color:var(--ink)}
+  .why ul{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:8px;font-family:var(--fs);font-size:14px;color:var(--graphite);line-height:1.5}
+  .why li{display:grid;grid-template-columns:16px 1fr;gap:10px}
+  .why li::before{content:"→";color:var(--ink);font-family:var(--fs);font-weight:600}
+  .why b{color:var(--ink);font-weight:600}
+
+  /* footer */
+  footer{border-top:1px solid var(--ink);padding:32px 48px;display:flex;justify-content:space-between;gap:20px;font-family:var(--fs);font-size:13px;color:var(--muted);flex-wrap:wrap}
+  footer a{color:var(--muted);text-decoration:none}
+  footer a:hover{color:var(--ink)}
+  footer .wm-mini{font-family:var(--fm);font-size:11px;letter-spacing:0.14em;text-transform:uppercase;color:var(--ink)}
+
+  /* ===== SUCCESS SCREEN ===== */
+  .success{display:none;max-width:480px}
+  body.state-sent .form,
+  body.state-sent .or,
+  body.state-sent .oauth,
+  body.state-sent .switch{display:none}
+  body.state-sent .success{display:flex;flex-direction:column;gap:24px}
+
+  .success .tag{font-family:var(--fm);font-size:11px;font-weight:500;letter-spacing:0.14em;text-transform:uppercase;color:var(--red);display:flex;align-items:center;gap:10px}
+  .success .tag .d{width:8px;height:8px;background:var(--red);display:inline-block;animation:blink 1.4s infinite}
+  @keyframes blink{50%{opacity:0.25}}
+
+  .success h2{font-family:var(--fd);font-weight:700;font-size:56px;line-height:0.95;letter-spacing:-0.03em;margin:0;color:var(--ink)}
+  .success h2 em{font-style:normal;color:var(--red)}
+  .success p{font-family:var(--fs);font-size:16px;line-height:1.55;color:var(--graphite);margin:0}
+  .success p b{color:var(--ink);font-weight:600}
+  .success p .em{font-family:var(--fm);font-weight:500;color:var(--ink);border-bottom:1px dashed var(--line-soft);padding-bottom:1px}
+
+  .success-steps{display:flex;flex-direction:column;border:1px solid var(--ink)}
+  .success-steps .st{display:grid;grid-template-columns:40px 1fr;gap:16px;padding:16px 20px;border-top:1px solid var(--line-soft)}
+  .success-steps .st:first-child{border-top:0}
+  .success-steps .st .n{font-family:var(--fm);font-weight:500;font-size:13px;color:var(--red);letter-spacing:0.04em}
+  .success-steps .st .t{font-family:var(--fs);font-size:14px;color:var(--ink);line-height:1.5}
+  .success-steps .st .t b{font-weight:600}
+
+  .success-meta{display:flex;justify-content:space-between;align-items:center;gap:16px;font-family:var(--fs);font-size:13px;color:var(--muted)}
+  .success-meta .exp{display:flex;align-items:center;gap:10px}
+  .success-meta .exp .k{font-family:var(--fm);font-size:11px;letter-spacing:0.14em;text-transform:uppercase}
+  .success-meta .exp .v{font-family:var(--fm);font-weight:500;font-size:14px;color:var(--ink);letter-spacing:0.04em}
+
+  .success-actions{display:flex;gap:10px;flex-wrap:wrap}
+
+  /* ===== RESPONSIVE ===== */
+  @media (max-width:1024px){
+    .grid{grid-template-columns:1fr;gap:48px}
+    h1.hero{font-size:56px}
+    .side{position:static}
+    .nav-links{display:none}
+    .page{padding:40px 32px}
+    .nav{padding:16px 32px}
+  }
+
+  /* mobile frame overrides */
+  body.m-mobile .page{padding:28px 24px}
+  body.m-mobile h1.hero{font-size:44px;line-height:0.95;letter-spacing:-0.035em}
+  body.m-mobile .nav{padding:16px 20px}
+  body.m-mobile .nav-links{display:none}
+  body.m-mobile .nav .wm img{height:24px}
+  body.m-mobile .grid{grid-template-columns:1fr;gap:28px}
+  body.m-mobile .side{order:-1}
+  body.m-mobile .illust{aspect-ratio:5/3;padding:16px}
+  body.m-mobile .submit-row{flex-direction:column}
+  body.m-mobile .submit-row .btn{width:100%;flex:0 0 auto}
+  body.m-mobile .oauth{grid-template-columns:1fr}
+  body.m-mobile .trust{grid-template-columns:1fr 1fr;gap:24px}
+  body.m-mobile .trust .c:nth-child(3){grid-column:1/-1}
+  body.m-mobile .trust .v{font-size:26px}
+  body.m-mobile footer{padding:24px 20px;font-size:12px;flex-direction:column;gap:10px}
+  body.m-mobile .success h2{font-size:38px}
+  body.m-mobile .lede{font-size:16px}
+  body.m-mobile .page{padding:24px 20px 40px}
+
+  /* burger */
+  .burger{display:none;height:40px;width:40px;border:1px solid var(--ink);background:transparent;align-items:center;justify-content:center;cursor:pointer;padding:0}
+  .burger i{display:block;width:16px;height:1px;background:var(--ink);position:relative}
+  .burger i::before,.burger i::after{content:"";position:absolute;left:0;width:16px;height:1px;background:var(--ink)}
+  .burger i::before{top:-5px}
+  .burger i::after{top:5px}
+  body.m-mobile .burger{display:inline-flex}
+</style><script src="https://mcp.figma.com/mcp/html-to-design/capture.js" async></script></head><body class="m-mobile">
+
+<div class="mob-stage">
+<div class="mob-frame">
+
+<!-- NAV -->
+<nav class="nav" aria-label="Primary">
+  <a href="#" class="wm" aria-label="Ситираннинг">
+    <img src="/brand/wordmark.png" alt="ситираннинг"/>
+  </a>
+  <div class="nav-links only-desk">
+    <a href="#">О проекте</a>
+    <a href="#">События</a>
+    <a href="#">Партнёры</a>
+    <a href="#">FAQ</a>
+  </div>
+  <div class="actions">
+    <button class="burger only-mob" aria-label="Меню"><i></i></button>
+    <button class="btn btn-sm only-desk">Уже есть аккаунт</button>
+  </div>
+</nav>
+
+<!-- MAIN -->
+<main class="page">
+  <div class="grid">
+
+    <!-- LEFT: hero + form -->
+    <section class="hero-col" aria-labelledby="page-title">
+      <div class="mono-caps" style="margin-bottom:20px">Вход · регистрация</div>
+
+      <h1 class="hero" id="page-title">Бегаешь по&nbsp;городу <span class="dash">—</span> меняешь у&nbsp;соседа на&nbsp;<em>кофе</em>.</h1>
+
+      <p class="lede">Соседи, кофейни, маршруты выходного утра. Без&nbsp;гонки, без&nbsp;секундомера. <b>+50&nbsp;баллов</b> дарим за&nbsp;регистрацию — хватит на&nbsp;первый <span class="bx">капучино у&nbsp;Маши</span>.</p>
+
+      <!-- form -->
+      <form class="form" id="auth-form" novalidate autocomplete="on">
+        <div class="row">
+          <label class="lbl" for="email">Email</label>
+          <div class="inp-wrap" id="emailWrap">
+            <input id="email" class="inp" type="email" name="email" placeholder="you@example.com" autocomplete="email" required aria-describedby="emailMsg"/>
+            <button type="button" class="clear" id="emailClear" aria-label="Очистить">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><path d="M6 6l12 12M18 6l-12 12"/></svg>
+            </button>
+          </div>
+          <div class="msg" id="emailMsg">Введи email — пришлём ссылку для входа</div>
+        </div>
+
+        <label class="check">
+          <input type="checkbox" id="agree" checked/>
+          <span>Я согласен с&nbsp;<a href="#">условиями</a> и&nbsp;<a href="#">политикой приватности</a>. Соседям показываем только имя и&nbsp;парк старта.</span>
+        </label>
+
+        <div class="submit-row">
+          <button type="submit" class="btn btn-primary btn-lg" id="submitBtn">
+            <span class="txt">Войти</span>
+            <span>→</span>
+          </button>
+          <button type="button" class="btn btn-lg" id="ghostBtn">Войти через телефон</button>
+        </div>
+
+        <div class="sub-hint">Отправим <b>ссылку на&nbsp;email</b> — без пароля. Жмёшь, и&nbsp;ты&nbsp;внутри.</div>
+
+        <div class="why">
+          <div class="hd">Почему без&nbsp;пароля</div>
+          <ul>
+            <li>Не&nbsp;придётся <b>придумывать и&nbsp;забывать</b>.</li>
+            <li>Одна ссылка в&nbsp;почте — и&nbsp;всё.</li>
+            <li>Безопаснее большинства <b>«12345678»</b>.</li>
+          </ul>
+        </div>
+      </form>
+
+      <!-- success state -->
+      <div class="success" aria-live="polite">
+        <div class="tag"><span class="d"></span>ПИСЬМО ОТПРАВЛЕНО</div>
+        <h2>Письмо уже <em>в&nbsp;пути</em>.</h2>
+        <p>Отправили ссылку на&nbsp;<span class="em" id="sentTo">you@example.com</span>. Открой её на&nbsp;этом устройстве — и&nbsp;мы&nbsp;начнём.</p>
+
+        <div class="success-steps">
+          <div class="st"><div class="n">01</div><div class="t">Открой почту. Если письма нет — загляни в&nbsp;<b>«Спам»</b> или <b>«Промо»</b>.</div></div>
+          <div class="st"><div class="n">02</div><div class="t">Жми кнопку <b>«Войти в&nbsp;Ситираннинг»</b>. Ссылка живёт 15&nbsp;минут.</div></div>
+          <div class="st"><div class="n">03</div><div class="t">Получишь <b>+50&nbsp;баллов</b> на&nbsp;первый кофе сразу после входа.</div></div>
+        </div>
+
+        <div class="success-meta">
+          <div class="exp">
+            <span class="k">Ссылка живёт</span>
+            <span class="v" id="expTimer">15:00</span>
+          </div>
+        </div>
+
+        <div class="success-actions">
+          <button type="button" class="btn" id="resendBtn" disabled>
+            <span class="resend-label">Отправить ещё раз</span>
+            <span class="mono" id="timerInline" style="color:var(--muted)">(60)</span>
+          </button>
+          <button type="button" class="btn btn-ghost" id="changeEmailBtn">Другой email</button>
+        </div>
+      </div>
+
+      <!-- divider -->
+      <div class="or" role="separator"><span class="mono-caps">или войти через</span></div>
+
+      <div class="oauth">
+        <button type="button" class="btn" aria-label="Войти через Apple">
+          <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M16.4 12.7c0-2.5 2-3.7 2.1-3.8-1.1-1.7-2.9-1.9-3.5-1.9-1.5-.2-2.9.9-3.7.9-.8 0-2-.9-3.2-.9-1.7 0-3.2 1-4.1 2.5-1.7 3-.4 7.5 1.3 9.9.8 1.2 1.8 2.5 3.1 2.5 1.2-.1 1.7-.8 3.2-.8 1.4 0 1.9.8 3.2.8 1.3 0 2.2-1.2 3-2.4.9-1.4 1.3-2.7 1.3-2.8-.1 0-2.7-1-2.7-4zM14 5c.7-.8 1.1-1.9 1-3-.9 0-2.1.6-2.8 1.4-.6.7-1.2 1.8-1 2.9 1 .1 2-.5 2.8-1.3z"/></svg>
+          Apple
+        </button>
+        <button type="button" class="btn" aria-label="Войти через Google">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path fill="#4285F4" d="M22 12.3c0-.8-.1-1.5-.2-2.2H12v4.2h5.6c-.2 1.3-1 2.4-2.1 3.1v2.6h3.4c2-1.8 3.1-4.5 3.1-7.7z"/><path fill="#34A853" d="M12 22c2.8 0 5.2-.9 6.9-2.5l-3.4-2.6c-.9.6-2.1 1-3.5 1-2.7 0-5-1.8-5.8-4.3H2.7v2.7C4.4 19.5 7.9 22 12 22z"/><path fill="#FBBC05" d="M6.2 13.6C6 13 5.9 12.5 5.9 12s.1-1 .3-1.6V7.7H2.7C2.2 8.8 2 10.1 2 11.5c0 1.4.3 2.6.7 3.8l3.5-2.7z"/><path fill="#EA4335" d="M12 5.8c1.5 0 2.9.5 4 1.5l3-3C17.2 2.7 14.7 2 12 2 7.9 2 4.4 4.5 2.7 7.7l3.5 2.7C7 7.6 9.3 5.8 12 5.8z"/></svg>
+          Google
+        </button>
+      </div>
+
+      <div class="switch">Забыл, каким email регистрировался? <a href="#">Спросить по&nbsp;телефону</a></div>
+
+      <!-- trust -->
+      <div class="trust">
+        <div class="c"><div class="k">Уже бегают</div><div class="v"><span class="a">2 140</span></div><div class="s">соседей</div></div>
+        <div class="c"><div class="k">Партнёров</div><div class="v">37</div><div class="s">кофеен и&nbsp;пекарен</div></div>
+        <div class="c"><div class="k">Ближайший старт</div><div class="v">СБ&nbsp;09:00</div><div class="s">Парк Горького</div></div>
+      </div>
+    </section>
+
+    <!-- RIGHT: side -->
+    <aside class="side" aria-label="Ближайший забег и что дальше">
+      <div class="card">
+        <div class="illust"><img src="/brand/runner-red.png" alt="Бегун Ситираннинг"/></div>
+      </div>
+      <div class="card">
+        <div class="card-head">
+          <span class="t">Ближайший забег</span>
+          <span class="mono-caps">3&nbsp;КМ</span>
+        </div>
+        <div class="card-body">
+          <div class="evt-row">
+            <span class="d red">СБ&nbsp;09:00</span>
+            <span class="sep">·</span>
+            <span class="place">Парк&nbsp;Горького</span>
+          </div>
+          <div class="evt-meta">
+            <div class="seats"><b>12/20</b> соседей записались</div>
+            <a href="#">Посмотреть →</a>
+          </div>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-head">
+          <span class="t">Что&nbsp;дальше</span>
+          <span class="mono-caps">4&nbsp;ШАГА</span>
+        </div>
+        <div class="card-body">
+          <ul class="next-list">
+            <li><span class="n">01</span><span class="t">Ссылка для&nbsp;входа <b>в&nbsp;почте</b></span><span class="v">+0</span></li>
+            <li><span class="n">02</span><span class="t">Приветственные <b>баллы</b></span><span class="v">+50</span></li>
+            <li><span class="n">03</span><span class="t">Старты на&nbsp;этой&nbsp;неделе</span><span class="v">3 шт</span></li>
+            <li><span class="n">04</span><span class="t">Кофейни рядом</span><span class="v">12 шт</span></li>
+          </ul>
+        </div>
+      </div>
+    </aside>
+  </div>
+</main>
+
+<footer>
+  <span class="wm-mini">CITYRNNG · МОСКВА · 2026</span>
+  <div class="only-desk">
+    <a href="#">Условия</a> &nbsp;·&nbsp;
+    <a href="#">Приватность</a> &nbsp;·&nbsp;
+    <a href="mailto:hello@cityrnng.ru">hello@cityrnng.ru</a>
+  </div>
+  <span>© Ситираннинг</span>
+</footer>
+
+</div><!-- /mob-frame -->
+</div><!-- /mob-stage -->
+
+<script>
+(function(){
+  const body=document.body;
+  // email handling
+  const email=document.getElementById('email');
+  const wrap=document.getElementById('emailWrap');
+  const msg=document.getElementById('emailMsg');
+  const clear=document.getElementById('emailClear');
+  const btn=document.getElementById('submitBtn');
+  const agree=document.getElementById('agree');
+
+  function validEmail(v){return /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(v)}
+
+  function syncState(){
+    const v=email.value.trim();
+    wrap.classList.toggle('filled', v.length>0);
+    const ok=validEmail(v);
+    if(!v){
+      email.classList.remove('err');
+      msg.classList.remove('err','ok');
+      msg.textContent='Введи email — пришлём ссылку для входа';
+    } else if(!ok){
+      email.classList.add('err');
+      msg.classList.remove('ok');
+      msg.classList.add('err');
+      msg.innerHTML='<span class="dot"></span>Проверь адрес — похоже, опечатка';
+    } else {
+      email.classList.remove('err');
+      msg.classList.remove('err');
+      msg.classList.add('ok');
+      msg.innerHTML='<span class="dot"></span>Формат в&nbsp;порядке — жми «Войти»';
+    }
+    btn.disabled = !(ok && agree.checked);
+  }
+  email.addEventListener('input',syncState);
+  agree.addEventListener('change',syncState);
+  clear.addEventListener('click',()=>{email.value='';email.focus();syncState();});
+  syncState();
+
+  // submit → success state
+  document.getElementById('auth-form').addEventListener('submit',e=>{
+    e.preventDefault();
+    if(!validEmail(email.value) || !agree.checked) return;
+    document.getElementById('sentTo').textContent=email.value;
+    body.classList.add('state-sent');
+    window.scrollTo({top:0,behavior:'smooth'});
+    startTimers();
+  });
+
+  // back to form
+  document.getElementById('changeEmailBtn').addEventListener('click',()=>{
+    body.classList.remove('state-sent');
+    email.focus();
+  });
+
+  // cooldown + expiry
+  let cdTimer, expTimer;
+  function startTimers(){
+    let cd=60;
+    const resend=document.getElementById('resendBtn');
+    const tInline=document.getElementById('timerInline');
+    const label=resend.querySelector('.resend-label');
+    resend.disabled=true;
+    tInline.style.display='';
+    tInline.style.color='var(--muted)';
+    label.textContent='Отправить ещё раз';
+    clearInterval(cdTimer);
+    cdTimer=setInterval(()=>{
+      cd--;
+      if(cd<=0){clearInterval(cdTimer); resend.disabled=false; tInline.textContent=''; tInline.style.display='none';}
+      else{tInline.textContent='('+cd+')';}
+    },1000);
+
+    let exp=15*60;
+    const expEl=document.getElementById('expTimer');
+    clearInterval(expTimer);
+    expTimer=setInterval(()=>{
+      exp--;
+      if(exp<=0){clearInterval(expTimer);expEl.textContent='истекла';expEl.style.color='var(--red)';return;}
+      const m=Math.floor(exp/60), s=exp%60;
+      expEl.textContent=m+':'+String(s).padStart(2,'0');
+    },1000);
+  }
+
+  document.getElementById('resendBtn').addEventListener('click',function(){
+    if(this.disabled) return;
+    startTimers();
+  });
+
+  document.getElementById('ghostBtn').addEventListener('click',()=>{
+    alert('Вход по телефону — в следующей итерации');
+  });
+})();
+</script>
+</body></html>
