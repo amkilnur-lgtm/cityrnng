@@ -4,7 +4,7 @@
  * different time), update here only.
  */
 export const CLUB = {
-  name: "Сити Раннинг",
+  name: "Ситираннинг",
   /** Nominative — "Уфа". */
   city: "Уфа",
   /** Genitive — "районы Уфы". */

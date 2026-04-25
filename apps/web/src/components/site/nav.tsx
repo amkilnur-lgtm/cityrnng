@@ -1,3 +1,4 @@
+import Image from "next/image";
 import Link from "next/link";
 import { LogoutButton } from "@/components/site/logout-button";
 import { CLUB } from "@/lib/club";
@@ -20,12 +21,17 @@ export function SiteNav({ state }: { state: SiteState }) {
     >
       <Link
         href="/"
-        aria-label="CITYRNNG"
-        className="flex items-baseline gap-1.5 no-underline"
+        aria-label={CLUB.name}
+        className="flex items-center gap-3 no-underline"
       >
-        <span className="font-display text-[22px] font-bold leading-none tracking-[-0.025em] text-ink">
-          city<span className="text-brand-red">rnng</span>
-        </span>
+        <Image
+          src="/brand/wordmark-text.png"
+          alt={CLUB.name}
+          width={170}
+          height={30}
+          priority
+          style={{ height: 30, width: "auto" }}
+        />
         <span className="hidden font-mono text-[11px] font-medium uppercase tracking-[0.14em] text-muted md:inline">
           {CLUB.city}
         </span>
