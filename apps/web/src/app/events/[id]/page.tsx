@@ -1,0 +1,201 @@
+import Link from "next/link";
+import { notFound } from "next/navigation";
+import { SiteFooter } from "@/components/site/footer";
+import { SiteNav } from "@/components/site/nav";
+import { Wrap } from "@/components/site/wrap";
+import { getPublicEvent } from "@/lib/api-events";
+import { CLUB, DISTANCE_RANGE } from "@/lib/club";
+import { sessionToSiteState } from "@/lib/home-mock";
+import { getSession } from "@/lib/session";
+
+const RU_MONTHS = [
+  "января", "февраля", "марта", "апреля", "мая", "июня",
+  "июля", "августа", "сентября", "октября", "ноября", "декабря",
+];
+const RU_WEEKDAYS_LONG = [
+  "Воскресенье", "Понедельник", "Вторник", "Среда",
+  "Четверг", "Пятница", "Суббота",
+];
+
+function formatFullDate(iso: string) {
+  const d = new Date(iso);
+  return `${RU_WEEKDAYS_LONG[d.getDay()]}, ${d.getDate()} ${RU_MONTHS[d.getMonth()]}`;
+}
+
+function formatTime(iso: string) {
+  const d = new Date(iso);
+  return `${String(d.getHours()).padStart(2, "0")}:${String(d.getMinutes()).padStart(2, "0")}`;
+}
+
+export async function generateMetadata({
+  params,
+}: {
+  params: { id: string };
+}) {
+  const event = await getPublicEvent(params.id);
+  return { title: event ? `${event.title} · CITYRNNG` : "Событие · CITYRNNG" };
+}
+
+export default async function EventDetailPage({
+  params,
+}: {
+  params: { id: string };
+}) {
+  const [session, event] = await Promise.all([
+    getSession(),
+    getPublicEvent(params.id),
+  ]);
+  if (!event) notFound();
+
+  const state = sessionToSiteState(session);
+  const startDate = formatFullDate(event.startsAt);
+  const startTime = formatTime(event.startsAt);
+  const locations = event.syncRule?.locations ?? [];
+
+  return (
+    <>
+      <SiteNav state={state} />
+      <main>
+        <section className="border-b border-ink">
+          <Wrap className="py-16 lg:py-24">
+            <div className="flex flex-col gap-4">
+              <Link
+                href="/events"
+                className="self-start font-mono text-[11px] font-medium uppercase tracking-[0.14em] text-muted hover:text-brand-red"
+              >
+                ← Все среды
+              </Link>
+              <span className="type-mono-caps">
+                {startDate.toUpperCase()} · {startTime}
+              </span>
+              <h1 className="type-hero" style={{ fontSize: 72 }}>
+                {event.title}
+              </h1>
+              {event.locationName ? (
+                <p className="type-lede">
+                  {event.locationName}
+                  {event.locationAddress ? ` · ${event.locationAddress}` : ""}
+                </p>
+              ) : null}
+            </div>
+          </Wrap>
+        </section>
+
+        <section className="border-b border-ink">
+          <Wrap className="py-12 lg:py-16">
+            <div className="grid grid-cols-1 gap-0 border border-ink lg:grid-cols-[260px_1fr]">
+              <dl className="grid grid-cols-2 gap-px bg-ink/10 lg:grid-cols-1 lg:border-r lg:border-ink">
+                <Fact k="Когда" v={startDate} />
+                <Fact k="Время" v={startTime} />
+                <Fact k="Дистанции" v={DISTANCE_RANGE} />
+                {event.isPointsEligible && event.basePointsAward > 0 ? (
+                  <Fact
+                    k="Баллы"
+                    v={`+${event.basePointsAward} Б`}
+                    accent
+                  />
+                ) : null}
+              </dl>
+              <div className="flex flex-col gap-6 bg-paper p-6 md:p-8">
+                {event.description ? (
+                  <p className="whitespace-pre-line text-[15px] leading-[1.55] text-graphite">
+                    {event.description}
+                  </p>
+                ) : (
+                  <p className="text-[15px] leading-[1.55] text-graphite">
+                    Старт в&nbsp;{startTime}. Темп любой, {DISTANCE_RANGE}
+                    &nbsp;на&nbsp;выбор. Записываться не&nbsp;нужно — просто
+                    приходи, Strava зафиксирует.
+                  </p>
+                )}
+
+                {locations.length > 0 ? (
+                  <div className="flex flex-col gap-2">
+                    <span className="type-mono-caps">точки старта</span>
+                    <ul className="flex flex-col">
+                      {locations.map((loc) => (
+                        <li
+                          key={loc.id}
+                          className="flex items-center justify-between border-b border-ink/15 py-2 text-[14px]"
+                        >
+                          <span className="text-ink">{loc.name}</span>
+                          <span className="font-mono text-[12px] tracking-[0.04em] text-muted">
+                            {loc.city}
+                          </span>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                ) : null}
+
+                <div className="mt-auto flex flex-wrap gap-3 pt-4">
+                  {state.isAuthed ? (
+                    <Link
+                      href="/app/profile"
+                      className="inline-flex h-12 items-center border border-ink bg-paper px-5 font-sans text-[14px] font-semibold text-ink hover:bg-ink hover:text-paper"
+                    >
+                      Подключить Strava →
+                    </Link>
+                  ) : (
+                    <Link
+                      href="/auth"
+                      className="inline-flex h-12 items-center border border-brand-red bg-brand-red px-5 font-sans text-[14px] font-semibold text-paper hover:bg-brand-red-ink"
+                    >
+                      Войти в клуб →
+                    </Link>
+                  )}
+                  <Link
+                    href={`/districts#${locations[0]?.id ?? ""}`}
+                    className="inline-flex h-12 items-center border border-ink bg-paper px-5 font-sans text-[14px] font-semibold text-ink hover:bg-ink hover:text-paper"
+                  >
+                    Карта маршрутов
+                  </Link>
+                </div>
+              </div>
+            </div>
+          </Wrap>
+        </section>
+
+        <section className="border-b border-ink bg-paper-2/60">
+          <Wrap className="flex flex-col gap-3 py-10 text-[13px] text-graphite lg:flex-row lg:items-center lg:justify-between">
+            <p>
+              Записываться не&nbsp;нужно — {CLUB.name} по&nbsp;средам всегда
+              в&nbsp;{CLUB.runTime}.
+            </p>
+            <Link
+              href="/how-it-works"
+              className="font-sans font-medium text-ink hover:text-brand-red"
+            >
+              Как это работает →
+            </Link>
+          </Wrap>
+        </section>
+      </main>
+      <SiteFooter />
+    </>
+  );
+}
+
+function Fact({
+  k,
+  v,
+  accent,
+}: {
+  k: string;
+  v: string;
+  accent?: boolean;
+}) {
+  return (
+    <div className="flex flex-col gap-1 bg-paper p-5 md:p-6">
+      <span className="type-mono-caps">{k}</span>
+      <span
+        className={
+          "font-display text-[24px] font-bold leading-none tracking-[-0.02em] " +
+          (accent ? "text-brand-red" : "text-ink")
+        }
+      >
+        {v}
+      </span>
+    </div>
+  );
+}
