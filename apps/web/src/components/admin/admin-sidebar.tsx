@@ -15,11 +15,11 @@ type SidebarSection = {
 const SECTIONS: SidebarSection[] = [
   { href: "/admin", label: "Дашборд" },
   { href: "/admin/locations", label: "Локации" },
-  { href: "/admin/events", label: "События", comingSoon: true },
-  { href: "/admin/recurrence", label: "Расписание", comingSoon: true },
+  { href: "/admin/recurrence", label: "Расписание" },
+  { href: "/admin/events", label: "События" },
+  { href: "/admin/attendances", label: "Attendances" },
   { href: "/admin/partners", label: "Партнёры" },
   { href: "/admin/rewards", label: "Награды" },
-  { href: "/admin/attendances", label: "Attendances", comingSoon: true },
   { href: "/admin/users", label: "Пользователи", comingSoon: true },
   { href: "/admin/points", label: "Балльные операции", comingSoon: true },
 ];

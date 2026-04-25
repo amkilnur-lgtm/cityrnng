@@ -24,6 +24,20 @@ export class AttendancesService {
     });
   }
 
+  /** Cross-event admin listing — useful for the admin pending-queue. */
+  listAll(opts: { status?: AttendanceStatus; limit?: number } = {}) {
+    return this.prisma.eventAttendance.findMany({
+      where: { status: opts.status ?? undefined },
+      orderBy: { createdAt: "desc" },
+      take: opts.limit ?? 100,
+      include: {
+        user: { select: { id: true, email: true } },
+        event: { select: { id: true, title: true, startsAt: true, type: true } },
+        externalActivity: true,
+      },
+    });
+  }
+
   async approve(id: string, reviewerId: string) {
     return this.prisma.$transaction(async (tx) => {
       const existing = await tx.eventAttendance.findUnique({ where: { id } });

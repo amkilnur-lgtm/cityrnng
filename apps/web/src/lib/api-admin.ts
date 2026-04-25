@@ -91,3 +91,87 @@ export async function listAdminRewards(opts: { partnerId?: string } = {}): Promi
   const qs = opts.partnerId ? `?partnerId=${encodeURIComponent(opts.partnerId)}` : "";
   return (await fetchJson<AdminReward[]>(`/admin/rewards${qs}`)) ?? [];
 }
+
+// === Recurrence rule admin types ===
+
+export type AdminRecurrenceRuleLocation = {
+  ruleId: string;
+  locationId: string;
+  location: AdminLocation;
+};
+
+export type AdminRecurrenceRule = {
+  id: string;
+  title: string;
+  type: "regular" | "special" | "partner";
+  status: "active" | "paused";
+  dayOfWeek: number;
+  timeOfDay: string;
+  durationMinutes: number;
+  isPointsEligible: boolean;
+  basePointsAward: number;
+  startsFromDate: string;
+  endsAtDate: string | null;
+  createdAt: string;
+  updatedAt: string;
+  locations: AdminRecurrenceRuleLocation[];
+};
+
+export async function listAdminRecurrenceRules(): Promise<AdminRecurrenceRule[]> {
+  return (await fetchJson<AdminRecurrenceRule[]>("/admin/recurrence-rules")) ?? [];
+}
+
+// === Event admin types ===
+
+export type AdminEvent = {
+  id: string;
+  title: string;
+  slug: string;
+  description: string | null;
+  type: "regular" | "special" | "partner";
+  status: "draft" | "published" | "started" | "finished" | "cancelled";
+  startsAt: string;
+  endsAt: string;
+  locationName: string | null;
+  locationAddress: string | null;
+  capacity: number | null;
+  isPointsEligible: boolean;
+  basePointsAward: number;
+  recurrenceRuleId: string | null;
+  overridesOccurrenceAt: string | null;
+  createdAt: string;
+  updatedAt: string;
+};
+
+export async function listAdminEvents(): Promise<AdminEvent[]> {
+  return (await fetchJson<AdminEvent[]>("/admin/events")) ?? [];
+}
+
+// === Attendance admin types ===
+
+export type AdminAttendance = {
+  id: string;
+  eventId: string;
+  userId: string;
+  status: "pending" | "approved" | "rejected";
+  source: "sync" | "manual_admin";
+  matchedAt: string | null;
+  reviewedAt: string | null;
+  reviewedById: string | null;
+  rejectionReason: string | null;
+  createdAt: string;
+  user: { id: string; email: string };
+  event: {
+    id: string;
+    title: string;
+    startsAt: string;
+    type: "regular" | "special" | "partner";
+  };
+};
+
+export async function listAdminAttendances(
+  opts: { status?: "pending" | "approved" | "rejected" } = {},
+): Promise<AdminAttendance[]> {
+  const qs = opts.status ? `?status=${opts.status}` : "";
+  return (await fetchJson<AdminAttendance[]>(`/admin/attendances${qs}`)) ?? [];
+}

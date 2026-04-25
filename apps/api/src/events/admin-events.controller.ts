@@ -42,6 +42,16 @@ export class AdminEventsController {
     private readonly attendances: AttendancesService,
   ) {}
 
+  @Get()
+  list() {
+    return this.events.listAdmin();
+  }
+
+  @Get(":id")
+  getOne(@Param("id", new ParseUUIDPipe()) id: string) {
+    return this.events.getAdminByIdOrThrow(id);
+  }
+
   @Post()
   create(@Body() dto: CreateEventDto, @CurrentUser() user: AuthenticatedUser) {
     return this.events.create(dto, user.id);
