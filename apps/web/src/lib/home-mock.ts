@@ -16,6 +16,27 @@ export function resolveSiteState(stateParam: string | undefined): SiteState {
   return stateParam === "authed" ? MOCK_AUTHED : MOCK_GUEST;
 }
 
+export function sessionToSiteState(
+  session: {
+    id: string;
+    email: string;
+    profile?: { displayName?: string | null } | null;
+  } | null,
+): SiteState {
+  if (!session) return MOCK_GUEST;
+  const displayName =
+    session.profile?.displayName?.trim() || session.email.split("@")[0];
+  return {
+    isAuthed: true,
+    user: {
+      name: displayName,
+      initial: displayName.slice(0, 1).toUpperCase(),
+      // points come from /points/balance fetch in Stage D — placeholder until then
+      points: 0,
+    },
+  };
+}
+
 /**
  * City location — mock of what will come from `city_locations` table.
  * `venue` (точка старта) and `landmark` (ориентир) are optional:
