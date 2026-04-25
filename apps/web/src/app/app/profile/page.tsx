@@ -6,8 +6,8 @@ import { SiteNav } from "@/components/site/nav";
 import { Wrap } from "@/components/site/wrap";
 import { getStravaStatus } from "@/lib/api-strava";
 import { CLUB } from "@/lib/club";
-import { sessionToSiteState } from "@/lib/home-mock";
 import { getSession } from "@/lib/session";
+import { getSiteState } from "@/lib/site-state";
 
 export const metadata = { title: "Профиль · CITYRNNG" };
 
@@ -15,8 +15,10 @@ export default async function ProfilePage() {
   const session = await getSession();
   if (!session) redirect("/auth");
 
-  const [stravaStatus] = await Promise.all([getStravaStatus()]);
-  const state = sessionToSiteState(session);
+  const [stravaStatus, state] = await Promise.all([
+    getStravaStatus(),
+    getSiteState(),
+  ]);
   const profile = session.profile;
   const displayName =
     profile?.displayName?.trim() || session.email.split("@")[0];

@@ -4,8 +4,7 @@ import { SiteNav } from "@/components/site/nav";
 import { Wrap } from "@/components/site/wrap";
 import { filterUpcoming, listPublicEvents } from "@/lib/api-events";
 import { CLUB, DISTANCE_RANGE } from "@/lib/club";
-import { sessionToSiteState } from "@/lib/home-mock";
-import { getSession } from "@/lib/session";
+import { getSiteState } from "@/lib/site-state";
 
 export const metadata = { title: "События · CITYRNNG" };
 
@@ -26,9 +25,10 @@ function formatDate(iso: string) {
 }
 
 export default async function EventsPage() {
-  const session = await getSession();
-  const state = sessionToSiteState(session);
-  const events = filterUpcoming(await listPublicEvents());
+  const [state, events] = await Promise.all([
+    getSiteState(),
+    listPublicEvents().then(filterUpcoming),
+  ]);
 
   return (
     <>

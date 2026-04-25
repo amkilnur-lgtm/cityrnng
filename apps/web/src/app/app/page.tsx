@@ -9,8 +9,8 @@ import { ShopPreview } from "@/components/home/shop-preview";
 import { SiteFooter } from "@/components/site/footer";
 import { SiteNav } from "@/components/site/nav";
 import { Wrap } from "@/components/site/wrap";
-import { sessionToSiteState } from "@/lib/home-mock";
 import { getSession } from "@/lib/session";
+import { getSiteState } from "@/lib/site-state";
 
 export const metadata = { title: "Личный кабинет · CITYRNNG" };
 
@@ -18,7 +18,7 @@ export default async function AppDashboardPage() {
   const session = await getSession();
   if (!session) redirect("/auth");
 
-  const state = sessionToSiteState(session);
+  const state = await getSiteState();
   if (!state.isAuthed) redirect("/auth");
 
   return (

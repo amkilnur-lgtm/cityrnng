@@ -5,8 +5,7 @@ import { SiteNav } from "@/components/site/nav";
 import { Wrap } from "@/components/site/wrap";
 import { getPublicEvent } from "@/lib/api-events";
 import { CLUB, DISTANCE_RANGE } from "@/lib/club";
-import { sessionToSiteState } from "@/lib/home-mock";
-import { getSession } from "@/lib/session";
+import { getSiteState } from "@/lib/site-state";
 
 const RU_MONTHS = [
   "января", "февраля", "марта", "апреля", "мая", "июня",
@@ -41,13 +40,11 @@ export default async function EventDetailPage({
 }: {
   params: { id: string };
 }) {
-  const [session, event] = await Promise.all([
-    getSession(),
+  const [state, event] = await Promise.all([
+    getSiteState(),
     getPublicEvent(params.id),
   ]);
   if (!event) notFound();
-
-  const state = sessionToSiteState(session);
   const startDate = formatFullDate(event.startsAt);
   const startTime = formatTime(event.startsAt);
   const locations = event.syncRule?.locations ?? [];
