@@ -72,13 +72,20 @@ export const LOCATIONS: Record<LocationSlug, CityLocation> = {
   },
 };
 
+export type EventType = "regular" | "special" | "partner";
+
 export type EventCard = {
   id: string;
+  /** ISO datetime — used for sort + format. dateBig/dayOfWeek are derived for display. */
+  startsAt: string;
   dateBig: string;
   dayOfWeek: string;
+  /** Custom title for special events — regulars use the default Сити Раннинг wording. */
+  title?: string;
   location: CityLocation;
   time: string;
   distances: readonly ClubDistance[];
+  type: EventType;
   /** Average turnout — no hard registration in MVP; this is social proof, not a limit. */
   typicalTurnout?: string;
 };
@@ -86,29 +93,47 @@ export type EventCard = {
 export const UPCOMING_EVENTS: EventCard[] = [
   {
     id: "w-22",
+    startsAt: "2026-04-22T19:30:00.000Z",
     dateBig: "22",
     dayOfWeek: `${CLUB.runDayShort} · АПР`,
     location: LOCATIONS.centr,
     time: CLUB.runTime,
     distances: CLUB.distances,
+    type: "regular",
     typicalTurnout: "12–15",
   },
   {
+    id: "spec-25",
+    startsAt: "2026-04-25T09:00:00.000Z",
+    dateBig: "25",
+    dayOfWeek: "СБ · АПР",
+    title: "Утренний забег с пейсером",
+    location: LOCATIONS.prospekt,
+    time: "09:00",
+    distances: [5] as const,
+    type: "special",
+    typicalTurnout: "8–10",
+  },
+  {
     id: "w-29",
+    startsAt: "2026-04-29T19:30:00.000Z",
     dateBig: "29",
     dayOfWeek: `${CLUB.runDayShort} · АПР`,
     location: LOCATIONS.prospekt,
     time: CLUB.runTime,
     distances: CLUB.distances,
+    type: "regular",
     typicalTurnout: "10–14",
   },
   {
     id: "w-06",
+    startsAt: "2026-05-06T19:30:00.000Z",
     dateBig: "06",
     dayOfWeek: `${CLUB.runDayShort} · МАЙ`,
     location: LOCATIONS.chernikovka,
     time: CLUB.runTime,
     distances: CLUB.distances,
+    type: "regular",
     typicalTurnout: "8–12",
   },
 ];
