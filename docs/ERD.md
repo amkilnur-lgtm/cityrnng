@@ -18,6 +18,8 @@
 - `events`
 - `event_sync_rules`
 - `event_sync_rule_locations`
+- `event_recurrence_rules`
+- `event_recurrence_rule_locations`
 - `event_attendances`
 - `city_locations`
 
@@ -114,7 +116,37 @@
 - `is_points_eligible`
 - `base_points_award`
 - `created_by` (user)
+- `recurrence_rule_id` nullable (FK → `event_recurrence_rules`, `on delete SET NULL`)
+- `overrides_occurrence_at` DATE nullable — день рекуррентного события, который перекрывает данный override
 - индексы: (`status`, `starts_at`), (`type`)
+- UNIQUE (`recurrence_rule_id`, `overrides_occurrence_at`) — один override на правило × дату
+
+## `event_recurrence_rules`
+
+Шаблон повторяющихся событий. Материализуется на лету через `EventOccurrenceService.listUpcoming()` — без записи на каждое вхождение, пока admin не создаст явный `events`-row, который перекроет конкретную дату.
+
+- `id`
+- `title`
+- `type` regular|special|partner — обычно `regular`
+- `status` active|paused (индекс с `day_of_week`)
+- `day_of_week` 0–6 (Sun=0 … Sat=6, как `Date.getDay`)
+- `time_of_day` HH:MM в локальной таймзоне сервера (deploy в TZ клуба, см. DEPLOY-RUNBOOK)
+- `duration_minutes`
+- `is_points_eligible`
+- `base_points_award`
+- `starts_from_date` DATE — с какой даты правило активно
+- `ends_at_date` DATE nullable — sunset
+- `created_by` (user)
+- `created_at`, `updated_at`
+
+## `event_recurrence_rule_locations`
+
+Junction правило ↔ `city_locations`. Все локации правила инлайнятся в каждое материализованное вхождение.
+
+- `rule_id`
+- `location_id`
+- `created_at`
+- primary key (`rule_id`, `location_id`)
 
 ## `event_sync_rules`
 
