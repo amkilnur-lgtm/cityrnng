@@ -6,13 +6,16 @@ import { cn } from "@/lib/utils";
 
 const COOKIE_NAME = "cityrnng_dev_state";
 
+type DevState = "guest" | "authed" | "admin";
+
 /**
- * Dev-only floating toggle for guest / authed mock state. Mirrors the
- * prototype's bottom-right switcher. Replace with real session state
- * once Epic 1 auth UI is wired.
- *
+ * Dev-only floating toggle for guest / authed / admin mock states.
  * Backed by a cookie (set via /api/dev/state) so the choice persists
  * across all routes — not just the home page.
+ *
+ * - guest: no cookie → public site
+ * - authed: cookie="authed" → /app, /shop authed views; not admin
+ * - admin: cookie="admin" → /admin unlocked + authed everywhere else
  */
 export function DevStateToggle() {
   if (process.env.NODE_ENV === "production") return null;
@@ -30,17 +33,16 @@ function readCookie(name: string): string | null {
 function DevStateToggleInner() {
   const router = useRouter();
   const [pending, startTransition] = useTransition();
-  // Server-rendered HTML can't tell which state is active (it depends on the
-  // cookie which the server already used to render). Hydrate the highlight
-  // client-side from the cookie value.
-  const [current, setCurrent] = useState<"guest" | "authed">("guest");
+  const [current, setCurrent] = useState<DevState>("guest");
 
   useEffect(() => {
     const value = readCookie(COOKIE_NAME);
-    setCurrent(value === "authed" ? "authed" : "guest");
+    if (value === "admin") setCurrent("admin");
+    else if (value === "authed") setCurrent("authed");
+    else setCurrent("guest");
   }, []);
 
-  function pick(state: "guest" | "authed") {
+  function pick(state: DevState) {
     if (pending || current === state) return;
     setCurrent(state);
     startTransition(async () => {
@@ -62,7 +64,7 @@ function DevStateToggleInner() {
       aria-label="Dev state toggle"
       className="fixed bottom-4 right-4 z-50 flex border border-ink bg-paper font-mono text-[11px] font-medium uppercase tracking-[0.14em] shadow-[0_0_0_1px_white]"
     >
-      {(["guest", "authed"] as const).map((s) => (
+      {(["guest", "authed", "admin"] as const).map((s) => (
         <button
           key={s}
           type="button"
