@@ -46,6 +46,13 @@ export class EventsService {
     return event;
   }
 
+  /** Admin listing — all statuses, ordered by startsAt desc (latest first). */
+  listAdmin() {
+    return this.prisma.event.findMany({
+      orderBy: { startsAt: "desc" },
+    });
+  }
+
   async create(dto: CreateEventDto, createdById: string) {
     assertDateRange(dto.startsAt, dto.endsAt);
     try {
