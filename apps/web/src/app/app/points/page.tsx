@@ -78,7 +78,7 @@ function EmptyHistory() {
     <div className="flex flex-col items-start gap-4 border border-ink bg-paper-2 p-8">
       <span className="type-mono-caps">пока пусто</span>
       <p className="max-w-[520px] text-[15px] leading-[1.55] text-graphite">
-        Первые баллы прилетают за&nbsp;регистрацию и&nbsp;первую среду.
+        Первые баллы прилетают за&nbsp;регистрацию и&nbsp;первую пробежку.
         Подключи Strava — и&nbsp;операции появятся здесь автоматически.
       </p>
       <Link

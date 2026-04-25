@@ -1,3 +1,4 @@
+import Image from "next/image";
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { AuthRequestForm } from "@/components/auth/request-form";
@@ -17,12 +18,17 @@ export default async function AuthPage() {
         <Wrap className="flex items-center justify-between">
           <Link
             href="/"
-            aria-label="CITYRNNG"
-            className="flex items-baseline gap-1.5 no-underline"
+            aria-label={CLUB.name}
+            className="flex items-center gap-3 no-underline"
           >
-            <span className="font-display text-[22px] font-bold leading-none tracking-[-0.025em] text-ink">
-              city<span className="text-brand-red">rnng</span>
-            </span>
+            <Image
+              src="/brand/wordmark-text.png"
+              alt={CLUB.name}
+              width={170}
+              height={30}
+              priority
+              style={{ height: 30, width: "auto" }}
+            />
             <span className="hidden font-mono text-[11px] font-medium uppercase tracking-[0.14em] text-muted md:inline">
               {CLUB.city}
             </span>
@@ -61,7 +67,7 @@ export default async function AuthPage() {
             <li className="flex gap-3">
               <span className="font-mono text-brand-red">→</span>
               <span>
-                На&nbsp;среды записываться не&nbsp;нужно — приходи, Strava сама
+                На&nbsp;пробежки записываться не&nbsp;нужно — приходи, Strava сама
                 фиксирует.
               </span>
             </li>

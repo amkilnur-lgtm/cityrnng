@@ -67,8 +67,8 @@ export async function getPointsHistory(opts?: {
 
 const REASON_LABELS: Record<string, string> = {
   signup_bonus: "Приветственный бонус",
-  event_attendance_first: "Первая среда",
-  event_attendance_regular: "Среда",
+  event_attendance_first: "Первая пробежка",
+  event_attendance_regular: "Пробежка",
   event_attendance_special: "Спецсобытие",
   event_attendance_reversal: "Отмена начисления",
   manual_adjustment: "Ручная корректировка",

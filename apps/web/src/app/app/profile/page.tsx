@@ -56,7 +56,7 @@ export default async function ProfilePage({
                 strava подключён
               </span>
               <span className="text-graphite">
-                Готово — теперь среды засчитываются автоматически.
+                Готово — теперь пробежки засчитываются автоматически.
               </span>
             </Wrap>
           </section>

@@ -48,7 +48,7 @@ export default async function AppDashboardPage() {
         </section>
 
         <PersonalDashboard user={state.user} nextEvent={nextEvent} />
-        <NextEvent isAuthed event={nextEvent} />
+        <NextEvent event={nextEvent} />
         <ShopPreview user={state.user} />
         <Locations />
         <Journal />

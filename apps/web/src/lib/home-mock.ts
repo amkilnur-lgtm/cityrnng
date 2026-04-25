@@ -52,9 +52,24 @@ export type CityLocation = {
 export type LocationSlug = "centr" | "prospekt" | "chernikovka";
 
 export const LOCATIONS: Record<LocationSlug, CityLocation> = {
-  centr: { slug: "centr", district: "Центр" },
-  prospekt: { slug: "prospekt", district: "Проспект" },
-  chernikovka: { slug: "chernikovka", district: "Черниковка" },
+  centr: {
+    slug: "centr",
+    district: "Центр",
+    venue: "Monkey Grinder, Карла Маркса 41",
+    landmark: "Парк Якутова, Советская площадь, ул. Ленина",
+  },
+  prospekt: {
+    slug: "prospekt",
+    district: "Проспект",
+    venue: "Monkey Grinder, Проспект Октября 63А",
+    landmark: "Уфимское ожерелье, лес, смотровая на Белую",
+  },
+  chernikovka: {
+    slug: "chernikovka",
+    district: "Черниковка",
+    venue: "Surf Coffee, Первомайская 22",
+    landmark: "Парк Победы, парк Нефтехимиков, ул. Первомайская",
+  },
 };
 
 export type EventCard = {
@@ -147,9 +162,24 @@ export type ShopItem = {
 };
 
 export const SHOP_PREVIEW: ShopItem[] = [
-  { id: "coffee", name: "Капучино", partner: "у Маши · Хамовники", price: 120 },
-  { id: "croissant", name: "Круассан", partner: "Цех 85 · Замоскворечье", price: 180 },
-  { id: "brunch", name: "Бранч", partner: "Ферма · Пресня", price: 340 },
+  {
+    id: "monkey-cappuccino",
+    name: "Капучино",
+    partner: "Monkey Grinder · Карла Маркса",
+    price: 120,
+  },
+  {
+    id: "monkey-croissant",
+    name: "Круассан с миндалём",
+    partner: "Monkey Grinder · Проспект Октября",
+    price: 180,
+  },
+  {
+    id: "surf-flat-white",
+    name: "Флэт уайт",
+    partner: "Surf Coffee · Черниковка",
+    price: 140,
+  },
 ];
 
 export type JournalPost = {
@@ -163,19 +193,21 @@ export const JOURNAL: JournalPost[] = [
   {
     id: "j1",
     eyebrow: "Анонс",
-    date: "18 апр",
-    title: "Следующая среда — Хамовники, 5 или&nbsp;10&nbsp;км от&nbsp;Парка культуры",
+    date: "23 апр",
+    title:
+      "Книжный клуб в&nbsp;Monkey Grinder — обсуждаем «Бегущего за&nbsp;ветром»",
   },
   {
     id: "j2",
     eyebrow: "История",
-    date: "12 апр",
-    title: "Как соседи собрали 200 стартов за&nbsp;январь",
+    date: "16 апр",
+    title: "Январский -25° — почему мы&nbsp;всё равно бежали",
   },
   {
     id: "j3",
     eyebrow: "Партнёр",
-    date: "05 апр",
-    title: "«Цех 85» — круассан за&nbsp;180 баллов до&nbsp;конца мая",
+    date: "09 апр",
+    title:
+      "Surf Coffee добавляет матча-латте за&nbsp;120&nbsp;баллов до&nbsp;конца мая",
   },
 ];

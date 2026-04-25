@@ -41,8 +41,8 @@ export function SiteFooter() {
             CITYRNNG · {CLUB.city.toUpperCase()} · 2026
           </span>
           <p className="max-w-xs text-[13px] leading-[1.55] text-graphite">
-            Соседский беговой клуб. Бесплатно, без&nbsp;секундомера,
-            с&nbsp;кофе на&nbsp;финише.
+            Открытое беговое сообщество. Каждую среду —
+            пробежка и&nbsp;кофе после.
           </p>
         </div>
         {COLUMNS.map((col) => (

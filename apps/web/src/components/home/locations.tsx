@@ -13,7 +13,7 @@ export function Locations() {
             <span className="type-mono-caps">где бегаем</span>
             <h2 className="type-h2">
               <em className="not-italic text-brand-red">{list.length} района</em>{" "}
-              {CLUB.cityGenitive}. Среда ротируется.
+              {CLUB.cityGenitive}. Каждую неделю — другая точка.
             </h2>
           </div>
           <Link

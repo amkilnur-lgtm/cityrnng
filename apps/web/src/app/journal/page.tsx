@@ -19,7 +19,7 @@ export default async function JournalPage() {
             <em className="not-italic text-brand-red">пишем</em> между забегами.
           </>
         }
-        lede="Анонсы сред, истории соседей, новости партнёров. Раз в неделю — новый материал."
+        lede="Анонсы пробежек, истории участников, новости партнёров. Раз в неделю — новый материал."
       />
 
       <section className="border-b border-ink">
