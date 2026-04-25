@@ -1,17 +1,42 @@
 import Link from "next/link";
 import { Wrap } from "@/components/site/wrap";
 import {
-  PARTNERS,
-  REWARDS,
+  PARTNERS as MOCK_PARTNERS,
+  REWARDS as MOCK_REWARDS,
   type AuthedUser,
 } from "@/lib/home-mock";
+import { listRewards } from "@/lib/api-rewards";
 
-export function ShopPreview({ user }: { user: AuthedUser }) {
+type PreviewItem = {
+  slug: string;
+  title: string;
+  costPoints: number;
+  partnerName: string;
+};
+
+export async function ShopPreview({ user }: { user: AuthedUser }) {
+  const apiRewards = await listRewards();
+
+  const fromApi: PreviewItem[] = apiRewards.map((r) => ({
+    slug: r.slug,
+    title: r.title,
+    costPoints: r.costPoints,
+    partnerName: r.partner.name,
+  }));
+  const fromMock: PreviewItem[] = MOCK_REWARDS.map((r) => ({
+    slug: r.slug,
+    title: r.title,
+    costPoints: r.costPoints,
+    partnerName: MOCK_PARTNERS[r.partnerSlug].name,
+  }));
+  const all = fromApi.length > 0 ? fromApi : fromMock;
+
   // Pick 3 cheapest items the user can actually afford — friendlier preview.
-  const affordable = REWARDS.filter((r) => r.costPoints <= user.points)
+  const affordable = all
+    .filter((r) => r.costPoints <= user.points)
     .sort((a, b) => a.costPoints - b.costPoints)
     .slice(0, 3);
-  const items = affordable.length === 3 ? affordable : REWARDS.slice(0, 3);
+  const items = affordable.length === 3 ? affordable : all.slice(0, 3);
 
   return (
     <section className="border-b border-ink">
@@ -46,27 +71,24 @@ export function ShopPreview({ user }: { user: AuthedUser }) {
             </div>
           </div>
           <div className="grid grid-cols-1 divide-y divide-ink md:grid-cols-3 md:divide-x md:divide-y-0">
-            {items.map((item) => {
-              const partner = PARTNERS[item.partnerSlug];
-              return (
-                <Link
-                  href={`/shop/${item.slug}`}
-                  key={item.slug}
-                  className="flex flex-col gap-3 p-5 transition-colors hover:bg-paper-2 md:p-6"
-                >
-                  <span className="type-mono-caps">{partner.name}</span>
-                  <span className="type-h3">{item.title}</span>
-                  <div className="mt-auto flex items-center justify-between">
-                    <span className="font-mono text-[14px] font-medium tracking-[0.04em] text-brand-red">
-                      {item.costPoints}&nbsp;Б
-                    </span>
-                    <span className="text-[13px] font-medium text-ink">
-                      Обменять →
-                    </span>
-                  </div>
-                </Link>
-              );
-            })}
+            {items.map((item) => (
+              <Link
+                href={`/shop/${item.slug}`}
+                key={item.slug}
+                className="flex flex-col gap-3 p-5 transition-colors hover:bg-paper-2 md:p-6"
+              >
+                <span className="type-mono-caps">{item.partnerName}</span>
+                <span className="type-h3">{item.title}</span>
+                <div className="mt-auto flex items-center justify-between">
+                  <span className="font-mono text-[14px] font-medium tracking-[0.04em] text-brand-red">
+                    {item.costPoints}&nbsp;Б
+                  </span>
+                  <span className="text-[13px] font-medium text-ink">
+                    Обменять →
+                  </span>
+                </div>
+              </Link>
+            ))}
           </div>
         </div>
       </Wrap>
