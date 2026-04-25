@@ -1,5 +1,11 @@
 # GitHub + Claude + Deploy Checklist
 
+> **Полный пошаговый гайд по подъёму VM, env, миграциям и reverse-proxy:**
+> [`docs/DEPLOY-RUNBOOK.md`](./DEPLOY-RUNBOOK.md)
+>
+> Этот документ — высокоуровневые правила и git/процесс. Конкретика деплоя — в runbook.
+
+
 ## 1. Репозиторий
 
 1. Создать GitHub repository `cityrnng`.

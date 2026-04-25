@@ -16,18 +16,21 @@ export default async function ProfilePage({
 }: {
   searchParams: { strava?: string; reason?: string };
 }) {
-  const session = await getSession();
-  if (!session) redirect("/auth");
-
-  const [stravaStatus, state] = await Promise.all([
+  const [session, stravaStatus, state] = await Promise.all([
+    getSession(),
     getStravaStatus(),
     getSiteState(),
   ]);
+  // Real session OR dev-mock authed unlocks the page.
+  if (!state.isAuthed) redirect("/auth");
+
   const stravaFlash = searchParams.strava;
   const stravaReason = searchParams.reason;
-  const profile = session.profile;
-  const displayName =
-    profile?.displayName?.trim() || session.email.split("@")[0];
+  // Profile data prefers real session; falls back to mock-derived view when only dev-authed.
+  const profile = session?.profile ?? null;
+  const email = session?.email ?? "—";
+  const roles = session?.roles ?? [];
+  const displayName = state.user.name;
 
   return (
     <>
@@ -44,7 +47,7 @@ export default async function ProfilePage({
             <h1 className="type-hero mt-4" style={{ fontSize: 64 }}>
               {displayName}
             </h1>
-            <p className="type-lede mt-2">{session.email}</p>
+            <p className="type-lede mt-2">{email}</p>
           </Wrap>
         </section>
 
@@ -86,19 +89,13 @@ export default async function ProfilePage({
             <div className="flex flex-col gap-6">
               <h2 className="type-h2">Профиль</h2>
               <dl className="flex flex-col gap-3 border border-ink bg-paper">
-                <Row k="Email" v={session.email} />
+                <Row k="Email" v={email} />
                 <Row k="Имя" v={profile?.firstName ?? "—"} />
                 <Row k="Фамилия" v={profile?.lastName ?? "—"} />
                 <Row k="Город" v={profile?.city ?? CLUB.city} />
-                <Row
-                  k="Telegram"
-                  v={profile?.telegramHandle ?? "—"}
-                />
-                <Row
-                  k="Instagram"
-                  v={profile?.instagramHandle ?? "—"}
-                />
-                <Row k="Роли" v={session.roles.join(", ") || "—"} />
+                <Row k="Telegram" v={profile?.telegramHandle ?? "—"} />
+                <Row k="Instagram" v={profile?.instagramHandle ?? "—"} />
+                <Row k="Роли" v={roles.join(", ") || "runner"} />
               </dl>
               <p className="text-[13px] text-muted">
                 Редактирование профиля — в&nbsp;админке (Epic 1 follow-up).

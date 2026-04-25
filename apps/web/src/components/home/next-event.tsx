@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { Wrap } from "@/components/site/wrap";
+import { Badge } from "@/components/ui/badge";
 import { CLUB } from "@/lib/club";
 import type { DisplayEvent } from "@/lib/display-event";
 import { LOCATIONS } from "@/lib/home-mock";
@@ -13,10 +14,23 @@ export function NextEvent({ event }: { event: DisplayEvent }) {
       <Wrap className="py-16 lg:py-24">
         <div className="mb-10 flex flex-col items-start justify-between gap-6 lg:flex-row lg:items-end">
           <div className="flex flex-col gap-3">
-            <span className="type-mono-caps">ближайшее событие</span>
+            <div className="flex items-center gap-2">
+              <span className="type-mono-caps">ближайшее событие</span>
+              {e.type === "special" ? <Badge variant="primary">Спец</Badge> : null}
+              {e.type === "partner" ? <Badge variant="soft">Партнёр</Badge> : null}
+            </div>
             <h2 className="type-h2">
-              Ближайший{" "}
-              <em className="not-italic text-brand-red">{CLUB.name}</em>.
+              {e.type === "special" ? (
+                <>
+                  Спецсобытие —{" "}
+                  <em className="not-italic text-brand-red">{e.district}</em>.
+                </>
+              ) : (
+                <>
+                  Ближайший{" "}
+                  <em className="not-italic text-brand-red">{CLUB.name}</em>.
+                </>
+              )}
             </h2>
           </div>
           <Link

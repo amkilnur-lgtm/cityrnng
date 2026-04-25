@@ -2,8 +2,9 @@ import Link from "next/link";
 import { SiteFooter } from "@/components/site/footer";
 import { SiteNav } from "@/components/site/nav";
 import { Wrap } from "@/components/site/wrap";
-import { filterUpcoming, listPublicEvents } from "@/lib/api-events";
+import { Badge } from "@/components/ui/badge";
 import { CLUB, DISTANCE_RANGE } from "@/lib/club";
+import { getDisplayUpcomingList, type ListedEvent } from "@/lib/display-event";
 import { getSiteState } from "@/lib/site-state";
 
 export const metadata = { title: "События · CITYRNNG" };
@@ -27,7 +28,7 @@ function formatDate(iso: string) {
 export default async function EventsPage() {
   const [state, events] = await Promise.all([
     getSiteState(),
-    listPublicEvents().then(filterUpcoming),
+    getDisplayUpcomingList(8),
   ]);
 
   return (
@@ -39,13 +40,13 @@ export default async function EventsPage() {
             <div className="flex flex-col gap-3">
               <span className="type-mono-caps">расписание</span>
               <h1 className="type-hero" style={{ fontSize: 72 }}>
-                Пробежки на&nbsp;
+                События на&nbsp;
                 <em className="not-italic text-brand-red">неделе</em>.
               </h1>
               <p className="type-lede max-w-[640px]">
                 Каждую {CLUB.runDayLong} в&nbsp;{CLUB.runTime} — старт
                 в&nbsp;одном из&nbsp;районов {CLUB.cityGenitive}. Две дистанции
-                на&nbsp;выбор: {DISTANCE_RANGE}.
+                на&nbsp;выбор: {DISTANCE_RANGE}. Спецсобытия отмечены отдельно.
               </p>
             </div>
           </Wrap>
@@ -57,53 +58,14 @@ export default async function EventsPage() {
               <EmptyState />
             ) : (
               <ul className="flex flex-col border border-ink">
-                {events.map((e, idx) => {
-                  const d = formatDate(e.startsAt);
-                  return (
-                    <li
-                      key={e.id}
-                      className={
-                        idx > 0 ? "border-t border-ink" : undefined
-                      }
-                    >
-                      <Link
-                        href={`/events/${e.id}`}
-                        className="grid grid-cols-1 gap-4 p-6 transition-colors hover:bg-paper-2 md:grid-cols-[140px_1fr_auto] md:items-center md:gap-8 md:p-8"
-                      >
-                        <div className="flex flex-col gap-0.5">
-                          <span className="type-mono-caps">
-                            {d.weekday}&nbsp;·&nbsp;{d.month}
-                          </span>
-                          <span className="font-display text-[56px] font-bold leading-none tracking-[-0.03em] text-ink">
-                            {d.day}
-                          </span>
-                          <span className="mt-1 font-mono text-[13px] font-medium tracking-[0.04em] text-ink">
-                            {d.time}
-                          </span>
-                        </div>
-
-                        <div className="flex flex-col gap-2">
-                          <h3 className="type-h3">{e.title}</h3>
-                          {e.locationName ? (
-                            <p className="text-[13px] text-graphite">
-                              {e.locationName}
-                              {e.locationAddress ? ` · ${e.locationAddress}` : ""}
-                            </p>
-                          ) : null}
-                          {e.isPointsEligible && e.basePointsAward > 0 ? (
-                            <span className="font-mono text-[12px] font-medium tracking-[0.04em] text-brand-red">
-                              +{e.basePointsAward}&nbsp;Б
-                            </span>
-                          ) : null}
-                        </div>
-
-                        <span className="font-sans text-[14px] font-medium text-ink md:justify-self-end">
-                          Подробнее →
-                        </span>
-                      </Link>
-                    </li>
-                  );
-                })}
+                {events.map((e, idx) => (
+                  <li
+                    key={e.id}
+                    className={idx > 0 ? "border-t border-ink" : undefined}
+                  >
+                    <EventRow event={e} />
+                  </li>
+                ))}
               </ul>
             )}
           </Wrap>
@@ -111,6 +73,59 @@ export default async function EventsPage() {
       </main>
       <SiteFooter />
     </>
+  );
+}
+
+function EventRow({ event }: { event: ListedEvent }) {
+  const d = formatDate(event.startsAt);
+  // Materialized rule occurrences ("rule:UUID:DATE") have no detail page yet —
+  // route them to /districts. Everything else (real events + mocks) goes to detail.
+  const detailHref = event.id.startsWith("rule:")
+    ? "/districts"
+    : `/events/${event.id}`;
+
+  return (
+    <Link
+      href={detailHref}
+      className="grid grid-cols-1 gap-4 p-6 transition-colors hover:bg-paper-2 md:grid-cols-[140px_1fr_auto] md:items-center md:gap-8 md:p-8"
+    >
+      <div className="flex flex-col gap-0.5">
+        <span className="type-mono-caps">
+          {d.weekday}&nbsp;·&nbsp;{d.month}
+        </span>
+        <span className="font-display text-[56px] font-bold leading-none tracking-[-0.03em] text-ink">
+          {d.day}
+        </span>
+        <span className="mt-1 font-mono text-[13px] font-medium tracking-[0.04em] text-ink">
+          {d.time}
+        </span>
+      </div>
+
+      <div className="flex flex-col gap-2">
+        <div className="flex flex-wrap items-center gap-2">
+          {event.type === "special" ? (
+            <Badge variant="primary">Спец</Badge>
+          ) : event.type === "partner" ? (
+            <Badge variant="soft">Партнёр</Badge>
+          ) : (
+            <Badge variant="default">Среда</Badge>
+          )}
+          <h3 className="type-h3">{event.title}</h3>
+        </div>
+        {event.locationName ? (
+          <p className="text-[13px] text-graphite">{event.locationName}</p>
+        ) : null}
+        {event.isPointsEligible && event.basePointsAward > 0 ? (
+          <span className="font-mono text-[12px] font-medium tracking-[0.04em] text-brand-red">
+            +{event.basePointsAward}&nbsp;Б
+          </span>
+        ) : null}
+      </div>
+
+      <span className="font-sans text-[14px] font-medium text-ink md:justify-self-end">
+        Подробнее →
+      </span>
+    </Link>
   );
 }
 

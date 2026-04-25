@@ -1,25 +1,17 @@
 import { cookies } from "next/headers";
 import { API_BASE_URL, AT_COOKIE } from "@/lib/api-config";
+import type {
+  PointsBalance,
+  PointsHistory,
+} from "@/lib/api-points-types";
 
-export type PointsBalance = { balance: number };
-
-export type PointsTxnDirection = "credit" | "debit";
-
-export type PointsTxn = {
-  id: string;
-  direction: PointsTxnDirection;
-  amount: number;
-  balanceAfter: number;
-  reasonType: string;
-  reasonRef: string | null;
-  comment: string | null;
-  createdAt: string;
-};
-
-export type PointsHistory = {
-  rows: PointsTxn[];
-  nextCursor: string | null;
-};
+export type {
+  PointsBalance,
+  PointsHistory,
+  PointsTxn,
+  PointsTxnDirection,
+} from "@/lib/api-points-types";
+export { reasonLabel } from "@/lib/api-points-types";
 
 function authHeaders(): HeadersInit | null {
   const token = cookies().get(AT_COOKIE)?.value;
@@ -63,18 +55,4 @@ export async function getPointsHistory(opts?: {
   } catch {
     return { rows: [], nextCursor: null };
   }
-}
-
-const REASON_LABELS: Record<string, string> = {
-  signup_bonus: "Приветственный бонус",
-  event_attendance_first: "Первая пробежка",
-  event_attendance_regular: "Пробежка",
-  event_attendance_special: "Спецсобытие",
-  event_attendance_reversal: "Отмена начисления",
-  manual_adjustment: "Ручная корректировка",
-  reward_redemption: "Списание · обмен на reward",
-};
-
-export function reasonLabel(reasonType: string): string {
-  return REASON_LABELS[reasonType] ?? reasonType;
 }

@@ -56,6 +56,11 @@ enum CityLocationStatus {
   archived
 }
 
+enum RecurrenceRuleStatus {
+  active
+  paused
+}
+
 enum PointAccountStatus {
   active
   blocked
@@ -103,6 +108,7 @@ model User {
   roles             UserRole[]
   sessions          Session[]
   createdEvents     Event[]                 @relation("EventCreatedBy")
+  createdRecurrenceRules EventRecurrenceRule[] @relation("RecurrenceRuleCreatedBy")
   providerAccounts  UserProviderAccount[]
   externalActivities ExternalActivity[]
   attendances       EventAttendance[]       @relation("AttendanceUser")
@@ -204,16 +210,68 @@ model Event {
   isPointsEligible      Boolean     @default(false) @map("is_points_eligible")
   basePointsAward       Int         @default(0) @map("base_points_award")
   createdById           String      @map("created_by") @db.Uuid
+  /** When this event is an override of a recurring rule occurrence. */
+  recurrenceRuleId      String?     @map("recurrence_rule_id") @db.Uuid
+  /** The materialized rule date this event replaces (matched on the calendar day). */
+  overridesOccurrenceAt DateTime?   @map("overrides_occurrence_at") @db.Date
   createdAt             DateTime    @default(now()) @map("created_at")
   updatedAt             DateTime    @updatedAt @map("updated_at")
 
-  createdBy   User              @relation("EventCreatedBy", fields: [createdById], references: [id])
-  syncRule    EventSyncRule?
-  attendances EventAttendance[]
+  createdBy        User                 @relation("EventCreatedBy", fields: [createdById], references: [id])
+  recurrenceRule   EventRecurrenceRule? @relation("RuleOverrides", fields: [recurrenceRuleId], references: [id])
+  syncRule         EventSyncRule?
+  attendances      EventAttendance[]
 
+  @@unique([recurrenceRuleId, overridesOccurrenceAt], map: "uq_event_overrides_per_rule_date")
   @@index([status, startsAt])
   @@index([type])
   @@map("events")
+}
+
+/**
+ * Defines a recurring schedule (e.g. "every Wednesday 19:30, all 3 city
+ * locations, regular type, points-eligible"). Materialized on demand by
+ * EventOccurrenceService — no DB row per occurrence unless an override
+ * Event explicitly replaces it.
+ */
+model EventRecurrenceRule {
+  id                  String                       @id @default(uuid()) @db.Uuid
+  title               String
+  type                EventType                    @default(regular)
+  status              RecurrenceRuleStatus         @default(active)
+  /** 0 = Sunday, 1 = Monday, ... 6 = Saturday (matches JS Date.getDay). */
+  dayOfWeek           Int                          @map("day_of_week")
+  /** "HH:MM" 24h string in the club's timezone. */
+  timeOfDay           String                       @map("time_of_day")
+  durationMinutes     Int                          @map("duration_minutes")
+  isPointsEligible    Boolean                      @default(true) @map("is_points_eligible")
+  basePointsAward     Int                          @default(0) @map("base_points_award")
+  /** Rule kicks in from this date (inclusive). */
+  startsFromDate      DateTime                     @map("starts_from_date") @db.Date
+  /** Optional sunset — rule stops generating occurrences after this date. */
+  endsAtDate          DateTime?                    @map("ends_at_date") @db.Date
+  createdById         String                       @map("created_by") @db.Uuid
+  createdAt           DateTime                     @default(now()) @map("created_at")
+  updatedAt           DateTime                     @updatedAt @map("updated_at")
+
+  createdBy        User                          @relation("RecurrenceRuleCreatedBy", fields: [createdById], references: [id])
+  locations        EventRecurrenceRuleLocation[]
+  overridingEvents Event[]                       @relation("RuleOverrides")
+
+  @@index([status, dayOfWeek])
+  @@map("event_recurrence_rules")
+}
+
+model EventRecurrenceRuleLocation {
+  ruleId     String   @map("rule_id") @db.Uuid
+  locationId String   @map("location_id") @db.Uuid
+  createdAt  DateTime @default(now()) @map("created_at")
+
+  rule     EventRecurrenceRule @relation(fields: [ruleId], references: [id], onDelete: Cascade)
+  location CityLocation        @relation("CityLocationRecurrenceRules", fields: [locationId], references: [id], onDelete: Cascade)
+
+  @@id([ruleId, locationId])
+  @@map("event_recurrence_rule_locations")
 }
 
 model EventSyncRule {
@@ -323,7 +381,8 @@ model CityLocation {
   createdAt     DateTime           @default(now()) @map("created_at")
   updatedAt     DateTime           @updatedAt @map("updated_at")
 
-  syncRules EventSyncRuleLocation[]
+  syncRules       EventSyncRuleLocation[]
+  recurrenceRules EventRecurrenceRuleLocation[] @relation("CityLocationRecurrenceRules")
 
   @@index([city])
   @@index([status])

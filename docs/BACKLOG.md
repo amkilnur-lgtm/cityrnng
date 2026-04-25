@@ -11,14 +11,24 @@
 | Эпик | Статус | Комментарий |
 |---|---|---|
 | 0. Foundation | ✅ | монорепо, docker-compose, CI, env loader |
-| 1. Auth & Profiles | 🔄 | API: magic-link, sessions, `/me`, profiles, roles + seed. Пока нет: `/auth/refresh`, `/auth/logout`, редактирование профиля, UI |
-| 2. Events | 🔄 | API: admin CRUD + sync-rules + список attendances. Пользовательский registration-flow **сознательно заменён** на Strava-matching (см. Epic 3). UI пока нет |
-| 3. Check-in | 🔄 заменён | QR-поток отменён. Вместо него: Strava connect → ingestion → `AttendanceMatcherService` → `event_attendances` (auto_approve или ручной approve админом) |
-| 4. Points Engine | 🔄 | Ledger (`point_accounts`, `point_transactions`) + idempotency, `signup_bonus`, `event_attendance_*`, `manual_adjustment`, `/points/balance`, `/points/history`, admin adjust. Пока нет: first-run / streak / milestone / returning / campaign / partner bonus'ов, reversal flow, `point_rules` как таблица |
-| 5. Rewards & Partners | ⭕ | не начинался |
-| 6. Admin Panel | ⭕ | backend-эндпоинты частично готовы, UI в `apps/web` отсутствует |
-| 7. Marketing Site | ⭕ | `apps/web` пустой (layout + page) |
-| 8. Notifications & Analytics | ⭕ | не начинался |
+| 1. Auth & Profiles | 🔄 | API: magic-link (без email-канала на проде!), sessions, `/me`, profiles, roles + seed. **Frontend:** `/auth` magic-link форма + `/auth/verify`, httpOnly cookies, logout, `/app/profile` view-only. Пока нет: фактическая отправка email (см. DEPLOY-RUNBOOK §gap), `/auth/refresh`, `/auth/logout` API endpoint, редактирование профиля |
+| 2. Events | 🔄 | API: admin CRUD + sync-rules + attendances. **Recurrence (Stage G):** `event_recurrence_rules` + materialized `GET /events/upcoming` ✅. Регистрация заменена на Strava-matching. **Frontend:** `/events` list + `/events/[id]` detail с Badge regular/special/partner ✅. Не хватает: admin UI для recurrence-rules (Epic 6), detail-страница для materialized rule occurrences (`rule:UUID:DATE`) |
+| 3. Check-in | 🔄 заменён | QR-поток отменён. Вместо него: Strava connect → ingestion → `AttendanceMatcherService` → `event_attendances` (auto_approve или ручной approve админом). **Frontend:** `/app/profile` со StravaCard (connect/disconnect через server actions), `/integrations/strava/callback` Next.js wrapper для OAuth-редиректа |
+| 4. Points Engine | 🔄 | Ledger + idempotency, `signup_bonus`, `event_attendance_*`, `manual_adjustment`, `/points/balance`, `/points/history`, admin adjust. **Frontend:** `/app/points` с балансом + Load-more пагинацией. Пока нет: first-run / streak / milestone / returning / campaign / partner bonus'ов, reversal flow, `point_rules` как таблица |
+| 5. Rewards & Partners | 🔄 backend ⭕ / frontend ✅ моки | **Backend:** не начат — таблиц `partners`/`rewards`/`reward_redemptions` нет. **Frontend:** `/shop` каталог + `/shop/[slug]` детали + `/app/rewards` (с QR-stub). Все на моках в `lib/home-mock.ts` (PARTNERS, REWARDS, MY_REDEMPTIONS) — структура зеркалит будущую API. CTA "Обменять" disabled до бэка |
+| 6. Admin Panel | ⭕ | backend-эндпоинты частично готовы (events, locations, attendances, points), UI в `apps/web` отсутствует. Critical для запуска: CRUD recurrence-rules + special events |
+| 7. Marketing Site | ✅ | Главная (guest+authed), `/auth`, `/events`, `/events/[id]`, `/how-it-works`, `/about`, `/faq`, `/partners`, `/districts` (с Я.Картами), `/journal` + `/journal/[id]`, `/shop`, `/terms`+`/privacy`+`/agreement` (stubs). Дев-toggle `[GUEST\|AUTHED]` для проверки authed-видов без API. C3 design system (Manrope/Space Grotesk/JetBrains Mono + tokens) |
+| 8. Notifications & Analytics | ⭕ | не начинался. **Critical блокер**: email-канал для magic-link |
+
+## Q. Frontend-only stage map (актуально на 2026-04-25)
+
+Большая часть UI собрана на моках, ждёт реальные endpoints:
+
+- `/shop` + `/app/rewards` — Epic 5 backend
+- Edit profile UI — нужен `PATCH /me`
+- Admin panel — Epic 6 целиком
+- Recurrence rules admin — Epic 6 partial
+- Email-доставка magic-link — Epic 8 (на ней блочится прод-логин)
 
 Дополнительно влито: идемпотентный Prisma seed для ролей `runner/admin/partner` + опциональное повышение known-email в admin (`SEED_ADMIN_EMAIL`). Это prerequisite для admin-protected flows, не самостоятельный эпик.
 

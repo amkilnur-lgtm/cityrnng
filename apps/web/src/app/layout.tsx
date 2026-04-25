@@ -1,6 +1,8 @@
 import type { Metadata } from "next";
 import type { ReactNode } from "react";
 import { JetBrains_Mono, Manrope, Space_Grotesk } from "next/font/google";
+import { DevStateToggle } from "@/components/site/dev-state-toggle";
+import { getSession } from "@/lib/session";
 import "./globals.css";
 
 const sans = Manrope({
@@ -28,13 +30,22 @@ export const metadata: Metadata = {
   description: "City running community platform",
 };
 
-export default function RootLayout({ children }: { children: ReactNode }) {
+export default async function RootLayout({
+  children,
+}: {
+  children: ReactNode;
+}) {
+  // Hide dev toggle for real authenticated users; show otherwise on every route.
+  const realSession = await getSession();
   return (
     <html
       lang="ru"
       className={`${sans.variable} ${display.variable} ${mono.variable}`}
     >
-      <body>{children}</body>
+      <body>
+        {children}
+        {!realSession ? <DevStateToggle /> : null}
+      </body>
     </html>
   );
 }

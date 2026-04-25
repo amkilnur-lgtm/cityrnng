@@ -3,9 +3,39 @@ import { notFound } from "next/navigation";
 import { SiteFooter } from "@/components/site/footer";
 import { SiteNav } from "@/components/site/nav";
 import { Wrap } from "@/components/site/wrap";
-import { getPublicEvent } from "@/lib/api-events";
+import { Badge } from "@/components/ui/badge";
+import { getPublicEvent, type ApiEvent } from "@/lib/api-events";
 import { CLUB, DISTANCE_RANGE } from "@/lib/club";
+import { UPCOMING_EVENTS } from "@/lib/home-mock";
 import { getSiteState } from "@/lib/site-state";
+
+/** Map a mock EventCard (used as API fallback) into ApiEvent shape so the page renders the same way. */
+function mockToApiEvent(id: string): ApiEvent | null {
+  const m = UPCOMING_EVENTS.find((e) => e.id === id);
+  if (!m) return null;
+  const start = new Date(m.startsAt);
+  const endsAt = new Date(start.getTime() + 90 * 60_000);
+  return {
+    id: m.id,
+    title: m.title ?? `${CLUB.name} — ${m.location.district}`,
+    slug: m.id,
+    description: null,
+    type: m.type,
+    status: "published",
+    startsAt: m.startsAt,
+    endsAt: endsAt.toISOString(),
+    locationName: m.location.venue ?? m.location.district,
+    locationAddress: null,
+    locationLat: null,
+    locationLng: null,
+    capacity: null,
+    registrationOpenAt: null,
+    registrationCloseAt: null,
+    isPointsEligible: true,
+    basePointsAward: m.type === "regular" ? 30 : 50,
+    syncRule: null,
+  };
+}
 
 const RU_MONTHS = [
   "января", "февраля", "марта", "апреля", "мая", "июня",
@@ -31,7 +61,7 @@ export async function generateMetadata({
 }: {
   params: { id: string };
 }) {
-  const event = await getPublicEvent(params.id);
+  const event = (await getPublicEvent(params.id)) ?? mockToApiEvent(params.id);
   return { title: event ? `${event.title} · CITYRNNG` : "Событие · CITYRNNG" };
 }
 
@@ -40,10 +70,12 @@ export default async function EventDetailPage({
 }: {
   params: { id: string };
 }) {
-  const [state, event] = await Promise.all([
+  const [state, apiEvent] = await Promise.all([
     getSiteState(),
     getPublicEvent(params.id),
   ]);
+  // Fall back to mock UPCOMING_EVENTS so non-UUID ids (e.g. "spec-25") still resolve.
+  const event = apiEvent ?? mockToApiEvent(params.id);
   if (!event) notFound();
   const startDate = formatFullDate(event.startsAt);
   const startTime = formatTime(event.startsAt);
@@ -62,9 +94,18 @@ export default async function EventDetailPage({
               >
                 ← Все события
               </Link>
-              <span className="type-mono-caps">
-                {startDate.toUpperCase()} · {startTime}
-              </span>
+              <div className="flex flex-wrap items-center gap-3">
+                {event.type === "special" ? (
+                  <Badge variant="primary">Спец</Badge>
+                ) : event.type === "partner" ? (
+                  <Badge variant="soft">Партнёр</Badge>
+                ) : (
+                  <Badge variant="default">Среда</Badge>
+                )}
+                <span className="type-mono-caps">
+                  {startDate.toUpperCase()} · {startTime}
+                </span>
+              </div>
               <h1 className="type-hero" style={{ fontSize: 72 }}>
                 {event.title}
               </h1>

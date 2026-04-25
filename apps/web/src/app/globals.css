@@ -44,6 +44,25 @@
 }
 
 /* =========================================================
+   Hatching pattern — diagonal ink strokes on paper.
+   Use for "done/completed" surfaces where solid black would be
+   too heavy. Text stays readable in dark ink because lines are
+   sparse (~14% density).
+   ========================================================= */
+@layer utilities {
+  .hatch-done {
+    background-color: hsl(var(--paper));
+    background-image: repeating-linear-gradient(
+      45deg,
+      hsl(var(--ink) / 0.16) 0,
+      hsl(var(--ink) / 0.16) 1px,
+      transparent 1px,
+      transparent 7px
+    );
+  }
+}
+
+/* =========================================================
    Typography roles (C3 v0)
    Hero/H2 = Space Grotesk. Data/eyebrows = JetBrains Mono.
    Body = Manrope (default via body base).
