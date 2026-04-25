@@ -81,7 +81,7 @@ export function HowItWorks() {
           </Link>
         </div>
 
-        <div className="grid grid-cols-1 border-t border-ink md:grid-cols-3">
+        <div className="grid grid-cols-1 border border-ink md:grid-cols-3">
           {STEPS.map((step, idx) => (
             <div
               key={step.n}

@@ -39,7 +39,8 @@ export default async function EventsPage() {
             <div className="flex flex-col gap-3">
               <span className="type-mono-caps">расписание</span>
               <h1 className="type-hero" style={{ fontSize: 72 }}>
-                Пробежки <em className="not-italic text-brand-red">впереди</em>.
+                Пробежки на&nbsp;
+                <em className="not-italic text-brand-red">неделе</em>.
               </h1>
               <p className="type-lede max-w-[640px]">
                 Каждую {CLUB.runDayLong} в&nbsp;{CLUB.runTime} — старт
@@ -118,11 +119,12 @@ function EmptyState() {
     <div className="flex flex-col items-start gap-4 border border-ink bg-paper-2 p-8 md:p-12">
       <span className="type-mono-caps">расписание формируется</span>
       <h2 className="type-h2">
-        Ближайших сред <em className="not-italic text-brand-red">пока нет</em>.
+        Ближайших событий{" "}
+        <em className="not-italic text-brand-red">пока нет</em>.
       </h2>
       <p className="max-w-[520px] text-[15px] leading-[1.55] text-graphite">
-        Как только событие появится в&nbsp;админке — покажем здесь. Обычно
-        ближайший старт анонсируем в&nbsp;понедельник.
+        Как только новое появится — покажем здесь. Обычно ближайший старт
+        анонсируем в&nbsp;понедельник.
       </p>
       <Link
         href="/"

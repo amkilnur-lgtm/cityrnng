@@ -2,6 +2,7 @@ import Image from "next/image";
 import { Wrap } from "@/components/site/wrap";
 import { CLUB, DISTANCE_RANGE } from "@/lib/club";
 import type { DisplayEvent } from "@/lib/display-event";
+import { LOCATIONS } from "@/lib/home-mock";
 
 export function Hero({ event }: { event: DisplayEvent }) {
   return (
@@ -20,18 +21,18 @@ function HeroMain() {
   return (
     <div className="flex flex-col">
       <h1 className="type-hero">
-        Беги по&nbsp;{CLUB.city}.{" "}
+        Беги по&nbsp;городу.{" "}
         <em className="not-italic text-brand-red">Не&nbsp;один.</em>
       </h1>
 
       <p className="type-lede mt-6 max-w-[540px]">
         {CLUB.name} — открытое беговое сообщество. Каждую среду
         в&nbsp;{CLUB.runTime} стартуем с&nbsp;трёх точек: Центр, Проспект,
-        Черниковка. Без секундомера, без гонки, без снобизма —{" "}
+        Черниковка. После пробежки —{" "}
         <span className="bg-brand-tint px-1.5 py-0.5 font-semibold text-brand-red-ink">
-          просто приходи
+          кофе и&nbsp;разговоры
         </span>
-        . После пробежки — кофе и&nbsp;разговоры.
+        .
       </p>
 
       <form className="mt-10 flex flex-col gap-3" noValidate>
@@ -67,17 +68,19 @@ function HeroSide({ event }: { event: DisplayEvent }) {
     <aside className="flex flex-col lg:sticky lg:top-24 lg:self-start">
       <div className="relative aspect-square border border-ink bg-paper-2">
         <div className="absolute left-5 top-5 z-10 flex flex-col gap-0.5">
-          <span className="type-mono-caps">Маршрут</span>
+          <span className="type-mono-caps">Три маршрута</span>
           <span className="font-sans text-[13px] font-medium text-ink">
-            {event.district} · {DISTANCE_RANGE}
+            {Object.values(LOCATIONS)
+              .map((l) => l.district)
+              .join(" · ")}
           </span>
         </div>
         <Image
-          src="/brand/runner-red.png"
-          alt="Бегун Ситираннинг"
+          src="/brand/runners.png"
+          alt="Бегуны Ситираннинг"
           fill
           sizes="(max-width: 1024px) 100vw, 40vw"
-          style={{ objectFit: "contain", padding: "11%" }}
+          style={{ objectFit: "contain", padding: "10%" }}
           priority
         />
       </div>
@@ -105,11 +108,11 @@ function HeroSide({ event }: { event: DisplayEvent }) {
           <div className="flex items-center justify-between">
             {event.typicalTurnout ? (
               <span className="text-[13px] text-graphite">
-                Обычно приходит{" "}
+                Обычно собирается{" "}
                 <b className="font-semibold text-ink">
                   {event.typicalTurnout}
                 </b>{" "}
-                соседей
+                человек
               </span>
             ) : (
               <span className="text-[13px] text-graphite">

@@ -32,7 +32,7 @@ export default async function HomePage({
         {state.isAuthed ? (
           <>
             <PersonalDashboard user={state.user} nextEvent={nextEvent} />
-            <NextEvent isAuthed event={nextEvent} />
+            <NextEvent event={nextEvent} />
             <ShopPreview user={state.user} />
             <Locations />
             <Journal />
@@ -42,7 +42,7 @@ export default async function HomePage({
           <>
             <Hero event={nextEvent} />
             <HowItWorks />
-            <NextEvent isAuthed={false} event={nextEvent} />
+            <NextEvent event={nextEvent} />
             <Locations />
             <Journal />
             <FinalCta isAuthed={false} />

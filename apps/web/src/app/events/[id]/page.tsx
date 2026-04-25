@@ -60,7 +60,7 @@ export default async function EventDetailPage({
                 href="/events"
                 className="self-start font-mono text-[11px] font-medium uppercase tracking-[0.14em] text-muted hover:text-brand-red"
               >
-                ← Все пробежки
+                ← Все события
               </Link>
               <span className="type-mono-caps">
                 {startDate.toUpperCase()} · {startTime}

@@ -22,7 +22,7 @@ export function Journal() {
           </Link>
         </div>
 
-        <div className="grid grid-cols-1 border-t border-ink md:grid-cols-3">
+        <div className="grid grid-cols-1 border border-ink md:grid-cols-3">
           {JOURNAL.map((post, idx) => (
             <Link
               href={`/journal/${post.id}`}

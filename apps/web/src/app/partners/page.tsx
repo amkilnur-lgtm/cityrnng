@@ -32,7 +32,7 @@ export default async function PartnersPage() {
             <em className="not-italic text-brand-red">бренды</em>.
           </>
         }
-        lede={`Бег для нас — повод собрать соседей, а ты — место, где они согреются и поговорят после. Если делаешь живое в ${CLUB.cityGenitive} — приходи в клуб партнёром.`}
+        lede={`Бег для нас — повод собрать людей, а ты — место, где они согреются и поговорят после. Если делаешь живое в ${CLUB.cityGenitive} — приходи в клуб партнёром.`}
       />
 
       <section className="border-b border-ink">
@@ -72,7 +72,7 @@ export default async function PartnersPage() {
           <div className="flex flex-col gap-4">
             <span className="type-mono-caps">как это устроено</span>
             <h2 className="type-h2">
-              Соседи приходят к&nbsp;тебе на&nbsp;
+              Бегуны приходят к&nbsp;тебе на&nbsp;
               <em className="not-italic text-brand-red">кофе</em> после
               пробежки.
             </h2>
