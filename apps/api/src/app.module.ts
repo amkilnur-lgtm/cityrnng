@@ -14,6 +14,7 @@ import { CryptoModule } from "./crypto/crypto.module";
 import { StravaModule } from "./integrations/strava/strava.module";
 import { LocationsModule } from "./locations/locations.module";
 import { PointsModule } from "./points/points.module";
+import { RewardsModule } from "./rewards/rewards.module";
 import { JwtAuthGuard } from "./auth/guards/jwt-auth.guard";
 
 // Load .env from the monorepo root regardless of cwd. In production, env vars
@@ -39,6 +40,7 @@ const monorepoRootEnv = resolve(__dirname, "..", "..", "..", ".env");
     StravaModule,
     LocationsModule,
     PointsModule,
+    RewardsModule,
   ],
   providers: [{ provide: APP_GUARD, useClass: JwtAuthGuard }],
 })
