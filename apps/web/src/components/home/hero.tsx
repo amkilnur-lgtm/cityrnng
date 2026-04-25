@@ -20,20 +20,18 @@ function HeroMain() {
   return (
     <div className="flex flex-col">
       <h1 className="type-hero">
-        Бегаешь по&nbsp;городу{" "}
-        <span className="font-semibold text-muted-2">—</span> меняешь
-        у&nbsp;соседа на&nbsp;<em className="not-italic text-brand-red">кофе</em>.
+        Беги по&nbsp;{CLUB.city}.{" "}
+        <em className="not-italic text-brand-red">Не&nbsp;один.</em>
       </h1>
 
-      <p className="type-lede mt-6 max-w-[520px]">
-        Соседи, кофейни, маршрут по&nbsp;средам вечером. Без&nbsp;гонки,
-        без&nbsp;секундомера.{" "}
-        <b className="font-semibold text-ink">+50&nbsp;баллов</b>{" "}
-        за&nbsp;регистрацию — хватит на&nbsp;первый{" "}
+      <p className="type-lede mt-6 max-w-[540px]">
+        {CLUB.name} — открытое беговое сообщество. Каждую среду
+        в&nbsp;{CLUB.runTime} стартуем с&nbsp;трёх точек: Центр, Проспект,
+        Черниковка. Без секундомера, без гонки, без снобизма —{" "}
         <span className="bg-brand-tint px-1.5 py-0.5 font-semibold text-brand-red-ink">
-          капучино у&nbsp;Маши
+          просто приходи
         </span>
-        .
+        . После пробежки — кофе и&nbsp;разговоры.
       </p>
 
       <form className="mt-10 flex flex-col gap-3" noValidate>

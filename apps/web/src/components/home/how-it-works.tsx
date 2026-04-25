@@ -14,48 +14,49 @@ type Step = {
 const STEPS: Step[] = [
   {
     n: "01",
-    title: "Вступаешь в ",
-    titleEm: "клуб",
-    body: (
-      <>
-        Регистрируешься по&nbsp;email, подключаешь{" "}
-        <b className="font-semibold text-ink">Strava</b> — один раз.
-        Записываться на&nbsp;каждую среду не&nbsp;нужно, просто приходи.
-      </>
-    ),
-    metaLeft: "один раз",
-    metaRight: "+50 Б",
-  },
-  {
-    n: "02",
-    title: "Приходишь в ",
-    titleEm: "среду",
+    title: "Просто ",
+    titleEm: "приходишь",
     body: (
       <>
         Каждую <b className="font-semibold text-ink">среду в&nbsp;19:30</b> —
-        две дистанции на&nbsp;выбор,{" "}
-        <b className="font-semibold text-ink">5 или&nbsp;10&nbsp;км</b>. Темп
-        любой, Strava сама зафиксирует и&nbsp;начислит баллы.
+        одна из&nbsp;трёх точек на&nbsp;выбор: Центр, Проспект,
+        Черниковка. Без подготовки, без формы, без предварительной записи.
       </>
     ),
-    metaLeft: "темп любой",
-    metaRight: "+30 / +60 Б",
+    metaLeft: "каждую среду",
+    metaRight: "приходи как есть",
+  },
+  {
+    n: "02",
+    title: "Бежишь свой ",
+    titleEm: "темп",
+    body: (
+      <>
+        Две дистанции,{" "}
+        <b className="font-semibold text-ink">5 или&nbsp;10&nbsp;км</b>.
+        Темп любой — можно идти пешком, остановиться, дождаться отстающих.
+        Никаких медалей, никаких рейтингов.
+      </>
+    ),
+    metaLeft: "5 / 10 км",
+    metaRight: "темп любой",
   },
   {
     n: "03",
-    title: "Меняешь на ",
+    title: "Остаёшься на ",
     titleEm: "кофе",
     body: (
       <>
-        Заходишь в&nbsp;любую кофейню-партнёра, показываешь QR — получаешь{" "}
+        На&nbsp;финише —{" "}
         <b className="font-semibold text-ink">
-          капучино, круассан или&nbsp;книгу
+          Monkey&nbsp;Grinder и&nbsp;Surf&nbsp;Coffee
         </b>
-        .
+        . Знакомства, разговоры, иногда — книжный клуб или летние coffee
+        ride'ы. Это тоже часть.
       </>
     ),
-    metaLeft: "37 партнёров",
-    metaRight: "−50 Б",
+    metaLeft: "кофейни-партнёры",
+    metaRight: "разговоры",
   },
 ];
 

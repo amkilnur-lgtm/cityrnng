@@ -39,7 +39,7 @@ export default async function EventsPage() {
             <div className="flex flex-col gap-3">
               <span className="type-mono-caps">расписание</span>
               <h1 className="type-hero" style={{ fontSize: 72 }}>
-                Среды <em className="not-italic text-brand-red">впереди</em>.
+                Пробежки <em className="not-italic text-brand-red">впереди</em>.
               </h1>
               <p className="type-lede max-w-[640px]">
                 Каждую {CLUB.runDayLong} в&nbsp;{CLUB.runTime} — старт

@@ -8,23 +8,23 @@ export function FinalCta({ isAuthed }: { isAuthed: boolean }) {
         <h2 className="type-h2 max-w-3xl text-paper">
           {isAuthed ? (
             <>
-              Следующая среда через{" "}
-              <em className="not-italic text-brand-red">1&nbsp;день</em>. Ждём.
+              Среда — это{" "}
+              <em className="not-italic text-brand-red">просто</em>. Ждём.
             </>
           ) : (
             <>
-              Следующая среда через{" "}
-              <em className="not-italic text-brand-red">6&nbsp;дней</em>.
-              Добежим?
+              Не нужно быть{" "}
+              <em className="not-italic text-brand-red">готовым</em>.
+              Достаточно прийти.
             </>
           )}
         </h2>
         <div className="flex flex-wrap gap-3">
           <Link
-            href={isAuthed ? "/events/w-22" : "/auth"}
+            href={isAuthed ? "/events" : "/auth"}
             className="inline-flex h-14 items-center border border-brand-red bg-brand-red px-6 font-sans text-[15px] font-semibold text-paper transition-colors hover:bg-brand-red-ink"
           >
-            {isAuthed ? "Маршрут среды →" : "Войти в клуб →"}
+            {isAuthed ? "Все маршруты →" : "Войти в клуб →"}
           </Link>
           <Link
             href="/about"

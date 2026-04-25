@@ -17,16 +17,17 @@ export function NextEvent({
       <Wrap className="py-16 lg:py-24">
         <div className="mb-10 flex flex-col items-start justify-between gap-6 lg:flex-row lg:items-end">
           <div className="flex flex-col gap-3">
-            <span className="type-mono-caps">ближайший забег</span>
+            <span className="type-mono-caps">ближайшая пробежка</span>
             <h2 className="type-h2">
               {isAuthed ? (
                 <>
-                  Твоя <em className="not-italic text-brand-red">среда</em> —
-                  скоро.
+                  Скоро — твоя{" "}
+                  <em className="not-italic text-brand-red">пробежка</em>.
                 </>
               ) : (
                 <>
-                  Следующая <em className="not-italic text-brand-red">среда</em>.
+                  Следующая{" "}
+                  <em className="not-italic text-brand-red">пробежка</em>.
                 </>
               )}
             </h2>
@@ -35,7 +36,7 @@ export function NextEvent({
             href="/events"
             className="inline-flex h-11 items-center border border-ink bg-paper px-4 font-sans text-[14px] font-semibold text-ink transition-colors hover:bg-ink hover:text-paper"
           >
-            Все среды →
+            Все пробежки →
           </Link>
         </div>
 

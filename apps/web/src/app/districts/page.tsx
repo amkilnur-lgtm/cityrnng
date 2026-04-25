@@ -62,7 +62,7 @@ export default async function DistrictsPage() {
                     href={`/events?district=${loc.slug}`}
                     className="inline-flex h-11 items-center border border-ink bg-paper px-4 font-sans text-[13px] font-semibold text-ink hover:bg-ink hover:text-paper"
                   >
-                    Среды здесь →
+                    Пробежки здесь →
                   </Link>
                   <span className="font-mono text-[11px] uppercase tracking-[0.14em] text-muted-2">
                     карта · скоро

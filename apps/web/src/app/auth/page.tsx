@@ -61,7 +61,7 @@ export default async function AuthPage() {
             <li className="flex gap-3">
               <span className="font-mono text-brand-red">→</span>
               <span>
-                На&nbsp;среды записываться не&nbsp;нужно — приходи, Strava сама
+                На&nbsp;пробежки записываться не&nbsp;нужно — приходи, Strava сама
                 фиксирует.
               </span>
             </li>
