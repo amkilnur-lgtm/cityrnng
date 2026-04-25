@@ -41,7 +41,7 @@ export async function getSiteState(searchParamState?: string): Promise<SiteState
   // entirely so a maliciously-set cookie can't unlock authed state.
   if (process.env.NODE_ENV !== "production") {
     const devCookie = cookies().get(DEV_STATE_COOKIE)?.value;
-    if (devCookie === "authed") {
+    if (devCookie === "authed" || devCookie === "admin") {
       return resolveSiteState("authed");
     }
   }

@@ -17,8 +17,13 @@ export async function POST(req: Request) {
   }
 
   const jar = cookies();
-  if (body.state === "authed") {
-    jar.set(DEV_STATE_COOKIE, "authed", {
+  const accepted = ["authed", "admin"] as const;
+  type Accepted = (typeof accepted)[number];
+  const value = accepted.includes(body.state as Accepted)
+    ? (body.state as Accepted)
+    : null;
+  if (value) {
+    jar.set(DEV_STATE_COOKIE, value, {
       httpOnly: false,
       sameSite: "lax",
       path: "/",
@@ -28,5 +33,5 @@ export async function POST(req: Request) {
     jar.delete(DEV_STATE_COOKIE);
   }
 
-  return NextResponse.json({ ok: true, state: body.state ?? "guest" });
+  return NextResponse.json({ ok: true, state: value ?? "guest" });
 }
