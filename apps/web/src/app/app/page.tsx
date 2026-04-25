@@ -29,21 +29,33 @@ export default async function AppDashboardPage() {
     <>
       <SiteNav state={state} />
       <main>
-        {/* Welcome banner for fresh users — points/profile fetches come in Stage C/D */}
         <section className="border-b border-ink bg-brand-tint/30">
           <Wrap className="flex flex-col gap-3 py-6 md:flex-row md:items-center md:justify-between">
             <p className="text-[14px] text-graphite">
               Привет,{" "}
-              <b className="font-semibold text-ink">{state.user.name}</b>! Личный
-              кабинет собирается — скоро появятся баланс баллов, история забегов
-              и&nbsp;подключение Strava.
+              <b className="font-semibold text-ink">{state.user.name}</b>!
+              Баланс, профиль, обмены и&nbsp;Strava — всё в&nbsp;кабинете.
             </p>
-            <Link
-              href="/app/profile"
-              className="inline-flex h-10 items-center self-start border border-ink bg-paper px-4 font-sans text-[13px] font-semibold text-ink hover:bg-ink hover:text-paper md:self-auto"
-            >
-              Профиль →
-            </Link>
+            <div className="flex flex-wrap gap-2">
+              <Link
+                href="/app/profile"
+                className="inline-flex h-10 items-center border border-ink bg-paper px-4 font-sans text-[13px] font-semibold text-ink hover:bg-ink hover:text-paper"
+              >
+                Профиль
+              </Link>
+              <Link
+                href="/app/points"
+                className="inline-flex h-10 items-center border border-ink bg-paper px-4 font-sans text-[13px] font-semibold text-ink hover:bg-ink hover:text-paper"
+              >
+                Баллы
+              </Link>
+              <Link
+                href="/app/rewards"
+                className="inline-flex h-10 items-center border border-ink bg-paper px-4 font-sans text-[13px] font-semibold text-ink hover:bg-ink hover:text-paper"
+              >
+                Обмены
+              </Link>
+            </div>
           </Wrap>
         </section>
 

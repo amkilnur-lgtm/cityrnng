@@ -154,31 +154,137 @@ export const WEEK_CELLS: WeekCell[] = [
 /** Monthly km target = 3 "done" Wednesdays × max distance. */
 export const MONTHLY_KM_TARGET = 3 * Math.max(...CLUB.distances);
 
-export type ShopItem = {
-  id: string;
+/**
+ * Partners catalog — mock of the future `partners` table (Epic 5).
+ * Single source for /shop, /partners, ShopPreview.
+ */
+export type Partner = {
+  slug: string;
   name: string;
-  partner: string;
-  price: number;
+  shortDescription: string;
+  locations: string[];
 };
 
-export const SHOP_PREVIEW: ShopItem[] = [
+export type PartnerSlug = "monkey-grinder" | "surf-coffee";
+
+export const PARTNERS: Record<PartnerSlug, Partner> = {
+  "monkey-grinder": {
+    slug: "monkey-grinder",
+    name: "Monkey Grinder",
+    shortDescription:
+      "Кофейня в&nbsp;Центре и&nbsp;на&nbsp;Проспекте — точки старта двух пробежек",
+    locations: ["Карла Маркса 41", "Проспект Октября 63А"],
+  },
+  "surf-coffee": {
+    slug: "surf-coffee",
+    name: "Surf Coffee",
+    shortDescription: "Кофейня в&nbsp;Черниковке — точка старта пробежки",
+    locations: ["Первомайская 22"],
+  },
+};
+
+export type Reward = {
+  slug: string;
+  partnerSlug: PartnerSlug;
+  title: string;
+  description?: string;
+  costPoints: number;
+  /** Optional badge text (e.g. "новинка", "до 31 мая"). */
+  badge?: string;
+};
+
+export const REWARDS: Reward[] = [
   {
-    id: "monkey-cappuccino",
-    name: "Капучино",
-    partner: "Monkey Grinder · Карла Маркса",
-    price: 120,
+    slug: "mg-cappuccino",
+    partnerSlug: "monkey-grinder",
+    title: "Капучино",
+    description: "200 мл, на любом молоке. Любая точка Monkey Grinder.",
+    costPoints: 120,
   },
   {
-    id: "monkey-croissant",
-    name: "Круассан с миндалём",
-    partner: "Monkey Grinder · Проспект Октября",
-    price: 180,
+    slug: "mg-croissant",
+    partnerSlug: "monkey-grinder",
+    title: "Круассан с миндалём",
+    description: "Свежий, утром свежевыпеченный. Идёт с кофе.",
+    costPoints: 180,
   },
   {
-    id: "surf-flat-white",
-    name: "Флэт уайт",
-    partner: "Surf Coffee · Черниковка",
-    price: 140,
+    slug: "mg-raf",
+    partnerSlug: "monkey-grinder",
+    title: "Раф ванильный",
+    description: "Любимый напиток зимы. 300 мл.",
+    costPoints: 160,
+  },
+  {
+    slug: "mg-espresso",
+    partnerSlug: "monkey-grinder",
+    title: "Двойной эспрессо",
+    description: "Ристретто или классика — на выбор.",
+    costPoints: 80,
+  },
+  {
+    slug: "sc-flat-white",
+    partnerSlug: "surf-coffee",
+    title: "Флэт уайт",
+    description: "200 мл. Surf-blend, фирменная обжарка.",
+    costPoints: 140,
+  },
+  {
+    slug: "sc-matcha",
+    partnerSlug: "surf-coffee",
+    title: "Матча-латте",
+    description: "Премиум матча из Удзи. На любом молоке.",
+    costPoints: 120,
+    badge: "до 31 мая",
+  },
+  {
+    slug: "sc-cheesecake",
+    partnerSlug: "surf-coffee",
+    title: "Чизкейк Нью-Йорк",
+    description: "Классический, в кофейню привозят утром.",
+    costPoints: 220,
+  },
+  {
+    slug: "sc-sandwich",
+    partnerSlug: "surf-coffee",
+    title: "Сэндвич с тунцом",
+    description: "На цельнозерновом, идеально после 10 км.",
+    costPoints: 260,
+  },
+];
+
+export type RedemptionStatus = "active" | "used" | "expired" | "cancelled";
+
+export type Redemption = {
+  slug: string;
+  rewardSlug: string;
+  costPoints: number;
+  status: RedemptionStatus;
+  /** 6-char alphanumeric code, doubles as QR payload. */
+  code: string;
+  createdAt: string;
+  expiresAt?: string;
+  usedAt?: string;
+};
+
+export const MY_REDEMPTIONS: Redemption[] = [
+  {
+    slug: "r-001",
+    rewardSlug: "mg-cappuccino",
+    costPoints: 120,
+    status: "active",
+    code: "M4XKF7",
+    createdAt: "2026-04-23T19:30:00.000Z",
+    expiresAt: "2026-04-30T23:59:00.000Z",
+  },
+  {
+    slug: "r-002",
+    rewardSlug: "mg-espresso",
+    costPoints: 80,
+    status: "used",
+    code: "M4WKG2",
+    createdAt: "2026-04-15T19:35:00.000Z",
+    usedAt: "2026-04-16T09:12:00.000Z",
   },
 ];
 
