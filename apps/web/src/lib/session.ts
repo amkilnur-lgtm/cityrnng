@@ -4,11 +4,16 @@ import { API_BASE_URL, AT_COOKIE } from "@/lib/api-config";
 export type AuthedUser = {
   id: string;
   email: string;
+  status: string;
   roles: string[];
-  profile?: {
+  profile: {
     displayName?: string | null;
-    avatarUrl?: string | null;
-  };
+    firstName?: string | null;
+    lastName?: string | null;
+    city?: string | null;
+    instagramHandle?: string | null;
+    telegramHandle?: string | null;
+  } | null;
 };
 
 /**

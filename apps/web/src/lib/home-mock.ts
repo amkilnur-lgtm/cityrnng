@@ -17,10 +17,15 @@ export function resolveSiteState(stateParam: string | undefined): SiteState {
 }
 
 export function sessionToSiteState(
-  session: { id: string; email: string; profile?: { displayName?: string | null } } | null,
+  session: {
+    id: string;
+    email: string;
+    profile?: { displayName?: string | null } | null;
+  } | null,
 ): SiteState {
   if (!session) return MOCK_GUEST;
-  const displayName = session.profile?.displayName?.trim() || session.email.split("@")[0];
+  const displayName =
+    session.profile?.displayName?.trim() || session.email.split("@")[0];
   return {
     isAuthed: true,
     user: {
