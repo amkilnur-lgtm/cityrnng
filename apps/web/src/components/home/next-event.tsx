@@ -1,10 +1,16 @@
 import Link from "next/link";
 import { Wrap } from "@/components/site/wrap";
 import { CLUB, DISTANCE_RANGE } from "@/lib/club";
-import { NEXT_EVENT } from "@/lib/home-mock";
+import type { DisplayEvent } from "@/lib/display-event";
 
-export function NextEvent({ isAuthed }: { isAuthed: boolean }) {
-  const e = NEXT_EVENT;
+export function NextEvent({
+  isAuthed,
+  event,
+}: {
+  isAuthed: boolean;
+  event: DisplayEvent;
+}) {
+  const e = event;
 
   return (
     <section className="border-b border-ink">
@@ -15,13 +21,12 @@ export function NextEvent({ isAuthed }: { isAuthed: boolean }) {
             <h2 className="type-h2">
               {isAuthed ? (
                 <>
-                  Твоя среда —{" "}
-                  <em className="not-italic text-brand-red">завтра</em>.
+                  Твоя <em className="not-italic text-brand-red">среда</em> —
+                  скоро.
                 </>
               ) : (
                 <>
-                  Следующая среда через{" "}
-                  <em className="not-italic text-brand-red">1&nbsp;день</em>.
+                  Следующая <em className="not-italic text-brand-red">среда</em>.
                 </>
               )}
             </h2>
@@ -47,15 +52,15 @@ export function NextEvent({ isAuthed }: { isAuthed: boolean }) {
 
           <div className="flex flex-col gap-4 border-b border-ink p-6 md:p-8 lg:border-b-0 lg:border-r">
             <h3 className="font-display text-[32px] font-bold leading-none tracking-[-0.02em] text-ink md:text-[40px]">
-              {e.location.district}
+              {e.district}
             </h3>
             <p className="text-[15px] leading-[1.55] text-graphite">
-              {e.location.venue ? (
-                <>Старт — {e.location.venue}. </>
+              {e.venue ? (
+                <>Старт — {e.venue}. </>
               ) : (
                 <>Точка старта уточняется. </>
               )}
-              {e.location.landmark ? <>Ориентир — {e.location.landmark}. </> : null}
+              {e.landmark ? <>Ориентир — {e.landmark}. </> : null}
               Темп любой, {DISTANCE_RANGE} на&nbsp;выбор.
             </p>
             <div className="flex flex-wrap gap-2">
@@ -73,9 +78,15 @@ export function NextEvent({ isAuthed }: { isAuthed: boolean }) {
             </div>
 
             <p className="mt-auto pt-2 text-[13px] text-graphite">
-              Обычно приходит{" "}
-              <b className="font-semibold text-ink">{e.typicalTurnout}</b>{" "}
-              соседей. Записываться не&nbsp;нужно — просто приходи.
+              {e.typicalTurnout ? (
+                <>
+                  Обычно приходит{" "}
+                  <b className="font-semibold text-ink">{e.typicalTurnout}</b>{" "}
+                  соседей. Записываться не&nbsp;нужно — просто приходи.
+                </>
+              ) : (
+                <>Записываться не&nbsp;нужно — просто приходи.</>
+              )}
             </p>
           </div>
 

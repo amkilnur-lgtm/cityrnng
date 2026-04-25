@@ -1,18 +1,16 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
+import { PointsHistoryList } from "@/components/app/points-history";
 import { SiteFooter } from "@/components/site/footer";
 import { SiteNav } from "@/components/site/nav";
 import { Wrap } from "@/components/site/wrap";
-import {
-  getPointsBalance,
-  getPointsHistory,
-  reasonLabel,
-  type PointsTxn,
-} from "@/lib/api-points";
+import { getPointsBalance, getPointsHistory } from "@/lib/api-points";
 import { getSession } from "@/lib/session";
 import { getSiteState } from "@/lib/site-state";
 
 export const metadata = { title: "Баллы · CITYRNNG" };
+
+const PAGE_SIZE = 25;
 
 export default async function PointsPage() {
   const session = await getSession();
@@ -20,7 +18,7 @@ export default async function PointsPage() {
 
   const [balance, history, state] = await Promise.all([
     getPointsBalance(),
-    getPointsHistory({ limit: 50 }),
+    getPointsHistory({ limit: PAGE_SIZE }),
     getSiteState(),
   ]);
 
@@ -42,9 +40,7 @@ export default async function PointsPage() {
               style={{ fontSize: 120, lineHeight: 0.85 }}
             >
               {balance ? balance.balance : "—"}
-              <span
-                className="ml-3 align-middle font-mono text-[24px] font-medium tracking-[0.04em] text-ink"
-              >
+              <span className="ml-3 align-middle font-mono text-[24px] font-medium tracking-[0.04em] text-ink">
                 Б
               </span>
             </h1>
@@ -58,87 +54,22 @@ export default async function PointsPage() {
                 <span className="type-mono-caps">история</span>
                 <h2 className="type-h2">
                   {history.rows.length > 0
-                    ? `Последние ${history.rows.length} операций`
+                    ? "Операции по баллам"
                     : "Операций пока нет"}
                 </h2>
               </div>
-              {history.nextCursor ? (
-                <span className="font-mono text-[12px] tracking-[0.04em] text-muted">
-                  есть ещё — пагинация в&nbsp;следующем апдейте
-                </span>
-              ) : null}
             </div>
 
             {history.rows.length === 0 ? (
               <EmptyHistory />
             ) : (
-              <ul className="flex flex-col border border-ink">
-                {history.rows.map((t, idx) => (
-                  <li
-                    key={t.id}
-                    className={
-                      idx > 0 ? "border-t border-ink/15" : undefined
-                    }
-                  >
-                    <TxnRow t={t} />
-                  </li>
-                ))}
-              </ul>
+              <PointsHistoryList initial={history} pageSize={PAGE_SIZE} />
             )}
           </Wrap>
         </section>
       </main>
       <SiteFooter />
     </>
-  );
-}
-
-function TxnRow({ t }: { t: PointsTxn }) {
-  const isCredit = t.direction === "credit";
-  const sign = isCredit ? "+" : "−";
-  const dt = new Date(t.createdAt);
-  const date = dt.toLocaleDateString("ru-RU", {
-    day: "2-digit",
-    month: "short",
-  });
-  const time = dt.toLocaleTimeString("ru-RU", {
-    hour: "2-digit",
-    minute: "2-digit",
-  });
-
-  return (
-    <div className="grid grid-cols-[80px_1fr_auto] items-center gap-4 px-5 py-4 md:grid-cols-[120px_1fr_auto] md:px-6">
-      <div className="flex flex-col gap-0.5">
-        <span className="font-mono text-[12px] tracking-[0.04em] text-ink">
-          {date}
-        </span>
-        <span className="font-mono text-[11px] tracking-[0.04em] text-muted">
-          {time}
-        </span>
-      </div>
-      <div className="flex flex-col gap-0.5">
-        <span className="text-[14px] font-medium text-ink">
-          {reasonLabel(t.reasonType)}
-        </span>
-        {t.comment ? (
-          <span className="text-[12px] text-muted">{t.comment}</span>
-        ) : null}
-      </div>
-      <div className="flex flex-col items-end gap-0.5">
-        <span
-          className={
-            "font-mono text-[16px] font-medium tracking-[0.04em] " +
-            (isCredit ? "text-brand-red" : "text-ink")
-          }
-        >
-          {sign}
-          {t.amount}&nbsp;Б
-        </span>
-        <span className="font-mono text-[11px] tracking-[0.04em] text-muted">
-          → {t.balanceAfter}&nbsp;Б
-        </span>
-      </div>
-    </div>
   );
 }
 

@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { Wrap } from "@/components/site/wrap";
 import { CLUB, DISTANCE_RANGE, pointsForDistance } from "@/lib/club";
+import type { DisplayEvent } from "@/lib/display-event";
 import {
   MONTHLY_KM_TARGET,
   WEEK_CELLS,
@@ -8,7 +9,13 @@ import {
   type WeekCell as WeekCellT,
 } from "@/lib/home-mock";
 
-export function PersonalDashboard({ user }: { user: AuthedUser }) {
+export function PersonalDashboard({
+  user,
+  nextEvent,
+}: {
+  user: AuthedUser;
+  nextEvent?: DisplayEvent;
+}) {
   const doneCells = WEEK_CELLS.filter((w) => w.kind === "done");
   const done = doneCells.length;
   const km = doneCells.reduce((s, w) => s + (w.km ?? 0), 0);
@@ -70,7 +77,7 @@ export function PersonalDashboard({ user }: { user: AuthedUser }) {
 
           <div className="grid grid-cols-1 divide-y divide-ink md:grid-cols-4 md:divide-x md:divide-y-0">
             {WEEK_CELLS.map((w) => (
-              <WeekCellView key={w.date} cell={w} />
+              <WeekCellView key={w.date} cell={w} nextEvent={nextEvent} />
             ))}
           </div>
 
@@ -103,8 +110,16 @@ export function PersonalDashboard({ user }: { user: AuthedUser }) {
   );
 }
 
-function WeekCellView({ cell }: { cell: WeekCellT }) {
+function WeekCellView({
+  cell,
+  nextEvent,
+}: {
+  cell: WeekCellT;
+  nextEvent?: DisplayEvent;
+}) {
   if (cell.kind === "tomorrow") {
+    const time = nextEvent?.time ?? cell.time;
+    const place = nextEvent?.venue ?? cell.place;
     return (
       <div className="flex flex-col gap-2 bg-brand-red px-5 py-5 text-paper md:px-6">
         <div className="flex items-center gap-2">
@@ -116,10 +131,10 @@ function WeekCellView({ cell }: { cell: WeekCellT }) {
           </span>
         </div>
         <span className="font-display text-[24px] font-bold leading-tight">
-          {cell.time}
+          {time}
         </span>
         <span className="text-[13px] leading-tight opacity-90">
-          {cell.place ?? "место уточняется"}
+          {place ?? "место уточняется"}
         </span>
         <span className="font-mono text-[12px] font-medium uppercase tracking-[0.08em] opacity-90">
           {DISTANCE_RANGE} · выбираешь на&nbsp;старте

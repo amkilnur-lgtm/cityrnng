@@ -9,6 +9,7 @@ import { ShopPreview } from "@/components/home/shop-preview";
 import { SiteFooter } from "@/components/site/footer";
 import { SiteNav } from "@/components/site/nav";
 import { Wrap } from "@/components/site/wrap";
+import { getDisplayNextEvent } from "@/lib/display-event";
 import { getSession } from "@/lib/session";
 import { getSiteState } from "@/lib/site-state";
 
@@ -18,7 +19,10 @@ export default async function AppDashboardPage() {
   const session = await getSession();
   if (!session) redirect("/auth");
 
-  const state = await getSiteState();
+  const [state, nextEvent] = await Promise.all([
+    getSiteState(),
+    getDisplayNextEvent(),
+  ]);
   if (!state.isAuthed) redirect("/auth");
 
   return (
@@ -43,8 +47,8 @@ export default async function AppDashboardPage() {
           </Wrap>
         </section>
 
-        <PersonalDashboard user={state.user} />
-        <NextEvent isAuthed />
+        <PersonalDashboard user={state.user} nextEvent={nextEvent} />
+        <NextEvent isAuthed event={nextEvent} />
         <ShopPreview user={state.user} />
         <Locations />
         <Journal />
