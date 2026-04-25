@@ -65,13 +65,26 @@ Response `200 OK`:
 
 ## 4. Events (public)
 
+### `GET /api/v1/events/upcoming?weeks=8`
+
+**Materialized list** — recurring rule occurrences (e.g. «среда 19:30, 3 локации») merged with explicit `events` rows that override individual occurrences and standalone special events. Sorted by `startsAt` asc.
+
+Returns `MaterializedEvent[]` where each item has:
+- `id` — UUID for explicit events; synthetic `rule:<ruleId>:<YYYY-MM-DD>` for materialized occurrences (no DB row)
+- `isMaterialized: boolean` — true for synthetic, false for explicit
+- `title, type (regular|special|partner), status, startsAt, endsAt, isPointsEligible, basePointsAward, description`
+- `locations: [{ id, name, city, lat, lng }]` — for materialized: from rule.locations; for explicit: from event.syncRule.locations (fallback to inherited rule's)
+- `recurrenceRuleId, overridesOccurrenceAt` — set on explicit overrides
+
+This endpoint is the source of truth for `/events` page and the home «next event» card. Use over `GET /events` for any forward-looking display.
+
 ### `GET /api/v1/events`
 
-Список опубликованных событий. Фильтры поддерживаются через query (см. DTO в `apps/api/src/events/dto`).
+Список явно созданных опубликованных событий (не материализованных). Фильтры через query (см. DTO в `apps/api/src/events/dto`). Полезен для админ-обзора и как backward-compat — фронт мигрирует на `/events/upcoming`.
 
 ### `GET /api/v1/events/:id`
 
-Детальная карточка события.
+Детальная карточка явного события (UUID). Materialized-occurrences пока не имеют отдельного detail-эндпоинта — frontend использует список `/events/upcoming` и при необходимости резолвит на `/districts`.
 
 ## 5. Points
 
