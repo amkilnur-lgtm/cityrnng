@@ -93,7 +93,25 @@ enum PointReasonType {
   returning_user_bonus
   campaign_bonus
   partner_bonus
+  reward_redemption
   reversal
+}
+
+enum PartnerStatus {
+  active
+  archived
+}
+
+enum RewardStatus {
+  active
+  archived
+}
+
+enum RedemptionStatus {
+  active
+  used
+  expired
+  cancelled
 }
 
 model User {
@@ -109,6 +127,9 @@ model User {
   sessions          Session[]
   createdEvents     Event[]                 @relation("EventCreatedBy")
   createdRecurrenceRules EventRecurrenceRule[] @relation("RecurrenceRuleCreatedBy")
+  createdPartners   Partner[]               @relation("PartnerCreatedBy")
+  createdRewards    Reward[]                @relation("RewardCreatedBy")
+  redemptions       Redemption[]            @relation("RedemptionUser")
   providerAccounts  UserProviderAccount[]
   externalActivities ExternalActivity[]
   attendances       EventAttendance[]       @relation("AttendanceUser")
@@ -210,9 +231,9 @@ model Event {
   isPointsEligible      Boolean     @default(false) @map("is_points_eligible")
   basePointsAward       Int         @default(0) @map("base_points_award")
   createdById           String      @map("created_by") @db.Uuid
-  /** When this event is an override of a recurring rule occurrence. */
+  /// When this event is an override of a recurring rule occurrence.
   recurrenceRuleId      String?     @map("recurrence_rule_id") @db.Uuid
-  /** The materialized rule date this event replaces (matched on the calendar day). */
+  /// The materialized rule date this event replaces (matched on the calendar day).
   overridesOccurrenceAt DateTime?   @map("overrides_occurrence_at") @db.Date
   createdAt             DateTime    @default(now()) @map("created_at")
   updatedAt             DateTime    @updatedAt @map("updated_at")
@@ -228,27 +249,25 @@ model Event {
   @@map("events")
 }
 
-/**
- * Defines a recurring schedule (e.g. "every Wednesday 19:30, all 3 city
- * locations, regular type, points-eligible"). Materialized on demand by
- * EventOccurrenceService — no DB row per occurrence unless an override
- * Event explicitly replaces it.
- */
+ // Defines a recurring schedule (e.g. "every Wednesday 19:30, all 3 city
+ // locations, regular type, points-eligible"). Materialized on demand by
+ // EventOccurrenceService — no DB row per occurrence unless an override
+ // Event explicitly replaces it.
 model EventRecurrenceRule {
   id                  String                       @id @default(uuid()) @db.Uuid
   title               String
   type                EventType                    @default(regular)
   status              RecurrenceRuleStatus         @default(active)
-  /** 0 = Sunday, 1 = Monday, ... 6 = Saturday (matches JS Date.getDay). */
+  /// 0 = Sunday, 1 = Monday, ... 6 = Saturday (matches JS Date.getDay).
   dayOfWeek           Int                          @map("day_of_week")
-  /** "HH:MM" 24h string in the club's timezone. */
+  /// "HH:MM" 24h string in the club's timezone.
   timeOfDay           String                       @map("time_of_day")
   durationMinutes     Int                          @map("duration_minutes")
   isPointsEligible    Boolean                      @default(true) @map("is_points_eligible")
   basePointsAward     Int                          @default(0) @map("base_points_award")
-  /** Rule kicks in from this date (inclusive). */
+  /// Rule kicks in from this date (inclusive).
   startsFromDate      DateTime                     @map("starts_from_date") @db.Date
-  /** Optional sunset — rule stops generating occurrences after this date. */
+  /// Optional sunset — rule stops generating occurrences after this date.
   endsAtDate          DateTime?                    @map("ends_at_date") @db.Date
   createdById         String                       @map("created_by") @db.Uuid
   createdAt           DateTime                     @default(now()) @map("created_at")
@@ -432,12 +451,90 @@ model PointTransaction {
   createdById     String?                @map("created_by_id") @db.Uuid
   createdAt       DateTime               @default(now()) @map("created_at")
 
-  account   PointAccount @relation(fields: [accountId], references: [id], onDelete: Restrict)
-  user      User         @relation("PointTransactionUser", fields: [userId], references: [id], onDelete: Cascade)
-  createdBy User?        @relation("PointTransactionCreatedBy", fields: [createdById], references: [id], onDelete: SetNull)
+  account    PointAccount @relation(fields: [accountId], references: [id], onDelete: Restrict)
+  user       User         @relation("PointTransactionUser", fields: [userId], references: [id], onDelete: Cascade)
+  createdBy  User?        @relation("PointTransactionCreatedBy", fields: [createdById], references: [id], onDelete: SetNull)
+  redemption Redemption?
 
   @@index([userId, createdAt(sort: Desc), id(sort: Desc)])
   @@index([accountId, createdAt(sort: Desc), id(sort: Desc)])
   @@index([reasonType])
   @@map("point_transactions")
+}
+
+model Partner {
+  id            String        @id @default(uuid()) @db.Uuid
+  slug          String        @unique
+  name          String
+  description   String?
+  contactEmail  String?       @map("contact_email")
+  status        PartnerStatus @default(active)
+  createdById   String        @map("created_by") @db.Uuid
+  createdAt     DateTime      @default(now()) @map("created_at")
+  updatedAt     DateTime      @updatedAt @map("updated_at")
+
+  createdBy User     @relation("PartnerCreatedBy", fields: [createdById], references: [id])
+  rewards   Reward[]
+
+  @@index([status])
+  @@map("partners")
+}
+
+model Reward {
+  id          String       @id @default(uuid()) @db.Uuid
+  slug        String       @unique
+  partnerId   String       @map("partner_id") @db.Uuid
+  title       String
+  description String?
+  costPoints  Int          @map("cost_points")
+  /// Optional badge text — "новинка", "до 31 мая", etc.
+  badge       String?
+  status      RewardStatus @default(active)
+  validFrom   DateTime?    @map("valid_from")
+  validUntil  DateTime?    @map("valid_until")
+  /// Optional capacity limit (null = unlimited).
+  capacity    Int?
+  /// Counter incremented on each successful redemption.
+  soldCount   Int          @default(0) @map("sold_count")
+  createdById String       @map("created_by") @db.Uuid
+  createdAt   DateTime     @default(now()) @map("created_at")
+  updatedAt   DateTime     @updatedAt @map("updated_at")
+
+  partner     Partner      @relation(fields: [partnerId], references: [id], onDelete: Cascade)
+  createdBy   User         @relation("RewardCreatedBy", fields: [createdById], references: [id])
+  redemptions Redemption[]
+
+  @@index([partnerId])
+  @@index([status])
+  @@map("rewards")
+}
+
+model Redemption {
+  id              String           @id @default(uuid()) @db.Uuid
+  userId          String           @map("user_id") @db.Uuid
+  rewardId        String           @map("reward_id") @db.Uuid
+  /// Snapshot of cost at the moment of redemption (reward.costPoints can change later).
+  costPoints      Int              @map("cost_points")
+  status          RedemptionStatus @default(active)
+  /// 6-char alphanumeric uppercase, doubles as QR payload. Unique.
+  code            String           @unique
+  /// FK to the debit point_transactions row.
+  pointTxnId      String           @unique @map("point_txn_id") @db.Uuid
+  expiresAt       DateTime?        @map("expires_at")
+  usedAt          DateTime?        @map("used_at")
+  /// User (admin/partner) who marked it used — for audit.
+  usedById        String?          @map("used_by_id") @db.Uuid
+  cancelledAt     DateTime?        @map("cancelled_at")
+  cancelledReason String?          @map("cancelled_reason")
+  createdAt       DateTime         @default(now()) @map("created_at")
+  updatedAt       DateTime         @updatedAt @map("updated_at")
+
+  user             User             @relation("RedemptionUser", fields: [userId], references: [id], onDelete: Restrict)
+  reward           Reward           @relation(fields: [rewardId], references: [id], onDelete: Restrict)
+  pointTransaction PointTransaction @relation(fields: [pointTxnId], references: [id], onDelete: Restrict)
+
+  @@index([userId, createdAt(sort: Desc)])
+  @@index([rewardId, status])
+  @@index([status, expiresAt])
+  @@map("redemptions")
 }

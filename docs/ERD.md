@@ -33,6 +33,12 @@
 - `point_accounts`
 - `point_transactions`
 
+### Rewards & Partners (Epic 5)
+
+- `partners`
+- `rewards`
+- `redemptions`
+
 ## 2. Реализованные таблицы
 
 ## `users`
@@ -290,8 +296,54 @@ Junction правило ↔ `city_locations`. Все локации правил
 - `returning_user_bonus` (зарезервирован)
 - `campaign_bonus` (зарезервирован)
 - `partner_bonus` (зарезервирован)
+- `reward_redemption` — debit при обмене баллов на reward (см. `redemptions`)
 - `manual_adjustment`
 - `reversal`
+
+## `partners`
+
+- `id`
+- `slug` unique
+- `name`
+- `description` nullable
+- `contact_email` nullable
+- `status` active|archived (индекс)
+- `created_by` (user)
+- `created_at`, `updated_at`
+
+## `rewards`
+
+- `id`
+- `slug` unique
+- `partner_id` (индекс, FK → `partners`, `on delete CASCADE`)
+- `title`
+- `description` nullable
+- `cost_points` int positive
+- `badge` nullable (короткая метка вроде "до 31 мая")
+- `status` active|archived (индекс)
+- `valid_from` nullable
+- `valid_until` nullable
+- `capacity` nullable (если NULL — без лимита)
+- `sold_count` int default 0 — инкрементируется при `redemption.create`, декрементируется при cancel
+- `created_by` (user)
+- `created_at`, `updated_at`
+
+## `redemptions`
+
+Запись об обмене баллов на reward. Создаётся атомарно вместе с debit `point_transactions`.
+
+- `id`
+- `user_id` (FK, `on delete RESTRICT` — историю обменов не теряем)
+- `reward_id` (FK, `on delete RESTRICT`)
+- `cost_points` — снимок цены на момент обмена (reward.cost_points может измениться)
+- `status` active|used|expired|cancelled (индекс с `expires_at`)
+- `code` unique — 6-char alphanumeric uppercase, payload для QR
+- `point_txn_id` unique (FK → `point_transactions`)
+- `expires_at` nullable — по умолчанию +7 дней
+- `used_at`, `used_by_id` nullable — кто пометил использованным (партнёр / админ)
+- `cancelled_at`, `cancelled_reason` nullable
+- `created_at`, `updated_at`
+- индексы: (`user_id`, `created_at DESC`), (`reward_id`, `status`), (`status`, `expires_at`)
 
 ## 3. Ключевые связи
 
@@ -359,14 +411,15 @@ Junction правило ↔ `city_locations`. Все локации правил
 
 Секция описывает сущности из продуктового roadmap, которые не существуют в текущей схеме. Перенесены сюда, чтобы сохранить продуктовое видение без смешивания с реальностью.
 
-### Rewards and partners (Epic 5)
+### Rewards and partners (Epic 5) — реализовано
 
-- `partners`
-- `partner_contacts`
-- `rewards`
-- `reward_inventory`
-- `reward_redemptions`
-- `reward_redemption_events`
+`partners`, `rewards`, `redemptions` переехали в §2 как реализованные. См. ниже описание полей.
+
+Из планируемого осталось:
+
+- `partner_contacts` (если потребуется > 1 контакта на партнёра)
+- `reward_inventory` (точное управление запасом — пока через `capacity` + `sold_count`)
+- `reward_redemption_events` (audit log переходов статуса; пока статус хранится в `redemptions` напрямую + есть `point_transactions` как косвенный лог)
 
 ### Notifications (Epic 8)
 

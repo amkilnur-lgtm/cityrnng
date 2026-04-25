@@ -270,7 +270,81 @@ Response:
 
 Только matcher, без нового обращения к Strava — прогоняет уже импортированные `external_activities` против текущих `event_sync_rules`. Полезно после правки правила.
 
-## 13. Error format
+## 13. Rewards & Partners (Epic 5)
+
+### `GET /api/v1/partners` (public)
+
+Список активных партнёров (status=active). Используется во фронте `/shop` для группировки.
+
+### `GET /api/v1/rewards` (public)
+
+Список активных наград от активных партнёров. Опциональный фильтр `?partner=<slug>`. Сортировка: партнёр (asc по name), затем `cost_points` (asc). Возвращает `Reward[]` с включённым `partner`.
+
+### `GET /api/v1/rewards/:slug` (public)
+
+Деталка награды. 404 если archived/inactive у reward или partner.
+
+### `POST /api/v1/rewards/:slug/redeem` (authed)
+
+Атомарно списывает баллы и создаёт `Redemption`. Тело:
+
+```json
+{ "idempotencyKey": "<uuid>" }
+```
+
+`idempotencyKey` опционален — если повторно прислан тот же, возвращается уже существующая redemption (для retry-safety). При пропуске сервер генерирует уникальный ключ.
+
+Валидации (порядок проверки): reward.status=active, partner.status=active, valid_from <= now <= valid_until, capacity > sold_count, balance >= cost_points. На любую — `403`/`400` с доменным кодом.
+
+Внутри транзакции:
+1. `point_transactions.post` (debit, reasonType=`reward_redemption`, reasonRef=reward.id, idempotencyKey)
+2. Генерация уникального 6-char alphanumeric `code` (5 retries при коллизии)
+3. `redemptions.create` (link на `point_txn_id`, expires_at = +7 дней)
+4. `rewards.sold_count++`
+
+Response `201`:
+
+```json
+{
+  "id": "uuid",
+  "userId": "uuid",
+  "rewardId": "uuid",
+  "costPoints": 120,
+  "status": "active",
+  "code": "M4XKF7",
+  "pointTxnId": "uuid",
+  "expiresAt": "2026-05-02T19:30:00.000Z",
+  "createdAt": "...",
+  "reward": { ... include partner ... }
+}
+```
+
+### `GET /api/v1/me/redemptions` (authed)
+
+Список redemptions текущего юзера, отсортирован по `created_at` desc. Опциональный фильтр `?status=active`.
+
+### `GET /api/v1/me/redemptions/:code` (authed)
+
+Один redemption по 6-char коду (case-insensitive). 404 если код принадлежит другому юзеру.
+
+### Admin (Roles: admin)
+
+- `GET /api/v1/admin/partners` — все партнёры (включая archived)
+- `POST /api/v1/admin/partners` — создать (`CreatePartnerDto`: slug, name, description?, contactEmail?, status?)
+- `PATCH /api/v1/admin/partners/:id` — обновить
+- `GET /api/v1/admin/rewards?partnerId=<uuid>` — все награды (включая archived)
+- `POST /api/v1/admin/rewards` — создать (`CreateRewardDto`: slug, partnerId, title, description?, costPoints, badge?, status?, validFrom?, validUntil?, capacity?)
+- `PATCH /api/v1/admin/rewards/:id` — обновить
+- `POST /api/v1/admin/redemptions/verify/:code` — пометить redemption использованным (партнёр сканирует QR, админ подтверждает). Возвращает обновлённый redemption. Ошибки: `REDEMPTION_NOT_FOUND`, `REDEMPTION_NOT_ACTIVE`, `REDEMPTION_EXPIRED`
+- `POST /api/v1/admin/redemptions/:id/cancel` — отменить + вернуть баллы. Тело `{ reason?: string }`. Создаёт credit-транзакцию `reasonType=reversal`, ставит `redemption.status=cancelled`, decrements `reward.sold_count`. Идемпотентно по `redemption.id`
+
+Доменные коды (для `error.code`):
+- `REWARD_NOT_FOUND`, `REWARD_SLUG_TAKEN`, `REWARD_NOT_AVAILABLE`, `REWARD_PARTNER_ARCHIVED`, `REWARD_NOT_YET_AVAILABLE`, `REWARD_EXPIRED`, `REWARD_SOLD_OUT`, `REWARD_INVALID_VALIDITY_RANGE`, `REWARD_PARTNER_INVALID`
+- `PARTNER_NOT_FOUND`, `PARTNER_SLUG_TAKEN`
+- `REDEMPTION_NOT_FOUND`, `REDEMPTION_NOT_ACTIVE`, `REDEMPTION_EXPIRED`, `REWARD_CODE_GENERATION_FAILED`
+- `POINTS_INSUFFICIENT`
+
+## 14. Error format
 
 ```json
 {
@@ -282,7 +356,7 @@ Response:
 }
 ```
 
-## 14. Доменные коды ошибок
+## 15. Доменные коды ошибок
 
 Реализованные (источник истины — `grep code: apps/api/src`):
 
@@ -332,7 +406,7 @@ Points:
 - `REWARD_NOT_AVAILABLE` (Epic 5)
 - `REWARD_ALREADY_REDEEMED` (Epic 5)
 
-## 15. Planned (ещё не реализовано)
+## 16. Planned (ещё не реализовано)
 
 Эндпоинты из продуктового roadmap, которые не существуют в текущем коде. Оставлены как reference для будущих эпиков.
 
@@ -348,17 +422,9 @@ Points:
 - `POST /api/v1/checkins/scan` — QR-flow отменён в пользу `event_attendances` + matcher.
 - `POST /api/v1/admin/events/:id/checkin-token` — аналогично.
 
-### Rewards and partners (Epic 5)
+### Rewards and partners (Epic 5) — реализовано
 
-- `GET /api/v1/rewards`
-- `GET /api/v1/rewards/:id`
-- `POST /api/v1/rewards/:id/redeem`
-- `GET /api/v1/me/redemptions`
-- `GET /api/v1/partners`
-- `GET /api/v1/partners/:id`
-- `POST /api/v1/partner/redemptions/:id/verify`
-- `POST /api/v1/admin/rewards` / `PATCH /api/v1/admin/rewards/:id`
-- `POST /api/v1/admin/partners` / `PATCH /api/v1/admin/partners/:id`
+См. §13 выше. Перенесено из Planned в actual.
 
 ### Event status transitions (Epic 6 admin)
 
