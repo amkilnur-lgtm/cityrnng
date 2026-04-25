@@ -2,11 +2,9 @@ import { FinalCta } from "@/components/home/final-cta";
 import { Hero } from "@/components/home/hero";
 import { HowItWorks } from "@/components/home/how-it-works";
 import { Journal } from "@/components/home/journal";
-import { Locations } from "@/components/home/locations";
 import { NextEvent } from "@/components/home/next-event";
 import { PersonalDashboard } from "@/components/home/personal-dashboard";
 import { ShopPreview } from "@/components/home/shop-preview";
-import { DevStateToggle } from "@/components/site/dev-state-toggle";
 import { SiteFooter } from "@/components/site/footer";
 import { SiteNav } from "@/components/site/nav";
 import { getDisplayNextEvent } from "@/lib/display-event";
@@ -23,7 +21,6 @@ export default async function HomePage({
     getSiteState(searchParams.state),
     getDisplayNextEvent(),
   ]);
-  const isAuthed = state.isAuthed;
 
   return (
     <>
@@ -34,7 +31,6 @@ export default async function HomePage({
             <PersonalDashboard user={state.user} nextEvent={nextEvent} />
             <NextEvent event={nextEvent} />
             <ShopPreview user={state.user} />
-            <Locations />
             <Journal />
             <FinalCta isAuthed />
           </>
@@ -43,14 +39,12 @@ export default async function HomePage({
             <Hero event={nextEvent} />
             <HowItWorks />
             <NextEvent event={nextEvent} />
-            <Locations />
             <Journal />
             <FinalCta isAuthed={false} />
           </>
         )}
       </main>
       <SiteFooter />
-      {!isAuthed ? <DevStateToggle /> : null}
     </>
   );
 }

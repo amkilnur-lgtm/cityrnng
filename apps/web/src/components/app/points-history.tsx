@@ -1,7 +1,11 @@
 "use client";
 
 import { useState } from "react";
-import { reasonLabel, type PointsHistory, type PointsTxn } from "@/lib/api-points";
+import {
+  reasonLabel,
+  type PointsHistory,
+  type PointsTxn,
+} from "@/lib/api-points-types";
 
 type Props = {
   initial: PointsHistory;

@@ -3,7 +3,6 @@ import { Wrap } from "@/components/site/wrap";
 import { CLUB, DISTANCE_RANGE, pointsForDistance } from "@/lib/club";
 import type { DisplayEvent } from "@/lib/display-event";
 import {
-  MONTHLY_KM_TARGET,
   WEEK_CELLS,
   type AuthedUser,
   type WeekCell as WeekCellT,
@@ -18,9 +17,9 @@ export function PersonalDashboard({
 }) {
   const doneCells = WEEK_CELLS.filter((w) => w.kind === "done");
   const done = doneCells.length;
+  const totalScheduled = WEEK_CELLS.length;
   const km = doneCells.reduce((s, w) => s + (w.km ?? 0), 0);
-  const target = MONTHLY_KM_TARGET;
-  const progressPct = Math.round((km / target) * 100);
+  const progressPct = Math.round((done / totalScheduled) * 100);
   const lastDone = [...doneCells].pop();
   const lastKm = lastDone?.km ?? 0;
   const lastPoints = lastKm ? pointsForDistance(lastKm) : 0;
@@ -61,10 +60,13 @@ export function PersonalDashboard({
 
         <div className="border border-ink bg-paper">
           <div className="flex items-center justify-between border-b border-ink px-5 py-4 md:px-6">
-            <span className="type-mono-caps">апрель · цель&nbsp;12&nbsp;км</span>
+            <span className="type-mono-caps">апрель · твои пробежки</span>
             <span className="font-mono text-[13px] font-medium tracking-[0.04em] text-ink">
-              <b className="text-brand-red">{km}</b>
-              <span className="text-muted-2"> из {target} км · {progressPct}%</span>
+              <b className="text-brand-red">{done}</b>
+              <span className="text-muted-2">
+                {" "}
+                из {totalScheduled} пробежек · {progressPct}%
+              </span>
             </span>
           </div>
 
@@ -145,14 +147,14 @@ function WeekCellView({
 
   if (cell.kind === "done") {
     return (
-      <div className="flex flex-col gap-2 bg-ink px-5 py-5 text-paper md:px-6">
-        <span className="font-mono text-[11px] font-medium uppercase tracking-[0.14em] opacity-80">
+      <div className="hatch-done flex flex-col gap-2 px-5 py-5 text-ink md:px-6">
+        <span className="font-mono text-[11px] font-medium uppercase tracking-[0.14em] text-muted">
           {cell.weekday}&nbsp;·&nbsp;{cell.date}
         </span>
-        <span className="font-display text-[24px] font-bold leading-none">
+        <span className="font-display text-[24px] font-bold leading-none text-ink">
           {cell.km}&nbsp;км
         </span>
-        <span className="font-mono text-[12px] font-medium tracking-[0.04em] text-brand-tint">
+        <span className="font-mono text-[12px] font-medium tracking-[0.04em] text-brand-red">
           + {cell.points}&nbsp;Б
         </span>
       </div>

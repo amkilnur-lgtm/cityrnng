@@ -5,7 +5,6 @@ import { SiteFooter } from "@/components/site/footer";
 import { SiteNav } from "@/components/site/nav";
 import { Wrap } from "@/components/site/wrap";
 import { getPointsBalance, getPointsHistory } from "@/lib/api-points";
-import { getSession } from "@/lib/session";
 import { getSiteState } from "@/lib/site-state";
 
 export const metadata = { title: "Баллы · CITYRNNG" };
@@ -13,14 +12,15 @@ export const metadata = { title: "Баллы · CITYRNNG" };
 const PAGE_SIZE = 25;
 
 export default async function PointsPage() {
-  const session = await getSession();
-  if (!session) redirect("/auth");
-
   const [balance, history, state] = await Promise.all([
     getPointsBalance(),
     getPointsHistory({ limit: PAGE_SIZE }),
     getSiteState(),
   ]);
+  if (!state.isAuthed) redirect("/auth");
+  // Dev-mock authed users see the layout with state.user.points and an empty
+  // history (real /points endpoints return null without a real session token).
+  const displayBalance = balance?.balance ?? state.user.points;
 
   return (
     <>
@@ -39,7 +39,7 @@ export default async function PointsPage() {
               className="type-hero text-brand-red"
               style={{ fontSize: 120, lineHeight: 0.85 }}
             >
-              {balance ? balance.balance : "—"}
+              {displayBalance}
               <span className="ml-3 align-middle font-mono text-[24px] font-medium tracking-[0.04em] text-ink">
                 Б
               </span>

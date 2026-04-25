@@ -39,7 +39,7 @@ export default async function EventsPage() {
             <div className="flex flex-col gap-3">
               <span className="type-mono-caps">расписание</span>
               <h1 className="type-hero" style={{ fontSize: 72 }}>
-                Пробежки на&nbsp;
+                События на&nbsp;
                 <em className="not-italic text-brand-red">неделе</em>.
               </h1>
               <p className="type-lede max-w-[640px]">

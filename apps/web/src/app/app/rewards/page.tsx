@@ -50,9 +50,6 @@ function fmtDateTime(iso: string) {
 }
 
 export default async function MyRewardsPage() {
-  const session = await getSession();
-  if (!session) redirect("/auth");
-
   const state = await getSiteState();
   if (!state.isAuthed) redirect("/auth");
 
