@@ -9,6 +9,7 @@ import { ShopPreview } from "@/components/home/shop-preview";
 import { DevStateToggle } from "@/components/site/dev-state-toggle";
 import { SiteFooter } from "@/components/site/footer";
 import { SiteNav } from "@/components/site/nav";
+import { getDisplayNextEvent } from "@/lib/display-event";
 import { getSiteState } from "@/lib/site-state";
 
 type SearchParams = { state?: string };
@@ -18,8 +19,11 @@ export default async function HomePage({
 }: {
   searchParams: SearchParams;
 }) {
-  const state = await getSiteState(searchParams.state);
-  const session = state.isAuthed ? state : null;
+  const [state, nextEvent] = await Promise.all([
+    getSiteState(searchParams.state),
+    getDisplayNextEvent(),
+  ]);
+  const isAuthed = state.isAuthed;
 
   return (
     <>
@@ -27,8 +31,8 @@ export default async function HomePage({
       <main>
         {state.isAuthed ? (
           <>
-            <PersonalDashboard user={state.user} />
-            <NextEvent isAuthed />
+            <PersonalDashboard user={state.user} nextEvent={nextEvent} />
+            <NextEvent isAuthed event={nextEvent} />
             <ShopPreview user={state.user} />
             <Locations />
             <Journal />
@@ -36,9 +40,9 @@ export default async function HomePage({
           </>
         ) : (
           <>
-            <Hero />
+            <Hero event={nextEvent} />
             <HowItWorks />
-            <NextEvent isAuthed={false} />
+            <NextEvent isAuthed={false} event={nextEvent} />
             <Locations />
             <Journal />
             <FinalCta isAuthed={false} />
@@ -46,7 +50,7 @@ export default async function HomePage({
         )}
       </main>
       <SiteFooter />
-      {!session ? <DevStateToggle /> : null}
+      {!isAuthed ? <DevStateToggle /> : null}
     </>
   );
 }

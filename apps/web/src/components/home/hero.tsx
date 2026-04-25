@@ -1,15 +1,15 @@
 import Image from "next/image";
 import { Wrap } from "@/components/site/wrap";
 import { CLUB, DISTANCE_RANGE } from "@/lib/club";
-import { NEXT_EVENT } from "@/lib/home-mock";
+import type { DisplayEvent } from "@/lib/display-event";
 
-export function Hero() {
+export function Hero({ event }: { event: DisplayEvent }) {
   return (
     <section className="border-b border-ink">
       <Wrap className="py-16 lg:py-24">
         <div className="grid grid-cols-1 gap-12 lg:grid-cols-[1.1fr_1fr] lg:gap-20">
           <HeroMain />
-          <HeroSide />
+          <HeroSide event={event} />
         </div>
       </Wrap>
     </section>
@@ -64,14 +64,14 @@ function HeroMain() {
   );
 }
 
-function HeroSide() {
+function HeroSide({ event }: { event: DisplayEvent }) {
   return (
     <aside className="flex flex-col lg:sticky lg:top-24 lg:self-start">
       <div className="relative aspect-square border border-ink bg-paper-2">
         <div className="absolute left-5 top-5 z-10 flex flex-col gap-0.5">
           <span className="type-mono-caps">Маршрут</span>
           <span className="font-sans text-[13px] font-medium text-ink">
-            {NEXT_EVENT.location.district} · {DISTANCE_RANGE}
+            {event.district} · {DISTANCE_RANGE}
           </span>
         </div>
         <Image
@@ -96,26 +96,30 @@ function HeroSide() {
         <div className="flex flex-col gap-3 px-5 py-4">
           <div className="flex items-center gap-2 font-mono text-[14px] font-medium tracking-[0.04em]">
             <span className="text-brand-red">
-              {CLUB.runDayShort}&nbsp;{CLUB.runTime}
+              {CLUB.runDayShort}&nbsp;{event.time}
             </span>
             <span className="text-muted-2">·</span>
-            <span className="text-ink">
-              {NEXT_EVENT.location.venue ?? "место уточняется"}
-            </span>
+            <span className="text-ink">{event.venue ?? "место уточняется"}</span>
           </div>
           <p className="text-[13px] text-graphite">
             Выбираешь {DISTANCE_RANGE} на&nbsp;старте — темп любой.
           </p>
           <div className="flex items-center justify-between">
-            <span className="text-[13px] text-graphite">
-              Обычно приходит{" "}
-              <b className="font-semibold text-ink">
-                {NEXT_EVENT.typicalTurnout}
-              </b>{" "}
-              соседей
-            </span>
+            {event.typicalTurnout ? (
+              <span className="text-[13px] text-graphite">
+                Обычно приходит{" "}
+                <b className="font-semibold text-ink">
+                  {event.typicalTurnout}
+                </b>{" "}
+                соседей
+              </span>
+            ) : (
+              <span className="text-[13px] text-graphite">
+                Записываться не&nbsp;нужно — просто приходи
+              </span>
+            )}
             <a
-              href={`/events/${NEXT_EVENT.id}`}
+              href={`/events/${event.id}`}
               className="text-[13px] font-medium text-ink hover:text-brand-red"
             >
               Подробнее →
