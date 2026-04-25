@@ -5,15 +5,30 @@ import { SiteNav } from "@/components/site/nav";
 import { Wrap } from "@/components/site/wrap";
 import {
   MY_REDEMPTIONS,
-  PARTNERS,
-  REWARDS,
-  type Redemption,
-  type RedemptionStatus,
+  PARTNERS as MOCK_PARTNERS,
+  REWARDS as MOCK_REWARDS,
+  type Redemption as MockRedemption,
 } from "@/lib/home-mock";
+import { listMyRedemptions, type ApiRedemption } from "@/lib/api-rewards";
 import { getSession } from "@/lib/session";
 import { getSiteState } from "@/lib/site-state";
 
 export const metadata = { title: "Мои обмены · CITYRNNG" };
+
+type RedemptionStatus = "active" | "used" | "expired" | "cancelled";
+
+type RedemptionView = {
+  id: string;
+  status: RedemptionStatus;
+  code: string;
+  costPoints: number;
+  createdAt: string;
+  expiresAt: string | null;
+  usedAt: string | null;
+  rewardTitle: string;
+  partnerName: string;
+  partnerLocations: string[];
+};
 
 const STATUS_LABEL: Record<RedemptionStatus, string> = {
   active: "Активен",
@@ -49,12 +64,58 @@ function fmtDateTime(iso: string) {
   return `${date} · ${time}`;
 }
 
+function fromApi(r: ApiRedemption): RedemptionView {
+  const fallbackPartner = (MOCK_PARTNERS as Record<string, { locations: string[] }>)[
+    r.reward.partner.slug
+  ];
+  return {
+    id: r.id,
+    status: r.status,
+    code: r.code,
+    costPoints: r.costPoints,
+    createdAt: r.createdAt,
+    expiresAt: r.expiresAt,
+    usedAt: r.usedAt,
+    rewardTitle: r.reward.title,
+    partnerName: r.reward.partner.name,
+    partnerLocations: fallbackPartner?.locations ?? [],
+  };
+}
+
+function fromMock(r: MockRedemption): RedemptionView {
+  const reward = MOCK_REWARDS.find((x) => x.slug === r.rewardSlug);
+  const partner = reward
+    ? (MOCK_PARTNERS as Record<string, { name: string; locations: string[] }>)[
+        reward.partnerSlug
+      ]
+    : undefined;
+  return {
+    id: r.slug,
+    status: r.status,
+    code: r.code,
+    costPoints: r.costPoints,
+    createdAt: r.createdAt,
+    expiresAt: r.expiresAt ?? null,
+    usedAt: r.usedAt ?? null,
+    rewardTitle: reward?.title ?? "Награда удалена",
+    partnerName: partner?.name ?? "—",
+    partnerLocations: partner?.locations ?? [],
+  };
+}
+
 export default async function MyRewardsPage() {
   const state = await getSiteState();
   if (!state.isAuthed) redirect("/auth");
 
-  const active = MY_REDEMPTIONS.filter((r) => r.status === "active");
-  const past = MY_REDEMPTIONS.filter((r) => r.status !== "active");
+  const session = await getSession();
+  // Real session → API (may legitimately be empty).
+  // Dev-mock authed (no session) → fall back to MY_REDEMPTIONS so UI is testable.
+  const redemptions: RedemptionView[] = session
+    ? (await listMyRedemptions()).map(fromApi)
+    : MY_REDEMPTIONS.map(fromMock);
+
+  const active = redemptions.filter((r) => r.status === "active");
+  const past = redemptions.filter((r) => r.status !== "active");
 
   return (
     <>
@@ -106,7 +167,7 @@ export default async function MyRewardsPage() {
               </div>
               <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
                 {active.map((r) => (
-                  <RedemptionCard key={r.slug} redemption={r} />
+                  <RedemptionCard key={r.id} redemption={r} />
                 ))}
               </div>
             </Wrap>
@@ -140,7 +201,7 @@ export default async function MyRewardsPage() {
               <ul className="flex flex-col border border-ink">
                 {past.map((r, idx) => (
                   <li
-                    key={r.slug}
+                    key={r.id}
                     className={
                       "flex flex-col gap-2 p-5 md:flex-row md:items-center md:justify-between md:p-6" +
                       (idx > 0 ? " border-t border-ink/15" : "")
@@ -159,15 +220,12 @@ export default async function MyRewardsPage() {
   );
 }
 
-function lookupReward(slug: string) {
-  const reward = REWARDS.find((r) => r.slug === slug);
-  if (!reward) return null;
-  return { reward, partner: PARTNERS[reward.partnerSlug] };
-}
-
-function RedemptionCard({ redemption }: { redemption: Redemption }) {
-  const found = lookupReward(redemption.rewardSlug);
+function RedemptionCard({ redemption }: { redemption: RedemptionView }) {
   const expires = redemption.expiresAt ? fmtDate(redemption.expiresAt) : null;
+  const partnerSubtitle =
+    redemption.partnerLocations.length > 0
+      ? `${redemption.partnerName} · ${redemption.partnerLocations.join(", ")}`
+      : redemption.partnerName;
 
   return (
     <article className="grid grid-cols-1 border border-ink md:grid-cols-[1fr_180px]">
@@ -178,19 +236,8 @@ function RedemptionCard({ redemption }: { redemption: Redemption }) {
             {STATUS_LABEL[redemption.status]}
           </span>
         </div>
-        {found ? (
-          <>
-            <h3 className="type-h3">{found.reward.title}</h3>
-            <p className="text-[13px] text-graphite">
-              {found.partner.name}
-              {found.partner.locations.length > 0
-                ? ` · ${found.partner.locations.join(", ")}`
-                : ""}
-            </p>
-          </>
-        ) : (
-          <h3 className="type-h3 text-muted-2">Награда удалена</h3>
-        )}
+        <h3 className="type-h3">{redemption.rewardTitle}</h3>
+        <p className="text-[13px] text-graphite">{partnerSubtitle}</p>
         <dl className="mt-auto flex flex-col gap-1.5 text-[12px]">
           <div className="flex justify-between border-t border-ink/15 pt-2">
             <dt className="text-muted">Списано</dt>
@@ -226,9 +273,7 @@ function RedemptionCard({ redemption }: { redemption: Redemption }) {
   );
 }
 
-function PastRow({ redemption }: { redemption: Redemption }) {
-  const found = lookupReward(redemption.rewardSlug);
-
+function PastRow({ redemption }: { redemption: RedemptionView }) {
   return (
     <>
       <div className="flex flex-col gap-1">
@@ -241,8 +286,8 @@ function PastRow({ redemption }: { redemption: Redemption }) {
           </span>
         </div>
         <span className="text-[15px] font-medium text-ink">
-          {found?.reward.title ?? "Награда удалена"}
-          {found ? <span className="text-muted"> · {found.partner.name}</span> : null}
+          {redemption.rewardTitle}
+          <span className="text-muted"> · {redemption.partnerName}</span>
         </span>
       </div>
       <div className="flex flex-col text-right md:items-end">
@@ -260,10 +305,9 @@ function PastRow({ redemption }: { redemption: Redemption }) {
 }
 
 /**
- * Tiny stub QR — just a 7×7 grid of squares deterministic from the code.
- * Replaces a real QR until backend issues redemption codes that need scanning.
- * Visual placeholder: looks like a QR, isn't scannable. Bartender uses the
- * 6-char alphanumeric code below the grid.
+ * Visual stub — looks QR-shaped, isn't scannable. The 6-char code below
+ * is what the bartender actually types; backend issues a real QR endpoint
+ * later if scanning becomes a desired flow.
  */
 function QrPlaceholder({ code }: { code: string }) {
   const seed = Array.from(code).reduce((s, c) => s + c.charCodeAt(0), 0);
