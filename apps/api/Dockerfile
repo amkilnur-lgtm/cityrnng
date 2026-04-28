@@ -36,6 +36,11 @@ RUN pnpm --filter @cityrnng/api build
 # Prune to production deps only — drops devDependencies from node_modules.
 RUN pnpm --filter @cityrnng/api deploy --prod /prod-api
 
+# `pnpm deploy` builds a fresh node_modules tree, so the `.prisma/client`
+# generated above lives in the wrong path. Regenerate the client INSIDE
+# /prod-api so the engine binaries land in the layout the runtime expects.
+RUN cd /prod-api && ./node_modules/.bin/prisma generate
+
 # === 3. runtime — slim image, non-root user ===
 FROM node:20-alpine AS runtime
 # Prisma's schema engine dlopens libssl + libgcc at runtime; without them on
