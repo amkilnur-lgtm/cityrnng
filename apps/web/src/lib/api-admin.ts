@@ -179,3 +179,40 @@ export async function listAdminAttendances(
   const qs = opts.status ? `?status=${opts.status}` : "";
   return (await fetchJson<AdminAttendance[]>(`/admin/attendances${qs}`)) ?? [];
 }
+
+// === User admin types ===
+
+export type AdminUserRole = "runner" | "admin" | "partner";
+
+export type AdminUser = {
+  id: string;
+  email: string;
+  status: "pending" | "active" | "blocked";
+  createdAt: string;
+  profile: {
+    displayName: string;
+    firstName: string | null;
+    lastName: string | null;
+    city: string | null;
+  } | null;
+  roles: Array<{ role: { code: AdminUserRole; name: string } }>;
+  pointAccount: { balance: number } | null;
+};
+
+export type AdminUsersPage = {
+  rows: AdminUser[];
+  nextCursor: string | null;
+};
+
+export async function listAdminUsers(
+  opts: { limit?: number; cursor?: string } = {},
+): Promise<AdminUsersPage> {
+  const params = new URLSearchParams();
+  if (opts.limit) params.set("limit", String(opts.limit));
+  if (opts.cursor) params.set("cursor", opts.cursor);
+  const qs = params.toString();
+  const result = await fetchJson<AdminUsersPage>(
+    `/admin/users${qs ? `?${qs}` : ""}`,
+  );
+  return result ?? { rows: [], nextCursor: null };
+}

@@ -20,7 +20,7 @@ const SECTIONS: SidebarSection[] = [
   { href: "/admin/attendances", label: "Attendances" },
   { href: "/admin/partners", label: "Партнёры" },
   { href: "/admin/rewards", label: "Награды" },
-  { href: "/admin/users", label: "Пользователи", comingSoon: true },
+  { href: "/admin/users", label: "Пользователи" },
   { href: "/admin/points", label: "Балльные операции", comingSoon: true },
 ];
 

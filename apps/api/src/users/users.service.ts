@@ -1,12 +1,20 @@
-import { Injectable } from "@nestjs/common";
+import {
+  ConflictException,
+  Injectable,
+  NotFoundException,
+} from "@nestjs/common";
 import { Prisma, User } from "@prisma/client";
 import { PrismaService } from "../prisma/prisma.service";
-import { ROLE_RUNNER } from "../auth/types";
+import { ROLE_ADMIN, ROLE_RUNNER } from "../auth/types";
 import { PointsAwardsService } from "../points/points-awards.service";
 
 export type UserWithRelations = Prisma.UserGetPayload<{
   include: { profile: true; roles: { include: { role: true } } };
 }>;
+
+export type AdminUserRow = UserWithRelations & {
+  pointAccount: { balance: number } | null;
+};
 
 @Injectable()
 export class UsersService {
@@ -58,6 +66,76 @@ export class UsersService {
         where: { id: user.id },
         include: { profile: true, roles: { include: { role: true } } },
       });
+    });
+  }
+
+  /** Admin listing — paginated by createdAt desc with profile + roles + balance. */
+  async listAdmin(opts: { limit?: number; cursor?: string } = {}): Promise<{
+    rows: AdminUserRow[];
+    nextCursor: string | null;
+  }> {
+    const limit = Math.min(Math.max(opts.limit ?? 50, 1), 200);
+    const rows = await this.prisma.user.findMany({
+      orderBy: [{ createdAt: "desc" }, { id: "desc" }],
+      take: limit + 1,
+      cursor: opts.cursor ? { id: opts.cursor } : undefined,
+      skip: opts.cursor ? 1 : 0,
+      include: {
+        profile: true,
+        roles: { include: { role: true } },
+        pointAccount: { select: { balance: true } },
+      },
+    });
+    const hasMore = rows.length > limit;
+    const trimmed = hasMore ? rows.slice(0, limit) : rows;
+    return {
+      rows: trimmed,
+      nextCursor: hasMore ? rows[limit - 1].id : null,
+    };
+  }
+
+  /** Grant a role by code. Idempotent — granting an already-held role is a no-op. */
+  async grantRole(userId: string, roleCode: string): Promise<UserWithRelations> {
+    const user = await this.prisma.user.findUnique({ where: { id: userId } });
+    if (!user) throw new NotFoundException({ code: "USER_NOT_FOUND" });
+    const role = await this.prisma.role.findUnique({ where: { code: roleCode } });
+    if (!role) throw new NotFoundException({ code: "ROLE_NOT_FOUND" });
+
+    await this.prisma.userRole.upsert({
+      where: { userId_roleId: { userId, roleId: role.id } },
+      update: {},
+      create: { userId, roleId: role.id },
+    });
+    return this.prisma.user.findUniqueOrThrow({
+      where: { id: userId },
+      include: { profile: true, roles: { include: { role: true } } },
+    });
+  }
+
+  /**
+   * Revoke a role by code. Refuses to revoke admin from the actor (to avoid
+   * locking yourself out) and refuses to revoke runner (everyone keeps it).
+   */
+  async revokeRole(
+    userId: string,
+    roleCode: string,
+    actorId: string,
+  ): Promise<UserWithRelations> {
+    if (roleCode === ROLE_RUNNER) {
+      throw new ConflictException({ code: "CANNOT_REVOKE_RUNNER" });
+    }
+    if (roleCode === ROLE_ADMIN && userId === actorId) {
+      throw new ConflictException({ code: "CANNOT_DEMOTE_SELF" });
+    }
+    const role = await this.prisma.role.findUnique({ where: { code: roleCode } });
+    if (!role) throw new NotFoundException({ code: "ROLE_NOT_FOUND" });
+
+    await this.prisma.userRole.deleteMany({
+      where: { userId, roleId: role.id },
+    });
+    return this.prisma.user.findUniqueOrThrow({
+      where: { id: userId },
+      include: { profile: true, roles: { include: { role: true } } },
     });
   }
 }
