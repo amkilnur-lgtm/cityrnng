@@ -134,7 +134,11 @@ export type AdminEvent = {
   endsAt: string;
   locationName: string | null;
   locationAddress: string | null;
+  locationLat: number | null;
+  locationLng: number | null;
   capacity: number | null;
+  registrationOpenAt: string | null;
+  registrationCloseAt: string | null;
   isPointsEligible: boolean;
   basePointsAward: number;
   recurrenceRuleId: string | null;
