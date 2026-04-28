@@ -60,14 +60,22 @@
 | `NODE_ENV` | `development` | `production` отключает Dev-toggle |
 | `TZ` | system | поставить `Asia/Yekaterinburg` для корректной материализации `event_recurrence_rules` |
 
-## 6. Email / magic-link канал — НЕ РЕАЛИЗОВАНО
+## 6. Email / magic-link канал
 
-> ⚠️ **Critical gap:** код отправки писем в `apps/api` отсутствует. `POST /auth/request-login` создаёт challenge, но не шлёт письмо. На проде нужен email-провайдер + интеграция (см. DEPLOY-RUNBOOK §gap).
-> Когда выберем провайдер — добавить сюда:
-> - `SMTP_HOST` / `SMTP_PORT` / `SMTP_USER` / `SMTP_PASS` / `SMTP_FROM` (если SMTP)
-> - или `MAILGUN_API_KEY` / `MAILGUN_DOMAIN` / `MAILGUN_FROM`
-> - или `SENDPULSE_API_USER_ID` / `SENDPULSE_API_SECRET`
-> - или Я.Постбокс / Я.Cloud Functions
+Реализовано в `apps/api/src/email/`. Провайдер выбирается через `EMAIL_PROVIDER`.
+
+| Secret | Default | Назначение |
+|---|---|---|
+| `WEB_BASE_URL` | `http://localhost:3000` | публичный origin фронта — из него собирается ссылка `${WEB_BASE_URL}/auth/verify?token=…` |
+| `EMAIL_PROVIDER` | `console` | `console` пишет письмо в stdout (dev), `smtp` отправляет реально |
+| `EMAIL_FROM` | `CITYRNNG <noreply@cityrnng.local>` | заголовок `From:` |
+| `SMTP_HOST` | — | при `EMAIL_PROVIDER=smtp` обязательно |
+| `SMTP_PORT` | — | `465` (implicit TLS) или `587` (STARTTLS) |
+| `SMTP_SECURE` | `false` | `true` для порта 465; `false` для 587 |
+| `SMTP_USER` | — | логин SMTP |
+| `SMTP_PASS` | — | пароль приложения (не от ящика!) |
+
+**Прод:** обязательно `EMAIL_PROVIDER=smtp` и `AUTH_DEV_RETURN_TOKEN=false`. Сервер при старте делает `transporter.verify()` и логирует ошибку, если SMTP не отвечает.
 
 ## 7. Database
 

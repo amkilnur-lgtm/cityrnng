@@ -2,7 +2,7 @@
 
 Пошаговый гайд по подъёму staging/production окружения. Цель: первый рабочий staging за 1-2 часа после получения VM. Production — после прогона staging хотя бы неделю.
 
-> **Status (2026-04-25):** инструкция написана под текущий код. Известный critical gap — нет реализации email-канала для magic-link. См. §10.
+> **Status (2026-04-28):** инструкция написана под текущий код. Email-канал для magic-link реализован — настройки в §10.
 
 ## Содержание
 
@@ -15,7 +15,7 @@
 7. [Миграции БД](#7-миграции-бд)
 8. [Seed: роли + локации + recurrence rule](#8-seed-роли--локации--recurrence-rule)
 9. [Запуск сервисов + reverse proxy](#9-запуск-сервисов--reverse-proxy)
-10. [Critical gap: email канал](#10-critical-gap-email-канал)
+10. [Email канал (magic-link)](#10-email-канал-magic-link)
 11. [Health checks](#11-health-checks)
 12. [Backup](#12-backup)
 13. [Логирование и observability](#13-логирование-и-observability)
@@ -253,24 +253,37 @@ curl https://staging.cityrnng.ru/
 # HTML главной страницы
 ```
 
-## 10. Critical gap: email канал
+## 10. Email канал (magic-link)
 
-> ⚠️ **На проде magic-link не сработает.** В `apps/api/src/auth/` нет кода отправки писем — `POST /auth/request-login` создаёт `login_challenge` в БД, но письмо не уходит. Юзер не получает токен → не залогинится.
+Реализован в `apps/api/src/email/` через провайдер-абстракцию. `EMAIL_PROVIDER` выбирает между `console` (dev-default — пишет в stdout) и `smtp` (prod — nodemailer).
 
-**Workaround на staging для тестов:**
+**Dev / локально (без SMTP):**
 ```bash
-AUTH_DEV_RETURN_TOKEN=true  # в .env.staging
+EMAIL_PROVIDER=console
+WEB_BASE_URL=http://localhost:3000
 ```
-Тогда токен возвращается прямо в HTTP-ответе (frontend подхватывает и в SentView показывает дев-ссылку). Подходит чтобы протестировать полный flow до подключения email.
+В логе API появится `[email:console] to=… subject=…` с полной ссылкой. Нажми её в терминале и попадёшь на `/auth/verify`.
 
-**Перед prod нужно:**
-1. Выбрать провайдер: Я.Postbox (SMTP), Я.Cloud Functions + SES, Mailgun, SendPulse
-2. Реализовать `MailerService` в `apps/api/src/auth/` с шаблоном письма
-3. Дёрнуть `MailerService.sendMagicLink()` в `AuthService.requestLogin()` после создания challenge
-4. Добавить env переменные провайдера в `envSchema` + `GITHUB-SECRETS.md`
-5. Тест с настоящим ящиком до production deploy
+Альтернатива: `AUTH_DEV_RETURN_TOKEN=true` — токен возвращается прямо в HTTP-ответе на `POST /auth/request-login`, фронт подхватывает и показывает дев-ссылку. Удобно для e2e-тестов.
 
-Это **блокер для production**. Можно стартовать staging с `AUTH_DEV_RETURN_TOKEN=true`, реализацию email — отдельным PR.
+**Staging / production:**
+```bash
+EMAIL_PROVIDER=smtp
+WEB_BASE_URL=https://cityrnng.ru
+EMAIL_FROM=CITYRNNG <noreply@cityrnng.ru>
+SMTP_HOST=smtp.yandex.ru
+SMTP_PORT=465
+SMTP_SECURE=true            # implicit TLS на 465; 587 → STARTTLS, ставь false
+SMTP_USER=noreply@cityrnng.ru
+SMTP_PASS=…                 # пароль приложения, не от ящика
+AUTH_DEV_RETURN_TOKEN=false # ⚠️ обязательно false на проде
+```
+SMTP-провайдер делает `transporter.verify()` при старте и логирует ошибку (без падения процесса), если SMTP временно недоступен.
+
+**Чек после деплоя:**
+1. Запросить magic-link с настоящим ящиком (`POST /auth/request-login`).
+2. Проверить, что письмо пришло и кнопка ведёт на `${WEB_BASE_URL}/auth/verify?token=…`.
+3. Залогиниться по ссылке, проверить, что cookies проставились.
 
 ## 11. Health checks
 
@@ -354,8 +367,8 @@ Prisma не делает rollback автоматически. Нужно:
 - [ ] Caddyfile настроен, SSL получен автоматически
 - [ ] `curl /api/v1/health` → 200
 - [ ] `curl /` → 200
-- [ ] Опционально: `AUTH_DEV_RETURN_TOKEN=true` для прохода magic-link до email-интеграции
+- [ ] Email: `EMAIL_PROVIDER=smtp`, `WEB_BASE_URL`, SMTP_* настроены и приходят письма
 - [ ] Backup-cron заведён
 - [ ] Sentry подключён (опционально для staging)
 
-После прохождения чек-листа — staging готов. Следующий этап: реализовать email + повторить чек-лист для production.
+После прохождения чек-листа — staging готов. Следующий этап: повторить чек-лист для production.

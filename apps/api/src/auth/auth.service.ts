@@ -1,5 +1,6 @@
 import { Injectable, Logger, UnauthorizedException } from "@nestjs/common";
 import { ConfigService } from "@nestjs/config";
+import { EmailService } from "../email/email.service";
 import { PrismaService } from "../prisma/prisma.service";
 import { UsersService, rolesOf } from "../users/users.service";
 import { LoginChallengeService } from "./login-challenge.service";
@@ -31,12 +32,22 @@ export class AuthService {
     private readonly users: UsersService,
     private readonly challenges: LoginChallengeService,
     private readonly tokens: TokensService,
+    private readonly email: EmailService,
     private readonly config: ConfigService<Env, true>,
   ) {}
 
   async requestLogin(email: string): Promise<RequestLoginResult> {
     const { token, expiresAt } = await this.challenges.issue(email);
-    this.logger.log(`Login challenge issued for ${email}: ${token} (expires ${expiresAt.toISOString()})`);
+    const ttlMinutes = this.config.get("LOGIN_CHALLENGE_TTL_MINUTES", { infer: true });
+    this.logger.log(
+      `Login challenge issued for ${email} (expires ${expiresAt.toISOString()})`,
+    );
+
+    // Email delivery failure must not leak user-existence info via timing or
+    // error messages, but it also shouldn't lock everyone out — we log and
+    // surface a generic 500 to the client.
+    await this.email.sendMagicLink({ email, token, ttlMinutes });
+
     const exposeToken = this.config.get("AUTH_DEV_RETURN_TOKEN", { infer: true });
     return exposeToken ? { ok: true, expiresAt, devToken: token } : { ok: true, expiresAt };
   }
