@@ -1,6 +1,25 @@
 import { randomUUID } from "node:crypto";
-import { Body, Controller, HttpCode, HttpStatus, Post, UseGuards } from "@nestjs/common";
+import {
+  Body,
+  Controller,
+  Get,
+  HttpCode,
+  HttpStatus,
+  Post,
+  Query,
+  UseGuards,
+} from "@nestjs/common";
 import { PointActorType, PointReasonType } from "@prisma/client";
+import { Type } from "class-transformer";
+import {
+  IsEnum,
+  IsInt,
+  IsOptional,
+  IsString,
+  IsUUID,
+  Max,
+  Min,
+} from "class-validator";
 import { CurrentUser } from "../auth/decorators/current-user.decorator";
 import { Roles } from "../auth/decorators/roles.decorator";
 import { RolesGuard } from "../auth/guards/roles.guard";
@@ -8,11 +27,42 @@ import { ROLE_ADMIN, type AuthenticatedUser } from "../auth/types";
 import { AdjustPointsDto } from "./dto/adjust-points.dto";
 import { PointsService } from "./points.service";
 
+class ListPointsQuery {
+  @IsOptional()
+  @Type(() => Number)
+  @IsInt()
+  @Min(1)
+  @Max(200)
+  limit?: number;
+
+  @IsOptional()
+  @IsString()
+  cursor?: string;
+
+  @IsOptional()
+  @IsUUID()
+  userId?: string;
+
+  @IsOptional()
+  @IsEnum(PointReasonType)
+  reasonType?: PointReasonType;
+}
+
 @Controller("admin/points")
 @UseGuards(RolesGuard)
 @Roles(ROLE_ADMIN)
 export class AdminPointsController {
   constructor(private readonly points: PointsService) {}
+
+  @Get()
+  list(@Query() query: ListPointsQuery) {
+    return this.points.listAdminHistory({
+      limit: query.limit,
+      cursor: query.cursor,
+      userId: query.userId,
+      reasonType: query.reasonType,
+    });
+  }
 
   @Post("adjust")
   @HttpCode(HttpStatus.OK)

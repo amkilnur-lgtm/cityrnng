@@ -95,6 +95,59 @@ export class PointsService {
     return account?.balance ?? 0;
   }
 
+  /**
+   * Admin cross-user listing — same shape as listHistory but unscoped, with
+   * the user joined in for each row. Optional userId/reasonType filters.
+   */
+  async listAdminHistory(query: {
+    limit?: number;
+    cursor?: string;
+    userId?: string;
+    reasonType?: PointReasonType;
+  } = {}) {
+    const take = Math.min(200, Math.max(1, query.limit ?? 50));
+    const where: Prisma.PointTransactionWhereInput = {};
+    if (query.userId) where.userId = query.userId;
+    if (query.reasonType) where.reasonType = query.reasonType;
+
+    const args: Prisma.PointTransactionFindManyArgs = {
+      where,
+      orderBy: [{ createdAt: "desc" }, { id: "desc" }],
+      take: take + 1,
+      include: {
+        user: { select: { id: true, email: true } },
+      },
+    };
+    if (query.cursor) {
+      args.cursor = { id: query.cursor };
+      args.skip = 1;
+    }
+    const rows = (await this.prisma.pointTransaction.findMany(
+      args,
+    )) as Array<
+      PointTransaction & { user: { id: string; email: string } }
+    >;
+    const nextCursor = rows.length > take ? rows[take - 1]!.id : null;
+    const page = rows.slice(0, take);
+    return {
+      items: page.map((t) => ({
+        id: t.id,
+        userId: t.userId,
+        userEmail: t.user.email,
+        direction: t.direction,
+        amount: t.amount,
+        balanceAfter: t.balanceAfter,
+        reasonType: t.reasonType,
+        reasonRef: t.reasonRef,
+        comment: t.comment,
+        createdByType: t.createdByType,
+        createdById: t.createdById,
+        createdAt: t.createdAt,
+      })),
+      nextCursor,
+    };
+  }
+
   async listHistory(userId: string, query: HistoryQuery = {}) {
     const take = Math.min(100, Math.max(1, query.limit ?? 20));
     const args: Prisma.PointTransactionFindManyArgs = {
