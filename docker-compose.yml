@@ -3,13 +3,16 @@ services:
     image: postgres:16-alpine
     container_name: cityrnng-postgres
     environment:
-      POSTGRES_DB: cityrnng
-      POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: postgres
+      # Defaults match the dev .env so `docker compose up -d postgres redis`
+      # without an env file still works. Production env files override these.
+      POSTGRES_DB: ${POSTGRES_DB:-cityrnng}
+      POSTGRES_USER: ${POSTGRES_USER:-postgres}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-postgres}
     ports:
       - "5432:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
+    restart: unless-stopped
 
   redis:
     image: redis:7-alpine
@@ -18,6 +21,7 @@ services:
       - "6379:6379"
     volumes:
       - redis_data:/data
+    restart: unless-stopped
 
   # === App services — opt-in via `--profile app` so the dev flow
   # `docker compose up -d postgres redis` still works untouched.
