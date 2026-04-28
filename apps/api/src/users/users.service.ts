@@ -69,6 +69,55 @@ export class UsersService {
     });
   }
 
+  /**
+   * Self-service profile patch. `undefined` fields are skipped (partial
+   * update). Caller is the authenticated user — guard happens at the
+   * controller / global JwtAuthGuard.
+   */
+  async updateProfile(
+    userId: string,
+    patch: {
+      displayName?: string;
+      firstName?: string | null;
+      lastName?: string | null;
+      city?: string | null;
+      telegramHandle?: string | null;
+      instagramHandle?: string | null;
+    },
+  ): Promise<UserWithRelations> {
+    // Drop undefined keys so Prisma doesn't write them.
+    const data = Object.fromEntries(
+      Object.entries(patch).filter(([, v]) => v !== undefined),
+    );
+
+    if (Object.keys(data).length > 0) {
+      const existing = await this.prisma.profile.findUnique({
+        where: { userId },
+      });
+      if (existing) {
+        await this.prisma.profile.update({ where: { userId }, data });
+      } else {
+        // Defensive — should never hit, ensureFromVerifiedEmail always creates one.
+        await this.prisma.profile.create({
+          data: {
+            userId,
+            displayName: data.displayName ?? "runner",
+            firstName: data.firstName ?? null,
+            lastName: data.lastName ?? null,
+            city: data.city ?? null,
+            telegramHandle: data.telegramHandle ?? null,
+            instagramHandle: data.instagramHandle ?? null,
+          },
+        });
+      }
+    }
+
+    return this.prisma.user.findUniqueOrThrow({
+      where: { id: userId },
+      include: { profile: true, roles: { include: { role: true } } },
+    });
+  }
+
   /** Admin listing — paginated by createdAt desc with profile + roles + balance. */
   async listAdmin(opts: { limit?: number; cursor?: string } = {}): Promise<{
     rows: AdminUserRow[];
