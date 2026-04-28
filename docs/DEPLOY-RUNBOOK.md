@@ -104,39 +104,32 @@ docker exec -it cityrnng-redis redis-cli ping  # → PONG
 
 ## 5. Сборка образов
 
-В корне репо есть `package.json`-скрипты, но **Dockerfile-ов пока нет**. До их создания (TODO для отдельного PR) можно собрать локально и тащить через rsync, либо использовать GitHub Actions без registry.
+Готовые multi-stage Dockerfile-ы лежат в `apps/api/Dockerfile` и `apps/web/Dockerfile`. Сборка из корня репо:
 
-**Минимальный Dockerfile-skeleton** (для будущего):
-```dockerfile
-# apps/api/Dockerfile
-FROM node:20-alpine AS base
-RUN corepack enable && corepack prepare pnpm@9.15.4 --activate
-WORKDIR /app
-COPY pnpm-lock.yaml pnpm-workspace.yaml package.json ./
-COPY apps/api/package.json apps/api/
-RUN pnpm install --frozen-lockfile --filter @cityrnng/api
-COPY apps/api ./apps/api
-RUN pnpm --filter @cityrnng/api prisma generate
-RUN pnpm --filter @cityrnng/api build
-EXPOSE 4000
-CMD ["pnpm", "--filter", "@cityrnng/api", "start:prod"]
+```bash
+# API: ~150MB (alpine + dist + prisma engines)
+docker build -f apps/api/Dockerfile -t cityrnng-api:staging .
+
+# Web: ~120MB (Next.js standalone)
+docker build -f apps/web/Dockerfile \
+  --build-arg NEXT_PUBLIC_API_URL=https://api.cityrnng.ru/api/v1 \
+  -t cityrnng-web:staging .
 ```
 
-```dockerfile
-# apps/web/Dockerfile
-FROM node:20-alpine AS base
-RUN corepack enable && corepack prepare pnpm@9.15.4 --activate
-WORKDIR /app
-COPY pnpm-lock.yaml pnpm-workspace.yaml package.json ./
-COPY apps/web/package.json apps/web/
-RUN pnpm install --frozen-lockfile --filter @cityrnng/web
-COPY apps/web ./apps/web
-ARG NEXT_PUBLIC_API_URL
-ENV NEXT_PUBLIC_API_URL=$NEXT_PUBLIC_API_URL
-RUN pnpm --filter @cityrnng/web build
-EXPOSE 3000
-CMD ["pnpm", "--filter", "@cityrnng/web", "start"]
+**Что важно знать про образы:**
+- API-контейнер при старте сам прогоняет `prisma migrate deploy`, потом `node dist/main.js`. Идемпотентно — на свежей БД проигрывает все миграции, на актуальной не делает ничего. `prisma` CLI вынесен в `dependencies` (а не devDeps) специально для этого шага.
+- Web-контейнер использует Next standalone output — никаких `node_modules` в runtime, только `server.js` с зависимостями, проинлайненными билдером.
+- Оба контейнера бегут под non-root юзером `app:1001` и используют `tini` как PID 1.
+
+**Локальная проверка через compose:**
+```bash
+# поднять postgres + redis + api + web одной командой
+APP_ENV_FILE=.env docker compose --profile app up -d --build
+
+# или только данные (как раньше)
+docker compose up -d postgres redis
 ```
+Сервисы `api`/`web` сидят за compose-профилем `app`, чтобы дев-флоу с одним лишь Postgres не сломался.
 
 ## 6. Env переменные
 
@@ -217,10 +210,12 @@ SEED_ADMIN_EMAIL=admin@cityrnng.ru pnpm --filter @cityrnng/api prisma db seed
 **Запуск контейнеров:**
 ```bash
 cd /opt/cityrnng
-docker compose --env-file .env.staging up -d  # postgres + redis + api + web
+APP_ENV_FILE=.env.staging \
+NEXT_PUBLIC_API_URL=https://api.staging.cityrnng.ru/api/v1 \
+docker compose --profile app up -d --build  # postgres + redis + api + web
 ```
 
-(Сейчас `docker-compose.yml` содержит только postgres + redis. Сервисы api/web нужно добавить — TODO для отдельного PR; до этого — поднимать напрямую через `pnpm` под systemd.)
+`api`/`web` сидят за compose-профилем `app`, чтобы случайный `docker compose up` не задел их без явного флага.
 
 **Caddy reverse proxy** — `/etc/caddy/Caddyfile`:
 ```
@@ -339,7 +334,8 @@ rm /tmp/cityrnng-$TS.sql.gz
 cd /opt/cityrnng
 git fetch
 git checkout <previous-good-sha>
-docker compose --env-file .env.staging up -d --build
+APP_ENV_FILE=.env.staging \
+docker compose --profile app up -d --build
 ```
 
 **Откатить миграцию:**
