@@ -1,0 +1,37 @@
+# Build output / caches
+**/node_modules
+**/.next
+**/dist
+**/.turbo
+**/coverage
+
+# Local dev artifacts
+.env
+.env.*
+!.env.example
+**/*.log
+.git
+.github
+.vscode
+.idea
+.DS_Store
+
+# Tests + tooling we never need at build time
+**/__tests__
+**/*.test.ts
+**/*.test.tsx
+
+# Docker artifacts
+**/Dockerfile
+docker-compose*.yml
+**/.dockerignore
+
+# Docs (image is leaner without)
+docs
+README.md
+*.md
+!apps/api/prisma/migrations/**/README.md
+
+# Editor / OS junk
+.cursor
+.claude
