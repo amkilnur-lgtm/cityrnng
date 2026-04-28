@@ -39,8 +39,11 @@ services:
       - postgres
     env_file:
       - ${APP_ENV_FILE:-.env}
+    # Loopback only — Caddy on the host proxies 443 → here. Same reasoning as
+    # postgres/redis: docker bypasses ufw, so a 0.0.0.0 bind would expose the
+    # raw API to the public internet.
     ports:
-      - "4000:4000"
+      - "127.0.0.1:4000:4000"
     restart: unless-stopped
 
   web:
@@ -57,7 +60,7 @@ services:
     env_file:
       - ${APP_ENV_FILE:-.env}
     ports:
-      - "3000:3000"
+      - "127.0.0.1:3000:3000"
     restart: unless-stopped
 
 volumes:

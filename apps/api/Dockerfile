@@ -38,7 +38,10 @@ RUN pnpm --filter @cityrnng/api deploy --prod /prod-api
 
 # === 3. runtime — slim image, non-root user ===
 FROM node:20-alpine AS runtime
-RUN apk add --no-cache libc6-compat tini
+# Prisma's schema engine dlopens libssl + libgcc at runtime; without them on
+# Alpine it crashes with "Could not parse schema engine response" on the
+# first `prisma migrate deploy`, taking the container into a crashloop.
+RUN apk add --no-cache libc6-compat openssl libgcc tini
 WORKDIR /app
 
 ENV NODE_ENV=production
