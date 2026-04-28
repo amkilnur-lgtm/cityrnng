@@ -216,3 +216,45 @@ export async function listAdminUsers(
   );
   return result ?? { rows: [], nextCursor: null };
 }
+
+// === Points ledger admin types ===
+
+export type AdminPointsTxn = {
+  id: string;
+  userId: string;
+  userEmail: string;
+  direction: "credit" | "debit";
+  amount: number;
+  balanceAfter: number;
+  reasonType: string;
+  reasonRef: string | null;
+  comment: string | null;
+  createdByType: "system" | "admin" | "partner" | "self";
+  createdById: string | null;
+  createdAt: string;
+};
+
+export type AdminPointsPage = {
+  items: AdminPointsTxn[];
+  nextCursor: string | null;
+};
+
+export async function listAdminPoints(
+  opts: {
+    limit?: number;
+    cursor?: string;
+    userId?: string;
+    reasonType?: string;
+  } = {},
+): Promise<AdminPointsPage> {
+  const params = new URLSearchParams();
+  if (opts.limit) params.set("limit", String(opts.limit));
+  if (opts.cursor) params.set("cursor", opts.cursor);
+  if (opts.userId) params.set("userId", opts.userId);
+  if (opts.reasonType) params.set("reasonType", opts.reasonType);
+  const qs = params.toString();
+  const result = await fetchJson<AdminPointsPage>(
+    `/admin/points${qs ? `?${qs}` : ""}`,
+  );
+  return result ?? { items: [], nextCursor: null };
+}

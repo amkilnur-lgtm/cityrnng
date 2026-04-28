@@ -21,7 +21,7 @@ const SECTIONS: SidebarSection[] = [
   { href: "/admin/partners", label: "Партнёры" },
   { href: "/admin/rewards", label: "Награды" },
   { href: "/admin/users", label: "Пользователи" },
-  { href: "/admin/points", label: "Балльные операции", comingSoon: true },
+  { href: "/admin/points", label: "Балльные операции" },
 ];
 
 export function AdminSidebar({ isDev }: { isDev: boolean }) {

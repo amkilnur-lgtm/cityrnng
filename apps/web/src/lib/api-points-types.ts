@@ -31,6 +31,7 @@ const REASON_LABELS: Record<string, string> = {
   event_attendance_reversal: "Отмена начисления",
   manual_adjustment: "Ручная корректировка",
   reward_redemption: "Списание · обмен на reward",
+  reversal: "Возврат",
 };
 
 export function reasonLabel(reasonType: string): string {
