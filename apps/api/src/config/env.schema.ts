@@ -29,6 +29,22 @@ export const envSchema = z.object({
   WELCOME_BONUS_POINTS: z.coerce.number().int().nonnegative().default(100),
   EVENT_ATTENDANCE_REGULAR_POINTS_FALLBACK: z.coerce.number().int().nonnegative().default(0),
   EVENT_ATTENDANCE_SPECIAL_POINTS_FALLBACK: z.coerce.number().int().nonnegative().default(0),
+
+  // === Email channel ===
+  /** Public origin of the web app — used to build magic-link URLs in emails. */
+  WEB_BASE_URL: z.string().url().default("http://localhost:3000"),
+  /** Provider for transactional email. `console` just logs (dev default). */
+  EMAIL_PROVIDER: z.enum(["console", "smtp"]).default("console"),
+  EMAIL_FROM: z.string().default("CITYRNNG <noreply@cityrnng.local>"),
+  SMTP_HOST: z.string().optional(),
+  SMTP_PORT: z.coerce.number().int().positive().optional(),
+  /** Set "true" for implicit TLS (port 465). Defaults to STARTTLS on 587. */
+  SMTP_SECURE: z
+    .union([z.boolean(), z.string()])
+    .transform((v) => v === true || v === "true" || v === "1")
+    .default(false),
+  SMTP_USER: z.string().optional(),
+  SMTP_PASS: z.string().optional(),
 });
 
 export type Env = z.infer<typeof envSchema>;
