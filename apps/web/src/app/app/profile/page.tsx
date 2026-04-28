@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
+import { ProfileEditForm } from "@/components/app/profile-edit-form";
 import { StravaCard } from "@/components/app/strava-card";
 import { SiteFooter } from "@/components/site/footer";
 import { SiteNav } from "@/components/site/nav";
@@ -90,17 +91,27 @@ export default async function ProfilePage({
               <h2 className="type-h2">Профиль</h2>
               <dl className="flex flex-col gap-3 border border-ink bg-paper">
                 <Row k="Email" v={email} />
-                <Row k="Имя" v={profile?.firstName ?? "—"} />
-                <Row k="Фамилия" v={profile?.lastName ?? "—"} />
-                <Row k="Город" v={profile?.city ?? CLUB.city} />
-                <Row k="Telegram" v={profile?.telegramHandle ?? "—"} />
-                <Row k="Instagram" v={profile?.instagramHandle ?? "—"} />
                 <Row k="Роли" v={roles.join(", ") || "runner"} />
               </dl>
-              <p className="text-[13px] text-muted">
-                Редактирование профиля — в&nbsp;админке (Epic 1 follow-up).
-                Скоро будет здесь.
-              </p>
+
+              {session ? (
+                <ProfileEditForm
+                  defaults={{
+                    displayName: profile?.displayName ?? displayName,
+                    firstName: profile?.firstName ?? null,
+                    lastName: profile?.lastName ?? null,
+                    city: profile?.city ?? null,
+                    telegramHandle: profile?.telegramHandle ?? null,
+                    instagramHandle: profile?.instagramHandle ?? null,
+                  }}
+                  cityFallback={CLUB.city}
+                />
+              ) : (
+                <p className="border border-ink/30 bg-paper-2 p-4 text-[13px] text-muted">
+                  Редактирование доступно после логина по&nbsp;магик-линку. В
+                  dev-mock режиме — только просмотр.
+                </p>
+              )}
             </div>
 
             <div className="flex flex-col gap-6">
