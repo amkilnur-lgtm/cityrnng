@@ -8,8 +8,12 @@ services:
       POSTGRES_DB: ${POSTGRES_DB:-cityrnng}
       POSTGRES_USER: ${POSTGRES_USER:-postgres}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-postgres}
+    # Bind to loopback only — Docker bypasses host ufw via its own iptables
+    # rules, so a default `5432:5432` would expose Postgres to the internet
+    # on any public-IP host. Container-to-container traffic still works via
+    # the docker network (service name `postgres`).
     ports:
-      - "5432:5432"
+      - "127.0.0.1:5432:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
     restart: unless-stopped
@@ -18,7 +22,7 @@ services:
     image: redis:7-alpine
     container_name: cityrnng-redis
     ports:
-      - "6379:6379"
+      - "127.0.0.1:6379:6379"
     volumes:
       - redis_data:/data
     restart: unless-stopped
