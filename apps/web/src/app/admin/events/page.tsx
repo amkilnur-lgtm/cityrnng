@@ -43,9 +43,12 @@ export default async function AdminEventsPage() {
               .
             </p>
           </div>
-          <span className="font-mono text-[10px] uppercase tracking-[0.14em] text-muted-2">
-            создание / редактирование — следующий PR
-          </span>
+          <Link
+            href="/admin/events/new"
+            className="inline-flex h-11 items-center self-start border border-brand-red bg-brand-red px-5 font-sans text-[14px] font-semibold text-paper hover:bg-brand-red-ink"
+          >
+            + Создать событие
+          </Link>
         </Wrap>
       </section>
 
@@ -57,7 +60,7 @@ export default async function AdminEventsPage() {
               <p className="max-w-xl text-[14px] leading-[1.55] text-graphite">
                 Явных событий нет. Регулярные среды видны на сайте через
                 recurrence-rules — добавь правило в&nbsp;разделе
-                «Расписание». Спецсобытия (one-off) — следующий PR.
+                «Расписание». Для one-off спецсобытий — кнопка «Создать» выше.
               </p>
             </div>
           ) : (
@@ -71,6 +74,7 @@ export default async function AdminEventsPage() {
                     <Th>Статус</Th>
                     <Th>Override</Th>
                     <Th>Баллы</Th>
+                    <Th />
                   </tr>
                 </thead>
                 <tbody>
@@ -110,6 +114,14 @@ export default async function AdminEventsPage() {
                         {e.isPointsEligible
                           ? `+${e.basePointsAward} Б`
                           : "—"}
+                      </Td>
+                      <Td className="text-right">
+                        <Link
+                          href={`/admin/events/${e.id}`}
+                          className="font-sans text-[13px] font-semibold text-ink hover:text-brand-red"
+                        >
+                          Изменить →
+                        </Link>
                       </Td>
                     </tr>
                   ))}
