@@ -243,7 +243,7 @@ function RewardCard({
         <span
           className={
             "font-mono text-[16px] font-medium tracking-[0.04em] " +
-            (insufficient ? "text-muted-2" : "text-brand-red")
+            (insufficient ? "text-muted" : "text-brand-red")
           }
         >
           {reward.costPoints}&nbsp;Б
@@ -256,7 +256,7 @@ function RewardCard({
             Войти →
           </Link>
         ) : insufficient ? (
-          <span className="font-mono text-[11px] uppercase tracking-[0.14em] text-muted-2">
+          <span className="font-mono text-[11px] uppercase tracking-[0.14em] text-muted">
             не хватает {reward.costPoints - userPoints}&nbsp;Б
           </span>
         ) : (

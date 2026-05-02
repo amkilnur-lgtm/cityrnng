@@ -39,9 +39,9 @@ const STATUS_LABEL: Record<RedemptionStatus, string> = {
 
 const STATUS_TONE: Record<RedemptionStatus, string> = {
   active: "text-brand-red",
-  used: "text-muted-2",
-  expired: "text-muted-2",
-  cancelled: "text-muted-2",
+  used: "text-muted",
+  expired: "text-muted",
+  cancelled: "text-muted",
 };
 
 function fmtDate(iso: string) {

@@ -47,6 +47,7 @@ export function UserRoleToggle({
         type="button"
         onClick={toggle}
         disabled={pending}
+        aria-busy={pending}
         className={
           "inline-flex h-7 items-center border px-3 font-mono text-[11px] font-medium uppercase tracking-[0.14em] disabled:opacity-50 " +
           (optimistic

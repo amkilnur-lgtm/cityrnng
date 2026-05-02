@@ -151,7 +151,7 @@ function StatusBadge({ status }: { status: string }) {
   const cls =
     status === "active"
       ? "border-ink bg-paper text-ink"
-      : "border-muted-2 bg-paper-2 text-muted-2";
+      : "border-muted-2 bg-paper-2 text-muted";
   return (
     <span
       className={

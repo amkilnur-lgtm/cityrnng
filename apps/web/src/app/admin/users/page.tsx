@@ -97,7 +97,7 @@ export default async function AdminUsersPage({
                           <span className="font-mono text-[13px] text-ink">
                             {u.email}
                           </span>
-                          <div className="font-mono text-[10px] text-muted-2">
+                          <div className="font-mono text-[10px] text-muted">
                             {u.id}
                           </div>
                         </Td>
@@ -107,7 +107,7 @@ export default async function AdminUsersPage({
                               {u.profile.displayName}
                             </span>
                           ) : (
-                            <span className="text-muted-2">—</span>
+                            <span className="text-muted">—</span>
                           )}
                           {u.profile?.city ? (
                             <div className="font-mono text-[11px] text-muted">
@@ -142,7 +142,7 @@ export default async function AdminUsersPage({
                               {u.pointAccount.balance}&nbsp;Б
                             </span>
                           ) : (
-                            <span className="text-muted-2">—</span>
+                            <span className="text-muted">—</span>
                           )}
                         </Td>
                         <Td mono>{fmtDate(u.createdAt)}</Td>
@@ -209,7 +209,7 @@ function Badge({
 }) {
   const cls =
     variant === "muted"
-      ? "border-muted-2 bg-paper-2 text-muted-2"
+      ? "border-muted-2 bg-paper-2 text-muted"
       : "border-ink bg-paper text-ink";
   return (
     <span

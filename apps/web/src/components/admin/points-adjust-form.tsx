@@ -21,7 +21,7 @@ export function PointsAdjustForm({ defaultUserId }: { defaultUserId?: string }) 
           required
           defaultValue={defaultUserId}
           placeholder="00000000-0000-0000-0000-000000000000"
-          className="h-11 border border-ink bg-paper px-3 font-mono text-[12px] outline-none focus:bg-brand-tint/30"
+          className="h-11 border border-ink bg-paper px-3 font-mono text-[12px] outline-none c3-focus focus:bg-brand-tint/30"
         />
       </Field>
 
@@ -30,7 +30,7 @@ export function PointsAdjustForm({ defaultUserId }: { defaultUserId?: string }) 
           <select
             name="direction"
             defaultValue="credit"
-            className="h-11 border border-ink bg-paper px-3 font-sans text-[14px] outline-none"
+            className="h-11 border border-ink bg-paper px-3 font-sans text-[14px] outline-none c3-focus"
           >
             <option value="credit">credit (+)</option>
             <option value="debit">debit (−)</option>
@@ -43,7 +43,7 @@ export function PointsAdjustForm({ defaultUserId }: { defaultUserId?: string }) 
             min={1}
             required
             placeholder="50"
-            className="h-11 border border-ink bg-paper px-3 font-mono text-[14px] outline-none focus:bg-brand-tint/30"
+            className="h-11 border border-ink bg-paper px-3 font-mono text-[14px] outline-none c3-focus focus:bg-brand-tint/30"
           />
         </Field>
       </div>
@@ -53,7 +53,7 @@ export function PointsAdjustForm({ defaultUserId }: { defaultUserId?: string }) 
           name="comment"
           required
           placeholder="Корректировка после ручного check-in 25.04"
-          className="h-11 border border-ink bg-paper px-3 font-sans text-[14px] outline-none focus:bg-brand-tint/30"
+          className="h-11 border border-ink bg-paper px-3 font-sans text-[14px] outline-none c3-focus focus:bg-brand-tint/30"
         />
       </Field>
 
@@ -62,11 +62,17 @@ export function PointsAdjustForm({ defaultUserId }: { defaultUserId?: string }) 
           ✓ Готово. Новый баланс: {state.balance}&nbsp;Б
         </p>
       ) : null}
-      {state && !state.ok ? (
-        <p className="border border-brand-red bg-brand-tint/50 px-3 py-2 text-[13px] text-brand-red-ink">
-          {state.message}
-        </p>
-      ) : null}
+      <p
+        role="alert"
+        aria-live="polite"
+        className={
+          state && !state.ok
+            ? "border border-brand-red bg-brand-tint/50 px-3 py-2 text-[13px] text-brand-red-ink"
+            : "sr-only"
+        }
+      >
+        {state && !state.ok ? state.message : ""}
+      </p>
 
       <SubmitButton />
     </form>
@@ -103,6 +109,7 @@ function SubmitButton() {
     <button
       type="submit"
       disabled={pending}
+      aria-busy={pending}
       className="inline-flex h-12 items-center justify-center self-start border border-brand-red bg-brand-red px-6 font-sans text-[14px] font-semibold text-paper hover:bg-brand-red-ink disabled:cursor-not-allowed disabled:border-muted-2 disabled:bg-muted-2"
     >
       {pending ? "Применяем…" : "Корректировка"}

@@ -77,7 +77,7 @@ function HeroSide({ event }: { event: DisplayEvent }) {
             <span className="text-brand-red">
               {CLUB.runDayShort}&nbsp;{event.time}
             </span>
-            <span className="text-muted-2">·</span>
+            <span className="text-muted">·</span>
             <span className="text-ink">{event.venue ?? "место уточняется"}</span>
           </div>
           <p className="text-[13px] text-graphite">

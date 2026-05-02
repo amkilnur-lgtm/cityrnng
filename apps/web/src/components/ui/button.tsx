@@ -7,7 +7,7 @@ import { cn } from "@/lib/utils";
  * Sharp-edge HUD style: radius 0, 1px ink border, no shadow.
  */
 const buttonVariants = cva(
-  "inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-none font-semibold leading-none transition-colors focus-visible:outline-none focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-red disabled:pointer-events-none disabled:opacity-50",
+  "inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-none font-semibold leading-none transition-colors focus-visible:outline-none c3-focus focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-red disabled:pointer-events-none disabled:opacity-50",
   {
     variants: {
       variant: {

@@ -62,7 +62,7 @@ export function RewardForm({
           name="partnerId"
           required
           defaultValue={defaults?.partnerId ?? partners[0]?.id}
-          className="h-11 border border-ink bg-paper px-3 font-sans text-[14px] outline-none"
+          className="h-11 border border-ink bg-paper px-3 font-sans text-[14px] outline-none c3-focus"
         >
           {partners.map((p) => (
             <option key={p.id} value={p.id}>
@@ -77,7 +77,7 @@ export function RewardForm({
           required
           defaultValue={defaults?.slug}
           placeholder="mg-cappuccino"
-          className="h-11 border border-ink bg-paper px-3 font-mono text-[14px] outline-none focus:bg-brand-tint/30"
+          className="h-11 border border-ink bg-paper px-3 font-mono text-[14px] outline-none c3-focus focus:bg-brand-tint/30"
         />
       </Field>
       <Field label="Название">
@@ -86,7 +86,7 @@ export function RewardForm({
           required
           defaultValue={defaults?.title}
           placeholder="Капучино"
-          className="h-11 border border-ink bg-paper px-3 font-sans text-[15px] outline-none focus:bg-brand-tint/30"
+          className="h-11 border border-ink bg-paper px-3 font-sans text-[15px] outline-none c3-focus focus:bg-brand-tint/30"
         />
       </Field>
       <Field label="Описание" hint="опционально">
@@ -94,7 +94,7 @@ export function RewardForm({
           name="description"
           rows={2}
           defaultValue={defaults?.description ?? undefined}
-          className="border border-ink bg-paper px-3 py-2 font-sans text-[14px] outline-none focus:bg-brand-tint/30"
+          className="border border-ink bg-paper px-3 py-2 font-sans text-[14px] outline-none c3-focus focus:bg-brand-tint/30"
         />
       </Field>
       <div className="grid grid-cols-1 gap-5 md:grid-cols-2">
@@ -106,7 +106,7 @@ export function RewardForm({
             required
             defaultValue={defaults?.costPoints}
             placeholder="120"
-            className="h-11 border border-ink bg-paper px-3 font-mono text-[14px] outline-none focus:bg-brand-tint/30"
+            className="h-11 border border-ink bg-paper px-3 font-mono text-[14px] outline-none c3-focus focus:bg-brand-tint/30"
           />
         </Field>
         <Field label="Капасити" hint="опционально, лимит обменов">
@@ -115,7 +115,7 @@ export function RewardForm({
             type="number"
             min={1}
             defaultValue={defaults?.capacity ?? undefined}
-            className="h-11 border border-ink bg-paper px-3 font-mono text-[14px] outline-none focus:bg-brand-tint/30"
+            className="h-11 border border-ink bg-paper px-3 font-mono text-[14px] outline-none c3-focus focus:bg-brand-tint/30"
           />
         </Field>
       </div>
@@ -125,7 +125,7 @@ export function RewardForm({
           defaultValue={defaults?.badge ?? undefined}
           placeholder="до 31 мая"
           maxLength={60}
-          className="h-11 border border-ink bg-paper px-3 font-sans text-[14px] outline-none focus:bg-brand-tint/30"
+          className="h-11 border border-ink bg-paper px-3 font-sans text-[14px] outline-none c3-focus focus:bg-brand-tint/30"
         />
       </Field>
       <div className="grid grid-cols-1 gap-5 md:grid-cols-2">
@@ -134,7 +134,7 @@ export function RewardForm({
             name="validFrom"
             type="date"
             defaultValue={fmtDateForInput(defaults?.validFrom)}
-            className="h-11 border border-ink bg-paper px-3 font-mono text-[14px] outline-none focus:bg-brand-tint/30"
+            className="h-11 border border-ink bg-paper px-3 font-mono text-[14px] outline-none c3-focus focus:bg-brand-tint/30"
           />
         </Field>
         <Field label="Действует до">
@@ -142,7 +142,7 @@ export function RewardForm({
             name="validUntil"
             type="date"
             defaultValue={fmtDateForInput(defaults?.validUntil)}
-            className="h-11 border border-ink bg-paper px-3 font-mono text-[14px] outline-none focus:bg-brand-tint/30"
+            className="h-11 border border-ink bg-paper px-3 font-mono text-[14px] outline-none c3-focus focus:bg-brand-tint/30"
           />
         </Field>
       </div>
@@ -150,18 +150,24 @@ export function RewardForm({
         <select
           name="status"
           defaultValue={defaults?.status ?? "active"}
-          className="h-11 border border-ink bg-paper px-3 font-sans text-[14px] outline-none"
+          className="h-11 border border-ink bg-paper px-3 font-sans text-[14px] outline-none c3-focus"
         >
           <option value="active">active</option>
           <option value="archived">archived</option>
         </select>
       </Field>
 
-      {state && !state.ok ? (
-        <p className="border border-brand-red bg-brand-tint/50 px-3 py-2 text-[13px] text-brand-red-ink">
-          {state.message}
-        </p>
-      ) : null}
+      <p
+        role="alert"
+        aria-live="polite"
+        className={
+          state && !state.ok
+            ? "border border-brand-red bg-brand-tint/50 px-3 py-2 text-[13px] text-brand-red-ink"
+            : "sr-only"
+        }
+      >
+        {state && !state.ok ? state.message : ""}
+      </p>
 
       <SubmitButton label={submitLabel} />
     </form>
@@ -198,6 +204,7 @@ function SubmitButton({ label }: { label: string }) {
     <button
       type="submit"
       disabled={pending}
+      aria-busy={pending}
       className="inline-flex h-12 items-center justify-center self-start border border-brand-red bg-brand-red px-6 font-sans text-[14px] font-semibold text-paper hover:bg-brand-red-ink disabled:cursor-not-allowed disabled:border-muted-2 disabled:bg-muted-2"
     >
       {pending ? "Сохраняем…" : label}

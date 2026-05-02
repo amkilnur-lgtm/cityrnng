@@ -79,7 +79,7 @@ export function EventForm({
             required
             defaultValue={defaults?.title}
             placeholder="Утренний забег с пейсером"
-            className="h-11 border border-ink bg-paper px-3 font-sans text-[15px] outline-none focus:bg-brand-tint/30"
+            className="h-11 border border-ink bg-paper px-3 font-sans text-[15px] outline-none c3-focus focus:bg-brand-tint/30"
           />
         </Field>
         <Field label="Slug" hint="lowercase, hyphens">
@@ -88,7 +88,7 @@ export function EventForm({
             required
             defaultValue={defaults?.slug}
             placeholder="utrennij-zabeg-25-04"
-            className="h-11 border border-ink bg-paper px-3 font-mono text-[14px] outline-none focus:bg-brand-tint/30"
+            className="h-11 border border-ink bg-paper px-3 font-mono text-[14px] outline-none c3-focus focus:bg-brand-tint/30"
           />
         </Field>
       </div>
@@ -99,7 +99,7 @@ export function EventForm({
           rows={4}
           defaultValue={defaults?.description ?? ""}
           placeholder="5 км в комфортном темпе с пейсером 6:00/км. Сбор у Monkey Grinder."
-          className="border border-ink bg-paper px-3 py-2 font-sans text-[14px] leading-[1.55] outline-none focus:bg-brand-tint/30"
+          className="border border-ink bg-paper px-3 py-2 font-sans text-[14px] leading-[1.55] outline-none c3-focus focus:bg-brand-tint/30"
         />
       </Field>
 
@@ -108,7 +108,7 @@ export function EventForm({
           <select
             name="type"
             defaultValue={defaults?.type ?? "special"}
-            className="h-11 border border-ink bg-paper px-3 font-sans text-[14px] outline-none"
+            className="h-11 border border-ink bg-paper px-3 font-sans text-[14px] outline-none c3-focus"
           >
             <option value="regular">regular</option>
             <option value="special">special</option>
@@ -119,7 +119,7 @@ export function EventForm({
           <select
             name="status"
             defaultValue={defaults?.status ?? "draft"}
-            className="h-11 border border-ink bg-paper px-3 font-sans text-[14px] outline-none"
+            className="h-11 border border-ink bg-paper px-3 font-sans text-[14px] outline-none c3-focus"
           >
             <option value="draft">draft</option>
             <option value="published">published</option>
@@ -135,7 +135,7 @@ export function EventForm({
             min={1}
             defaultValue={defaults?.capacity ?? undefined}
             placeholder="20"
-            className="h-11 border border-ink bg-paper px-3 font-mono text-[14px] outline-none focus:bg-brand-tint/30"
+            className="h-11 border border-ink bg-paper px-3 font-mono text-[14px] outline-none c3-focus focus:bg-brand-tint/30"
           />
         </Field>
       </div>
@@ -149,7 +149,7 @@ export function EventForm({
               type="datetime-local"
               required
               defaultValue={toDatetimeLocal(defaults?.startsAt)}
-              className="h-11 border border-ink bg-paper px-3 font-mono text-[14px] outline-none focus:bg-brand-tint/30"
+              className="h-11 border border-ink bg-paper px-3 font-mono text-[14px] outline-none c3-focus focus:bg-brand-tint/30"
             />
           </Field>
           <Field label="Окончание">
@@ -158,7 +158,7 @@ export function EventForm({
               type="datetime-local"
               required
               defaultValue={toDatetimeLocal(defaults?.endsAt)}
-              className="h-11 border border-ink bg-paper px-3 font-mono text-[14px] outline-none focus:bg-brand-tint/30"
+              className="h-11 border border-ink bg-paper px-3 font-mono text-[14px] outline-none c3-focus focus:bg-brand-tint/30"
             />
           </Field>
           <Field label="Регистрация открыта с" hint="опционально">
@@ -166,7 +166,7 @@ export function EventForm({
               name="registrationOpenAt"
               type="datetime-local"
               defaultValue={toDatetimeLocal(defaults?.registrationOpenAt)}
-              className="h-11 border border-ink bg-paper px-3 font-mono text-[14px] outline-none focus:bg-brand-tint/30"
+              className="h-11 border border-ink bg-paper px-3 font-mono text-[14px] outline-none c3-focus focus:bg-brand-tint/30"
             />
           </Field>
           <Field label="Регистрация закрывается" hint="опционально">
@@ -174,7 +174,7 @@ export function EventForm({
               name="registrationCloseAt"
               type="datetime-local"
               defaultValue={toDatetimeLocal(defaults?.registrationCloseAt)}
-              className="h-11 border border-ink bg-paper px-3 font-mono text-[14px] outline-none focus:bg-brand-tint/30"
+              className="h-11 border border-ink bg-paper px-3 font-mono text-[14px] outline-none c3-focus focus:bg-brand-tint/30"
             />
           </Field>
         </div>
@@ -187,7 +187,7 @@ export function EventForm({
             <input
               name="locationName"
               defaultValue={defaults?.locationName ?? ""}
-              className="h-11 border border-ink bg-paper px-3 font-sans text-[15px] outline-none focus:bg-brand-tint/30"
+              className="h-11 border border-ink bg-paper px-3 font-sans text-[15px] outline-none c3-focus focus:bg-brand-tint/30"
             />
           </Field>
           <Field label="Адрес">
@@ -195,7 +195,7 @@ export function EventForm({
               name="locationAddress"
               defaultValue={defaults?.locationAddress ?? ""}
               placeholder="Уфа, ул. Ленина 1"
-              className="h-11 border border-ink bg-paper px-3 font-sans text-[15px] outline-none focus:bg-brand-tint/30"
+              className="h-11 border border-ink bg-paper px-3 font-sans text-[15px] outline-none c3-focus focus:bg-brand-tint/30"
             />
           </Field>
           <div className="grid grid-cols-1 gap-5 md:grid-cols-2">
@@ -206,7 +206,7 @@ export function EventForm({
                 step="any"
                 defaultValue={defaults?.locationLat ?? undefined}
                 placeholder="54.7388"
-                className="h-11 border border-ink bg-paper px-3 font-mono text-[14px] outline-none focus:bg-brand-tint/30"
+                className="h-11 border border-ink bg-paper px-3 font-mono text-[14px] outline-none c3-focus focus:bg-brand-tint/30"
               />
             </Field>
             <Field label="Долгота (lng)">
@@ -216,7 +216,7 @@ export function EventForm({
                 step="any"
                 defaultValue={defaults?.locationLng ?? undefined}
                 placeholder="55.9721"
-                className="h-11 border border-ink bg-paper px-3 font-mono text-[14px] outline-none focus:bg-brand-tint/30"
+                className="h-11 border border-ink bg-paper px-3 font-mono text-[14px] outline-none c3-focus focus:bg-brand-tint/30"
               />
             </Field>
           </div>
@@ -243,17 +243,23 @@ export function EventForm({
               type="number"
               min={0}
               defaultValue={defaults?.basePointsAward ?? 0}
-              className="h-11 w-32 border border-ink bg-paper px-3 font-mono text-[14px] outline-none focus:bg-brand-tint/30"
+              className="h-11 w-32 border border-ink bg-paper px-3 font-mono text-[14px] outline-none c3-focus focus:bg-brand-tint/30"
             />
           </Field>
         </div>
       </fieldset>
 
-      {state && !state.ok ? (
-        <p className="border border-brand-red bg-brand-tint/50 px-3 py-2 text-[13px] text-brand-red-ink">
-          {state.message}
-        </p>
-      ) : null}
+      <p
+        role="alert"
+        aria-live="polite"
+        className={
+          state && !state.ok
+            ? "border border-brand-red bg-brand-tint/50 px-3 py-2 text-[13px] text-brand-red-ink"
+            : "sr-only"
+        }
+      >
+        {state && !state.ok ? state.message : ""}
+      </p>
 
       <SubmitButton label={submitLabel} />
     </form>
@@ -290,6 +296,7 @@ function SubmitButton({ label }: { label: string }) {
     <button
       type="submit"
       disabled={pending}
+      aria-busy={pending}
       className="inline-flex h-12 items-center justify-center self-start border border-brand-red bg-brand-red px-6 font-sans text-[14px] font-semibold text-paper hover:bg-brand-red-ink disabled:cursor-not-allowed disabled:border-muted-2 disabled:bg-muted-2"
     >
       {pending ? "Сохраняем…" : label}

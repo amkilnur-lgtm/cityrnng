@@ -74,7 +74,7 @@ export function RecurrenceForm({
           name="title"
           required
           defaultValue={defaults?.title ?? "Регулярная среда — Ситираннинг"}
-          className="h-11 border border-ink bg-paper px-3 font-sans text-[15px] outline-none focus:bg-brand-tint/30"
+          className="h-11 border border-ink bg-paper px-3 font-sans text-[15px] outline-none c3-focus focus:bg-brand-tint/30"
         />
       </Field>
       <div className="grid grid-cols-1 gap-5 md:grid-cols-2">
@@ -121,7 +121,7 @@ export function RecurrenceForm({
             defaultValue={defaults?.timeOfDay ?? "19:30"}
             placeholder="19:30"
             pattern="^([01]?\d|2[0-3]):([0-5]\d)$"
-            className="h-11 border border-ink bg-paper px-3 font-mono text-[14px] outline-none focus:bg-brand-tint/30"
+            className="h-11 border border-ink bg-paper px-3 font-mono text-[14px] outline-none c3-focus focus:bg-brand-tint/30"
           />
         </Field>
         <Field label="Длительность, мин">
@@ -131,7 +131,7 @@ export function RecurrenceForm({
             min={15}
             max={720}
             defaultValue={defaults?.durationMinutes ?? 90}
-            className="h-11 border border-ink bg-paper px-3 font-mono text-[14px] outline-none focus:bg-brand-tint/30"
+            className="h-11 border border-ink bg-paper px-3 font-mono text-[14px] outline-none c3-focus focus:bg-brand-tint/30"
           />
         </Field>
       </div>
@@ -142,7 +142,7 @@ export function RecurrenceForm({
             type="date"
             required
             defaultValue={fmtDate(defaults?.startsFromDate)}
-            className="h-11 border border-ink bg-paper px-3 font-mono text-[14px] outline-none focus:bg-brand-tint/30"
+            className="h-11 border border-ink bg-paper px-3 font-mono text-[14px] outline-none c3-focus focus:bg-brand-tint/30"
           />
         </Field>
         <Field label="Действует до" hint="опционально, sunset">
@@ -150,7 +150,7 @@ export function RecurrenceForm({
             name="endsAtDate"
             type="date"
             defaultValue={fmtDate(defaults?.endsAtDate)}
-            className="h-11 border border-ink bg-paper px-3 font-mono text-[14px] outline-none focus:bg-brand-tint/30"
+            className="h-11 border border-ink bg-paper px-3 font-mono text-[14px] outline-none c3-focus focus:bg-brand-tint/30"
           />
         </Field>
       </div>
@@ -161,7 +161,7 @@ export function RecurrenceForm({
             type="number"
             min={0}
             defaultValue={defaults?.basePointsAward ?? 30}
-            className="h-11 border border-ink bg-paper px-3 font-mono text-[14px] outline-none focus:bg-brand-tint/30"
+            className="h-11 border border-ink bg-paper px-3 font-mono text-[14px] outline-none c3-focus focus:bg-brand-tint/30"
           />
         </Field>
         <Field label=" ">
@@ -194,7 +194,7 @@ export function RecurrenceForm({
                 {loc.slug}
               </span>
               <span>{loc.name}</span>
-              <span className="ml-auto font-mono text-[11px] text-muted-2">
+              <span className="ml-auto font-mono text-[11px] text-muted">
                 {loc.city}
               </span>
             </label>
@@ -202,11 +202,17 @@ export function RecurrenceForm({
         </div>
       </Field>
 
-      {state && !state.ok ? (
-        <p className="border border-brand-red bg-brand-tint/50 px-3 py-2 text-[13px] text-brand-red-ink">
-          {state.message}
-        </p>
-      ) : null}
+      <p
+        role="alert"
+        aria-live="polite"
+        className={
+          state && !state.ok
+            ? "border border-brand-red bg-brand-tint/50 px-3 py-2 text-[13px] text-brand-red-ink"
+            : "sr-only"
+        }
+      >
+        {state && !state.ok ? state.message : ""}
+      </p>
 
       <SubmitButton label={submitLabel} />
     </form>
@@ -243,6 +249,7 @@ function SubmitButton({ label }: { label: string }) {
     <button
       type="submit"
       disabled={pending}
+      aria-busy={pending}
       className="inline-flex h-12 items-center justify-center self-start border border-brand-red bg-brand-red px-6 font-sans text-[14px] font-semibold text-paper hover:bg-brand-red-ink disabled:cursor-not-allowed disabled:border-muted-2 disabled:bg-muted-2"
     >
       {pending ? "Сохраняем…" : label}

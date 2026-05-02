@@ -55,7 +55,7 @@ export function AdminSidebar({ isDev }: { isDev: boolean }) {
             return (
               <span
                 key={s.href}
-                className="flex items-center justify-between px-6 py-2.5 font-sans text-[14px] font-medium text-muted-2"
+                className="flex items-center justify-between px-6 py-2.5 font-sans text-[14px] font-medium text-muted"
                 title="Скоро"
               >
                 {s.label}

@@ -35,6 +35,7 @@ export function AttendanceActions({ id }: { id: string }) {
           type="button"
           onClick={approve}
           disabled={pending}
+          aria-busy={pending}
           className="inline-flex h-8 items-center border border-brand-red bg-brand-red px-3 font-sans text-[12px] font-semibold text-paper hover:bg-brand-red-ink disabled:opacity-50"
         >
           Одобрить
@@ -43,6 +44,7 @@ export function AttendanceActions({ id }: { id: string }) {
           type="button"
           onClick={reject}
           disabled={pending}
+          aria-busy={pending}
           className="inline-flex h-8 items-center border border-ink bg-paper px-3 font-sans text-[12px] font-semibold text-ink hover:bg-ink hover:text-paper disabled:opacity-50"
         >
           Отклонить

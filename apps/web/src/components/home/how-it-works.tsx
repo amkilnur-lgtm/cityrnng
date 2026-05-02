@@ -90,7 +90,7 @@ export function HowItWorks() {
                 (idx > 0 ? " border-t border-ink md:border-l md:border-t-0" : "")
               }
             >
-              <span className="type-hero text-muted-2" style={{ fontSize: 120, lineHeight: 0.85 }}>
+              <span className="type-hero text-muted" style={{ fontSize: 120, lineHeight: 0.85 }}>
                 {step.n}
               </span>
               <h3 className="type-h3">
