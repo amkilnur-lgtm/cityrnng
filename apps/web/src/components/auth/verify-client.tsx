@@ -2,64 +2,58 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useEffect, useRef, useState } from "react";
+import { useState } from "react";
 
 type State =
+  | { kind: "idle" }
   | { kind: "verifying" }
   | { kind: "success" }
   | { kind: "error"; message: string };
 
+/**
+ * Magic-link confirmation step.
+ *
+ * Why a manual button instead of auto-fire on mount: mobile email clients
+ * (Gmail iOS, Mail.app, etc.) pre-fetch links for safety scanning and
+ * preview rendering — and they execute JS while doing it. An auto-fire
+ * useEffect would consume the one-shot token before the user actually
+ * clicks the link from their inbox, so when they do click they land on
+ * "ссылка не подошла". Forcing an explicit click here guarantees the
+ * token is only spent on a real human action.
+ */
 export function AuthVerifyClient({ token }: { token: string }) {
-  const [state, setState] = useState<State>({ kind: "verifying" });
+  const [state, setState] = useState<State>({ kind: "idle" });
   const router = useRouter();
-  const firedRef = useRef(false);
 
-  useEffect(() => {
-    if (firedRef.current) return;
-    firedRef.current = true;
-
-    (async () => {
-      try {
-        const res = await fetch("/api/auth/verify-login", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ token }),
-        });
-        const payload = (await res.json().catch(() => ({}))) as {
-          message?: string;
-        };
-        if (!res.ok) {
-          setState({
-            kind: "error",
-            message:
-              payload.message ??
-              "Ссылка не подошла. Возможно, истёк срок действия — запроси новую.",
-          });
-          return;
-        }
-        setState({ kind: "success" });
-        router.replace("/app");
-      } catch {
+  async function confirm() {
+    if (state.kind === "verifying") return;
+    setState({ kind: "verifying" });
+    try {
+      const res = await fetch("/api/auth/verify-login", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ token }),
+      });
+      const payload = (await res.json().catch(() => ({}))) as {
+        message?: string;
+      };
+      if (!res.ok) {
         setState({
           kind: "error",
-          message: "Нет связи с сервером. Попробуй ещё раз.",
+          message:
+            payload.message ??
+            "Ссылка не подошла. Возможно, истёк срок действия — запроси новую.",
         });
+        return;
       }
-    })();
-  }, [token, router]);
-
-  if (state.kind === "verifying") {
-    return (
-      <>
-        <span className="type-mono-caps">проверяем ссылку</span>
-        <h1 className="type-h2">
-          Ещё <em className="not-italic text-brand-red">секунда</em>…
-        </h1>
-        <p className="text-[15px] text-graphite">
-          Подтверждаем токен и&nbsp;логиним тебя в&nbsp;клуб.
-        </p>
-      </>
-    );
+      setState({ kind: "success" });
+      router.replace("/app");
+    } catch {
+      setState({
+        kind: "error",
+        message: "Нет связи с сервером. Попробуй ещё раз.",
+      });
+    }
   }
 
   if (state.kind === "success") {
@@ -77,19 +71,43 @@ export function AuthVerifyClient({ token }: { token: string }) {
     );
   }
 
+  if (state.kind === "error") {
+    return (
+      <>
+        <span className="type-mono-caps">не&nbsp;получилось</span>
+        <h1 className="type-h2">
+          Ссылка <em className="not-italic text-brand-red">не&nbsp;подошла</em>.
+        </h1>
+        <p className="text-[15px] text-graphite">{state.message}</p>
+        <Link
+          href="/auth"
+          className="inline-flex h-12 items-center self-center border border-ink bg-paper px-5 font-sans text-[14px] font-semibold text-ink hover:bg-ink hover:text-paper"
+        >
+          ← Запросить новую ссылку
+        </Link>
+      </>
+    );
+  }
+
   return (
     <>
-      <span className="type-mono-caps">не&nbsp;получилось</span>
+      <span className="type-mono-caps">подтверждение входа</span>
       <h1 className="type-h2">
-        Ссылка <em className="not-italic text-brand-red">не&nbsp;подошла</em>.
+        Подтверди вход в&nbsp;
+        <em className="not-italic text-brand-red">клуб</em>.
       </h1>
-      <p className="text-[15px] text-graphite">{state.message}</p>
-      <Link
-        href="/auth"
-        className="inline-flex h-12 items-center self-center border border-ink bg-paper px-5 font-sans text-[14px] font-semibold text-ink hover:bg-ink hover:text-paper"
+      <p className="text-[15px] text-graphite">
+        Нажми кнопку ниже — и&nbsp;мы&nbsp;залогиним тебя на&nbsp;этом
+        устройстве.
+      </p>
+      <button
+        type="button"
+        onClick={confirm}
+        disabled={state.kind === "verifying"}
+        className="inline-flex h-14 items-center justify-center self-center border border-brand-red bg-brand-red px-8 font-sans text-[15px] font-semibold text-paper transition-colors hover:bg-brand-red-ink disabled:cursor-not-allowed disabled:border-muted-2 disabled:bg-muted-2"
       >
-        ← Запросить новую ссылку
-      </Link>
+        {state.kind === "verifying" ? "Заходим…" : "Войти →"}
+      </button>
     </>
   );
 }
