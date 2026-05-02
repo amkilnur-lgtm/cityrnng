@@ -62,9 +62,27 @@ export function SiteNav({ state }: { state: SiteState }) {
           <span className="block h-px w-4 bg-current shadow-[0_-5px_0_currentColor,0_5px_0_currentColor]" />
         </button>
 
-        {state.isAuthed ? <AuthedPill user={state.user} /> : <GuestCta />}
+        {state.isAuthed ? (
+          <>
+            {state.isAdmin && <AdminPill />}
+            <AuthedPill user={state.user} />
+          </>
+        ) : (
+          <GuestCta />
+        )}
       </div>
     </nav>
+  );
+}
+
+function AdminPill() {
+  return (
+    <Link
+      href="/admin"
+      className="hidden h-11 items-center border border-ink bg-ink px-3.5 font-mono text-[11px] font-semibold uppercase tracking-[0.14em] text-paper transition-colors hover:bg-paper hover:text-ink md:inline-flex"
+    >
+      Админ
+    </Link>
   );
 }
 
