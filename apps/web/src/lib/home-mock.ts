@@ -2,7 +2,7 @@ import { CLUB, pointsForDistance, type ClubDistance } from "@/lib/club";
 
 export type GuestState = { isAuthed: false };
 export type AuthedUser = { name: string; initial: string; points: number };
-export type AuthedState = { isAuthed: true; user: AuthedUser };
+export type AuthedState = { isAuthed: true; isAdmin?: boolean; user: AuthedUser };
 export type SiteState = GuestState | AuthedState;
 
 export const MOCK_GUEST: GuestState = { isAuthed: false };

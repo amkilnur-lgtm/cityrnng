@@ -1,6 +1,7 @@
 import { cookies } from "next/headers";
 import { getPointsBalance } from "@/lib/api-points";
 import {
+  MOCK_AUTHED,
   MOCK_GUEST,
   resolveSiteState,
   type SiteState,
@@ -29,6 +30,7 @@ export async function getSiteState(searchParamState?: string): Promise<SiteState
       session.profile?.displayName?.trim() || session.email.split("@")[0];
     return {
       isAuthed: true,
+      isAdmin: session.roles?.includes("admin") ?? false,
       user: {
         name: displayName,
         initial: displayName.slice(0, 1).toUpperCase(),
@@ -41,7 +43,10 @@ export async function getSiteState(searchParamState?: string): Promise<SiteState
   // entirely so a maliciously-set cookie can't unlock authed state.
   if (process.env.NODE_ENV !== "production") {
     const devCookie = cookies().get(DEV_STATE_COOKIE)?.value;
-    if (devCookie === "authed" || devCookie === "admin") {
+    if (devCookie === "admin") {
+      return { ...MOCK_AUTHED, isAdmin: true };
+    }
+    if (devCookie === "authed") {
       return resolveSiteState("authed");
     }
   }
