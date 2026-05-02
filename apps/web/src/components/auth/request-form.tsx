@@ -8,9 +8,9 @@ type State =
   | { kind: "sent"; email: string; expiresAt?: string; devToken?: string }
   | { kind: "error"; message: string };
 
-export function AuthRequestForm() {
+export function AuthRequestForm({ initialEmail = "" }: { initialEmail?: string }) {
   const [state, setState] = useState<State>({ kind: "idle" });
-  const [email, setEmail] = useState("");
+  const [email, setEmail] = useState(initialEmail);
 
   async function onSubmit(e: React.FormEvent) {
     e.preventDefault();

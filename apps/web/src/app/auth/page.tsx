@@ -8,9 +8,17 @@ import { getSession } from "@/lib/session";
 
 export const metadata = { title: "Вход · CITYRNNG" };
 
-export default async function AuthPage() {
+export default async function AuthPage({
+  searchParams,
+}: {
+  searchParams?: { email?: string };
+}) {
   const session = await getSession();
   if (session) redirect("/app");
+
+  // Email may arrive pre-filled from the homepage hero form (action="/auth").
+  // We trust the value as-is for prefill — the API still validates on submit.
+  const initialEmail = searchParams?.email?.trim() ?? "";
 
   return (
     <main className="flex min-h-screen flex-col">
@@ -75,7 +83,7 @@ export default async function AuthPage() {
         </section>
 
         <section className="flex flex-col justify-center p-8 md:p-12 lg:p-16">
-          <AuthRequestForm />
+          <AuthRequestForm initialEmail={initialEmail} />
         </section>
       </Wrap>
     </main>
