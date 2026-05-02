@@ -75,18 +75,25 @@ export function AuthRequestForm({ initialEmail = "" }: { initialEmail?: string }
         value={email}
         onChange={(e) => setEmail(e.target.value)}
         placeholder="you@example.com"
-        className="h-14 border border-ink bg-paper px-4 font-sans text-[15px] text-ink outline-none placeholder:text-muted-2 focus:bg-brand-tint/40"
+        className="h-14 border border-ink bg-paper px-4 font-sans text-[15px] text-ink outline-none c3-focus placeholder:text-muted focus:bg-brand-tint/40"
       />
 
-      {state.kind === "error" ? (
-        <p className="border border-brand-red bg-brand-tint/50 px-3 py-2 text-[13px] text-brand-red-ink">
-          {state.message}
-        </p>
-      ) : null}
+      <p
+        role="alert"
+        aria-live="polite"
+        className={
+          state.kind === "error"
+            ? "border border-brand-red bg-brand-tint/50 px-3 py-2 text-[13px] text-brand-red-ink"
+            : "sr-only"
+        }
+      >
+        {state.kind === "error" ? state.message : ""}
+      </p>
 
       <button
         type="submit"
         disabled={state.kind === "sending" || !email}
+        aria-busy={state.kind === "sending"}
         className="inline-flex h-14 items-center justify-center border border-brand-red bg-brand-red px-6 font-sans text-[15px] font-semibold text-paper transition-colors hover:bg-brand-red-ink disabled:cursor-not-allowed disabled:border-muted-2 disabled:bg-muted-2"
       >
         {state.kind === "sending" ? "Отправляем…" : "Получить ссылку →"}
@@ -129,7 +136,7 @@ function SentView({
 
       {state.devToken ? (
         <div className="border border-ink/20 bg-paper-2 p-4 text-[13px] text-graphite">
-          <div className="type-mono-caps mb-1.5 text-muted-2">
+          <div className="type-mono-caps mb-1.5 text-muted">
             dev · авто-ссылка
           </div>
           <a

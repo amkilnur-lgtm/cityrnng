@@ -37,7 +37,7 @@ export function ProfileEditForm({
           defaultValue={defaults.displayName ?? ""}
           maxLength={80}
           placeholder="Маша"
-          className="h-11 border border-ink bg-paper px-3 font-sans text-[15px] outline-none focus:bg-brand-tint/30"
+          className="h-11 border border-ink bg-paper px-3 font-sans text-[15px] outline-none c3-focus focus:bg-brand-tint/30"
         />
       </Field>
 
@@ -48,7 +48,7 @@ export function ProfileEditForm({
             defaultValue={defaults.firstName ?? ""}
             maxLength={80}
             placeholder="Мария"
-            className="h-11 border border-ink bg-paper px-3 font-sans text-[15px] outline-none focus:bg-brand-tint/30"
+            className="h-11 border border-ink bg-paper px-3 font-sans text-[15px] outline-none c3-focus focus:bg-brand-tint/30"
           />
         </Field>
         <Field label="Фамилия">
@@ -57,7 +57,7 @@ export function ProfileEditForm({
             defaultValue={defaults.lastName ?? ""}
             maxLength={80}
             placeholder="Иванова"
-            className="h-11 border border-ink bg-paper px-3 font-sans text-[15px] outline-none focus:bg-brand-tint/30"
+            className="h-11 border border-ink bg-paper px-3 font-sans text-[15px] outline-none c3-focus focus:bg-brand-tint/30"
           />
         </Field>
       </div>
@@ -68,7 +68,7 @@ export function ProfileEditForm({
           defaultValue={defaults.city ?? ""}
           maxLength={80}
           placeholder={cityFallback}
-          className="h-11 border border-ink bg-paper px-3 font-sans text-[15px] outline-none focus:bg-brand-tint/30"
+          className="h-11 border border-ink bg-paper px-3 font-sans text-[15px] outline-none c3-focus focus:bg-brand-tint/30"
         />
       </Field>
 
@@ -79,7 +79,9 @@ export function ProfileEditForm({
             defaultValue={defaults.telegramHandle ?? ""}
             maxLength={64}
             placeholder="@cityrnng"
-            className="h-11 border border-ink bg-paper px-3 font-mono text-[14px] outline-none focus:bg-brand-tint/30"
+            autoComplete="off"
+            inputMode="text"
+            className="h-11 border border-ink bg-paper px-3 font-mono text-[14px] outline-none c3-focus focus:bg-brand-tint/30"
           />
         </Field>
         <Field label="Instagram" hint="@handle">
@@ -88,21 +90,35 @@ export function ProfileEditForm({
             defaultValue={defaults.instagramHandle ?? ""}
             maxLength={64}
             placeholder="@cityrnng"
-            className="h-11 border border-ink bg-paper px-3 font-mono text-[14px] outline-none focus:bg-brand-tint/30"
+            autoComplete="off"
+            inputMode="text"
+            className="h-11 border border-ink bg-paper px-3 font-mono text-[14px] outline-none c3-focus focus:bg-brand-tint/30"
           />
         </Field>
       </div>
 
-      {state?.ok ? (
-        <p className="border border-brand-red bg-brand-tint/30 px-3 py-2 font-mono text-[12px] text-ink">
-          ✓ Сохранили.
-        </p>
-      ) : null}
-      {state && !state.ok ? (
-        <p className="border border-brand-red bg-brand-tint/50 px-3 py-2 text-[13px] text-brand-red-ink">
-          {state.message}
-        </p>
-      ) : null}
+      <p
+        role="status"
+        aria-live="polite"
+        className={
+          state?.ok
+            ? "border border-brand-red bg-brand-tint/30 px-3 py-2 font-mono text-[12px] text-ink"
+            : "sr-only"
+        }
+      >
+        {state?.ok ? "✓ Сохранили." : ""}
+      </p>
+      <p
+        role="alert"
+        aria-live="polite"
+        className={
+          state && !state.ok
+            ? "border border-brand-red bg-brand-tint/50 px-3 py-2 text-[13px] text-brand-red-ink"
+            : "sr-only"
+        }
+      >
+        {state && !state.ok ? state.message : ""}
+      </p>
 
       <SubmitButton />
     </form>
@@ -139,6 +155,7 @@ function SubmitButton() {
     <button
       type="submit"
       disabled={pending}
+      aria-busy={pending}
       className="inline-flex h-12 items-center justify-center self-start border border-brand-red bg-brand-red px-6 font-sans text-[14px] font-semibold text-paper hover:bg-brand-red-ink disabled:cursor-not-allowed disabled:border-muted-2 disabled:bg-muted-2"
     >
       {pending ? "Сохраняем…" : "Сохранить"}

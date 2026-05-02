@@ -50,6 +50,12 @@
    sparse (~14% density).
    ========================================================= */
 @layer utilities {
+  /* Visible focus ring for keyboard users. Pairs with outline-none on
+     interactive elements so click/tap doesn't flash, but Tab does. */
+  .c3-focus {
+    @apply focus-visible:ring-2 focus-visible:ring-brand-red focus-visible:ring-offset-2 focus-visible:ring-offset-paper;
+  }
+
   .hatch-done {
     background-color: hsl(var(--paper));
     background-image: repeating-linear-gradient(

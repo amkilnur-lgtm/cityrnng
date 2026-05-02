@@ -63,7 +63,7 @@ export function PersonalDashboard({
             <span className="type-mono-caps">апрель · твои пробежки</span>
             <span className="font-mono text-[13px] font-medium tracking-[0.04em] text-ink">
               <b className="text-brand-red">{done}</b>
-              <span className="text-muted-2">
+              <span className="text-muted">
                 {" "}
                 из {totalScheduled} пробежек · {progressPct}%
               </span>
@@ -163,13 +163,13 @@ function WeekCellView({
 
   return (
     <div className="flex flex-col gap-2 bg-paper-2 px-5 py-5 md:px-6">
-      <span className="font-mono text-[11px] font-medium uppercase tracking-[0.14em] text-muted-2">
+      <span className="font-mono text-[11px] font-medium uppercase tracking-[0.14em] text-muted">
         {cell.weekday}&nbsp;·&nbsp;{cell.date}
       </span>
       <span className="font-display text-[24px] font-bold leading-none text-muted-2 line-through decoration-muted-2">
         пропуск
       </span>
-      <span className="text-[12px] text-muted-2">без&nbsp;баллов</span>
+      <span className="text-[12px] text-muted">без&nbsp;баллов</span>
     </div>
   );
 }

@@ -90,22 +90,29 @@ export function HeroAuthForm() {
           value={email}
           onChange={(e) => setEmail(e.target.value)}
           placeholder="you@example.com"
-          className="min-w-0 flex-1 bg-paper px-4 font-sans text-[15px] text-ink outline-none placeholder:text-muted-2 focus:bg-brand-tint/40"
+          className="min-w-0 flex-1 bg-paper px-4 font-sans text-[15px] text-ink outline-none c3-focus placeholder:text-muted focus:bg-brand-tint/40"
         />
         <button
           type="submit"
           disabled={state.kind === "sending" || !email}
+          aria-busy={state.kind === "sending"}
           className="h-14 border-t border-ink bg-brand-red px-6 font-sans text-[14px] font-semibold text-paper transition-colors hover:bg-brand-red-ink disabled:cursor-not-allowed disabled:border-muted-2 disabled:bg-muted-2 sm:border-l sm:border-t-0"
         >
           {state.kind === "sending" ? "Отправляем…" : "Получить ссылку →"}
         </button>
       </div>
 
-      {state.kind === "error" ? (
-        <p className="border border-brand-red bg-brand-tint/50 px-3 py-2 text-[13px] text-brand-red-ink">
-          {state.message}
-        </p>
-      ) : null}
+      <p
+        role="alert"
+        aria-live="polite"
+        className={
+          state.kind === "error"
+            ? "border border-brand-red bg-brand-tint/50 px-3 py-2 text-[13px] text-brand-red-ink"
+            : "sr-only"
+        }
+      >
+        {state.kind === "error" ? state.message : ""}
+      </p>
 
       <p className="text-[13px] text-muted">
         Пришлём ссылку на&nbsp;email — без пароля. 20&nbsp;секунд —

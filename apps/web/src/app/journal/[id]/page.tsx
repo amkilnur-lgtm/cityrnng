@@ -37,7 +37,7 @@ export default async function JournalPostPage({
             </Link>
             <div className="flex items-center gap-2 font-mono text-[11px] font-medium uppercase tracking-[0.14em]">
               <span className="text-brand-red">{post.eyebrow}</span>
-              <span className="text-muted-2">·</span>
+              <span className="text-muted">·</span>
               <span className="text-muted">{post.date}</span>
             </div>
             <h1

@@ -43,7 +43,7 @@ export function Locations() {
                   <dt className="text-muted">Старт</dt>
                   <dd className="text-right text-ink">
                     {loc.venue ?? (
-                      <span className="text-muted-2">уточняется</span>
+                      <span className="text-muted">уточняется</span>
                     )}
                   </dd>
                 </div>

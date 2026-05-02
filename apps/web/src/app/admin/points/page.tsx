@@ -77,7 +77,7 @@ export default async function AdminPointsPage({
               ) : null}
             </div>
             {searchParams?.userId ? (
-              <p className="font-mono text-[12px] text-muted-2">
+              <p className="font-mono text-[12px] text-muted">
                 фильтр: {searchParams.userId}
               </p>
             ) : null}

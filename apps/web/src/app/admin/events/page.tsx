@@ -107,7 +107,7 @@ export default async function AdminEventsPage() {
                             override
                           </span>
                         ) : (
-                          <span className="text-muted-2">—</span>
+                          <span className="text-muted">—</span>
                         )}
                       </Td>
                       <Td mono>
@@ -174,7 +174,7 @@ function Badge({
 }) {
   const cls =
     variant === "muted"
-      ? "border-muted-2 bg-paper-2 text-muted-2"
+      ? "border-muted-2 bg-paper-2 text-muted"
       : "border-ink bg-paper text-ink";
   return (
     <span

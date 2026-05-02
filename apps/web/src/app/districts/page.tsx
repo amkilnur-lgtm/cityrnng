@@ -123,7 +123,7 @@ function Row({
       <dt className="whitespace-nowrap text-muted">{k}</dt>
       <dd
         className={
-          "min-w-0 truncate text-right " + (v ? "text-ink" : "text-muted-2")
+          "min-w-0 truncate text-right " + (v ? "text-ink" : "text-muted")
         }
         title={v ?? placeholder ?? "—"}
       >

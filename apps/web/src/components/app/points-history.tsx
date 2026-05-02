@@ -75,7 +75,7 @@ export function PointsHistoryList({ initial, pageSize }: Props) {
           {loading ? "Загружаем…" : `Показать ещё ${pageSize}`}
         </button>
       ) : (
-        <p className="self-center font-mono text-[11px] uppercase tracking-[0.14em] text-muted-2">
+        <p className="self-center font-mono text-[11px] uppercase tracking-[0.14em] text-muted">
           конец истории · показано {rows.length}
         </p>
       )}

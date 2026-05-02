@@ -102,8 +102,8 @@ function ComingSoonCard({
         {kind}
       </span>
       <h3 className="type-h3 text-muted">{title}</h3>
-      <p className="text-[14px] leading-[1.55] text-muted-2">{body}</p>
-      <span className="mt-auto pt-2 font-mono text-[11px] uppercase tracking-[0.14em] text-muted-2">
+      <p className="text-[14px] leading-[1.55] text-muted">{body}</p>
+      <span className="mt-auto pt-2 font-mono text-[11px] uppercase tracking-[0.14em] text-muted">
         скоро
       </span>
     </div>

@@ -78,7 +78,9 @@ export function AuthVerifyClient({ token }: { token: string }) {
         <h1 className="type-h2">
           Ссылка <em className="not-italic text-brand-red">не&nbsp;подошла</em>.
         </h1>
-        <p className="text-[15px] text-graphite">{state.message}</p>
+        <p role="alert" aria-live="polite" className="text-[15px] text-graphite">
+          {state.message}
+        </p>
         <Link
           href="/auth"
           className="inline-flex h-12 items-center self-center border border-ink bg-paper px-5 font-sans text-[14px] font-semibold text-ink hover:bg-ink hover:text-paper"
@@ -104,6 +106,7 @@ export function AuthVerifyClient({ token }: { token: string }) {
         type="button"
         onClick={confirm}
         disabled={state.kind === "verifying"}
+        aria-busy={state.kind === "verifying"}
         className="inline-flex h-14 items-center justify-center self-center border border-brand-red bg-brand-red px-8 font-sans text-[15px] font-semibold text-paper transition-colors hover:bg-brand-red-ink disabled:cursor-not-allowed disabled:border-muted-2 disabled:bg-muted-2"
       >
         {state.kind === "verifying" ? "Заходим…" : "Войти →"}
