@@ -29,9 +29,15 @@ services:
 
   # === App services — opt-in via `--profile app` so the dev flow
   # `docker compose up -d postgres redis` still works untouched.
+  #
+  # `image:` + `build:` together: `compose pull` fetches from GHCR (CI/CD
+  # path), `compose up --build` builds locally from the Dockerfile (dev
+  # path). Set IMAGE_TAG=sha-<commit> to pin a specific build; default
+  # `latest` always works.
   api:
     profiles: ["app"]
     container_name: cityrnng-api
+    image: ghcr.io/amkilnur-lgtm/cityrnng-api:${IMAGE_TAG:-latest}
     build:
       context: .
       dockerfile: apps/api/Dockerfile
@@ -49,6 +55,7 @@ services:
   web:
     profiles: ["app"]
     container_name: cityrnng-web
+    image: ghcr.io/amkilnur-lgtm/cityrnng-web:${IMAGE_TAG:-latest}
     build:
       context: .
       dockerfile: apps/web/Dockerfile

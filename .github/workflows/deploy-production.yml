@@ -1,45 +1,59 @@
-name: Deploy Production
+name: Deploy production
 
+# Manual trigger only — staging tested first, then a human picks the
+# image tag (usually the SHA from a known-good staging deploy).
 on:
   workflow_dispatch:
     inputs:
       image_tag:
-        description: Docker image tag to deploy
+        description: Image tag to deploy (e.g. sha-abc1234 or latest)
         required: true
+        default: latest
         type: string
 
 permissions:
   contents: read
 
-jobs:
-  deploy-production:
-    runs-on: ubuntu-latest
-    environment: production
+concurrency:
+  group: deploy-production
+  cancel-in-progress: false
 
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    # `production` environment in repo settings should require reviewer
+    # approval before this job starts.
+    environment: production
     steps:
       - name: Setup SSH
         uses: webfactory/ssh-agent@v0.9.0
         with:
           ssh-private-key: ${{ secrets.PROD_SSH_KEY }}
 
-      - name: Add host to known_hosts
+      - name: Trust production host
         run: |
           mkdir -p ~/.ssh
           ssh-keyscan -H "${{ secrets.PROD_HOST }}" >> ~/.ssh/known_hosts
 
-      - name: Upload deploy env file
+      - name: Pull + restart on production
         run: |
-          ssh "${{ secrets.PROD_USER }}@${{ secrets.PROD_HOST }}" "mkdir -p '${{ secrets.PROD_APP_DIR }}'"
-          printf '%s' "${{ secrets.PROD_ENV_FILE }}" | ssh "${{ secrets.PROD_USER }}@${{ secrets.PROD_HOST }}" "cat > '${{ secrets.PROD_APP_DIR }}/.env'"
+          ssh "${{ secrets.PROD_USER }}@${{ secrets.PROD_HOST }}" "set -e; \
+            cd /opt/cityrnng && \
+            git fetch --all --prune && \
+            git pull --ff-only origin main && \
+            export APP_ENV_FILE=.env.production && \
+            export IMAGE_TAG='${{ inputs.image_tag }}' && \
+            docker compose --env-file .env.production --profile app pull && \
+            docker compose --env-file .env.production --profile app up -d"
 
-      - name: Deploy on production host
+      - name: Health check
         run: |
-          ssh "${{ secrets.PROD_USER }}@${{ secrets.PROD_HOST }}" \
-            "export IMAGE='${{ secrets.REGISTRY_URL }}/${{ secrets.IMAGE_NAME }}:${{ inputs.image_tag }}' && bash '${{ secrets.PROD_APP_DIR }}/deploy-production.sh'"
-
-      - name: Run health check
-        run: |
-          curl --fail --retry 5 --retry-delay 5 "https://app.example.com/api/v1/health"
-
-      - name: Deployment note
-        run: echo "Replace app.example.com and prepare deploy-production.sh on the server before enabling this workflow."
+          for i in 1 2 3 4 5 6 7 8 9 10; do
+            if curl -fsS "https://${{ secrets.PROD_DOMAIN }}/api/v1/health" > /dev/null; then
+              echo "API healthy on attempt $i"
+              exit 0
+            fi
+            sleep 5
+          done
+          echo "API failed health check"
+          exit 1
