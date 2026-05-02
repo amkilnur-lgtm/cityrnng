@@ -1,4 +1,5 @@
 import Image from "next/image";
+import { HeroAuthForm } from "@/components/home/hero-auth-form";
 import { Wrap } from "@/components/site/wrap";
 import { CLUB, DISTANCE_RANGE } from "@/lib/club";
 import type { DisplayEvent } from "@/lib/display-event";
@@ -35,37 +36,7 @@ function HeroMain() {
         .
       </p>
 
-      {/*
-        Compact entry-point form. Submits a plain HTML GET to /auth so we
-        don't duplicate the magic-link logic from AuthRequestForm; the email
-        rides along as `?email=…` and gets pre-filled on the auth page.
-      */}
-      <form className="mt-10 flex flex-col gap-3" action="/auth" method="get">
-        <label htmlFor="hero-email" className="type-label">
-          Войти или&nbsp;зарегистрироваться
-        </label>
-        <div className="flex h-14 flex-col border border-ink sm:flex-row">
-          <input
-            id="hero-email"
-            name="email"
-            type="email"
-            required
-            placeholder="you@example.com"
-            autoComplete="email"
-            className="min-w-0 flex-1 bg-paper px-4 font-sans text-[15px] text-ink outline-none placeholder:text-muted-2 focus:bg-brand-tint/40"
-          />
-          <button
-            type="submit"
-            className="h-14 border-t border-ink bg-brand-red px-6 font-sans text-[14px] font-semibold text-paper transition-colors hover:bg-brand-red-ink sm:border-l sm:border-t-0"
-          >
-            Получить ссылку →
-          </button>
-        </div>
-        <p className="text-[13px] text-muted">
-          Пришлём ссылку на&nbsp;email — без пароля. 20&nbsp;секунд —
-          и&nbsp;ты&nbsp;в&nbsp;клубе.
-        </p>
-      </form>
+      <HeroAuthForm />
     </div>
   );
 }
