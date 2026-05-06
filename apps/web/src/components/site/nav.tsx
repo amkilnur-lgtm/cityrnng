@@ -14,53 +14,72 @@ const NAV_LINKS = [
 ];
 
 export function SiteNav({ state }: { state: SiteState }) {
+  // Authed users get a 2-row layout on mobile so the full pill (avatar +
+  // name + points + logout) doesn't crowd the wordmark out. Desktop stays
+  // single-row regardless.
+  const stacked = state.isAuthed;
   return (
     <nav
       aria-label="Primary"
-      className="sticky top-0 z-10 flex h-[70px] items-center justify-between gap-6 border-b border-ink bg-paper px-6 lg:px-12"
+      className={cn(
+        "sticky top-0 z-10 border-b border-ink bg-paper",
+        stacked
+          ? "flex flex-col md:h-[70px] md:flex-row md:items-center md:justify-between md:gap-6 md:px-12"
+          : "flex h-[70px] items-center justify-between gap-6 px-6 lg:px-12",
+      )}
     >
-      <Link
-        href="/"
-        aria-label={CLUB.name}
-        className="flex items-center gap-3 no-underline"
+      <div
+        className={cn(
+          "flex items-center",
+          stacked
+            ? "h-[70px] justify-between gap-6 border-b border-ink px-6 md:h-auto md:flex-1 md:justify-start md:gap-8 md:border-b-0 md:px-0"
+            : "shrink-0 gap-6",
+        )}
       >
-        <Image
-          src="/brand/wordmark-text.png"
-          alt={CLUB.name}
-          width={170}
-          height={30}
-          priority
-          style={{ height: 30, width: "auto" }}
-        />
-        <span className="hidden font-mono text-[11px] font-medium uppercase tracking-[0.14em] text-muted md:inline">
-          {CLUB.city}
-        </span>
-      </Link>
+        <Link
+          href="/"
+          aria-label={CLUB.name}
+          className="flex shrink-0 items-center gap-3 no-underline"
+        >
+          <Image
+            src="/brand/wordmark-text.png"
+            alt={CLUB.name}
+            width={170}
+            height={30}
+            priority
+            style={{ height: 30, width: "auto" }}
+          />
+          <span className="hidden font-mono text-[11px] font-medium uppercase tracking-[0.14em] text-muted md:inline">
+            {CLUB.city}
+          </span>
+        </Link>
 
-      <div className="hidden items-center gap-8 md:flex">
-        {NAV_LINKS.map((link) => (
-          <Link
-            key={link.href}
-            href={link.href}
-            aria-current={link.current ? "page" : undefined}
-            className={cn(
-              "font-sans text-[14px] font-medium text-ink transition-colors hover:text-brand-red",
-              link.current && "text-brand-red",
-            )}
-          >
-            {link.label}
-          </Link>
-        ))}
+        <div className="hidden items-center gap-8 md:flex">
+          {NAV_LINKS.map((link) => (
+            <Link
+              key={link.href}
+              href={link.href}
+              aria-current={link.current ? "page" : undefined}
+              className={cn(
+                "font-sans text-[14px] font-medium text-ink transition-colors hover:text-brand-red",
+                link.current && "text-brand-red",
+              )}
+            >
+              {link.label}
+            </Link>
+          ))}
+        </div>
+
+        {stacked && <MenuButton />}
       </div>
 
-      <div className="flex items-center gap-2">
-        <button
-          type="button"
-          aria-label="Меню"
-          className="flex h-10 w-10 items-center justify-center border border-ink bg-paper hover:bg-ink hover:text-paper md:hidden"
-        >
-          <span className="block h-px w-4 bg-current shadow-[0_-5px_0_currentColor,0_5px_0_currentColor]" />
-        </button>
+      <div
+        className={cn(
+          "flex items-center gap-2",
+          stacked && "h-[70px] justify-end px-6 md:h-auto md:px-0",
+        )}
+      >
+        {!stacked && <MenuButton />}
 
         {state.isAuthed ? (
           <>
@@ -72,6 +91,18 @@ export function SiteNav({ state }: { state: SiteState }) {
         )}
       </div>
     </nav>
+  );
+}
+
+function MenuButton() {
+  return (
+    <button
+      type="button"
+      aria-label="Меню"
+      className="flex h-11 w-11 items-center justify-center border border-ink bg-paper hover:bg-ink hover:text-paper md:hidden"
+    >
+      <span className="block h-px w-4 bg-current shadow-[0_-5px_0_currentColor,0_5px_0_currentColor]" />
+    </button>
   );
 }
 
@@ -90,7 +121,7 @@ function GuestCta() {
   return (
     <Link
       href="/auth"
-      className="inline-flex h-8 items-center border border-ink bg-paper px-3.5 font-sans text-[13px] font-semibold text-ink transition-colors hover:bg-ink hover:text-paper"
+      className="inline-flex h-11 items-center border border-ink bg-paper px-4 font-sans text-[13px] font-semibold text-ink transition-colors hover:bg-ink hover:text-paper"
     >
       Войти
     </Link>

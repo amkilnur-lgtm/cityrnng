@@ -80,7 +80,7 @@ export function HeroAuthForm() {
       <label htmlFor="hero-email" className="type-label">
         Войти или&nbsp;зарегистрироваться
       </label>
-      <div className="flex h-14 flex-col border border-ink sm:flex-row">
+      <div className="flex flex-col border border-ink transition-colors focus-within:border-brand-red has-[:focus-visible]:ring-2 has-[:focus-visible]:ring-brand-red has-[:focus-visible]:ring-offset-2 has-[:focus-visible]:ring-offset-paper sm:flex-row">
         <input
           id="hero-email"
           name="email"
@@ -90,13 +90,14 @@ export function HeroAuthForm() {
           value={email}
           onChange={(e) => setEmail(e.target.value)}
           placeholder="you@example.com"
-          className="min-w-0 flex-1 bg-paper px-4 font-sans text-[15px] text-ink outline-none c3-focus placeholder:text-muted focus:bg-brand-tint/40"
+          aria-describedby="hero-email-help"
+          className="h-14 min-w-0 bg-paper px-4 font-sans text-[15px] text-ink outline-none placeholder:text-muted sm:flex-1"
         />
         <button
           type="submit"
           disabled={state.kind === "sending" || !email}
           aria-busy={state.kind === "sending"}
-          className="h-14 border-t border-ink bg-brand-red px-6 font-sans text-[14px] font-semibold text-paper transition-colors hover:bg-brand-red-ink disabled:cursor-not-allowed disabled:border-muted-2 disabled:bg-muted-2 sm:border-l sm:border-t-0"
+          className="h-14 shrink-0 border-t border-ink bg-brand-red px-6 font-sans text-[14px] font-semibold text-paper transition-colors hover:bg-brand-red-ink disabled:cursor-not-allowed disabled:bg-muted-2 disabled:text-paper disabled:hover:bg-muted-2 sm:border-l sm:border-t-0"
         >
           {state.kind === "sending" ? "Отправляем…" : "Получить ссылку →"}
         </button>
@@ -114,7 +115,7 @@ export function HeroAuthForm() {
         {state.kind === "error" ? state.message : ""}
       </p>
 
-      <p className="text-[13px] text-muted">
+      <p id="hero-email-help" className="text-[13px] text-muted">
         Пришлём ссылку на&nbsp;email — без пароля. 20&nbsp;секунд —
         и&nbsp;ты&nbsp;в&nbsp;клубе.
       </p>
