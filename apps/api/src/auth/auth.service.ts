@@ -4,7 +4,7 @@ import { EmailService } from "../email/email.service";
 import { PrismaService } from "../prisma/prisma.service";
 import { UsersService, rolesOf } from "../users/users.service";
 import { LoginChallengeService } from "./login-challenge.service";
-import { TokensService } from "./tokens.service";
+import { TokensService, hashRefresh } from "./tokens.service";
 import type { Env } from "../config/env.schema";
 
 export interface RequestLoginResult {
@@ -80,5 +80,76 @@ export class AuthService {
       refreshToken: issued.refreshToken,
       user: { id: user.id, email: user.email, roles },
     };
+  }
+
+  /**
+   * Rotate a refresh token: validate the presented token, mark its session
+   * revoked, and issue a fresh access+refresh pair tied to a new session.
+   * Old refresh tokens become unusable on first use — that's the point.
+   */
+  async refresh(
+    refreshToken: string,
+    meta: { userAgent?: string; ipAddress?: string } = {},
+  ): Promise<VerifyLoginResult> {
+    const refreshTokenHash = hashRefresh(refreshToken);
+    const session = await this.prisma.session.findUnique({
+      where: { refreshTokenHash },
+      include: {
+        user: { include: { profile: true, roles: { include: { role: true } } } },
+      },
+    });
+
+    if (!session || session.status !== "active") {
+      throw new UnauthorizedException({ code: "AUTH_INVALID_REFRESH" });
+    }
+    if (session.expiresAt.getTime() <= Date.now()) {
+      // mark expired so we don't keep tripping the same row
+      await this.prisma.session.update({
+        where: { id: session.id },
+        data: { status: "expired" },
+      });
+      throw new UnauthorizedException({ code: "AUTH_INVALID_REFRESH" });
+    }
+
+    const user = session.user;
+    const roles = rolesOf(user);
+    const issued = await this.tokens.issue({ id: user.id, email: user.email, roles });
+
+    await this.prisma.$transaction([
+      this.prisma.session.update({
+        where: { id: session.id },
+        data: { status: "revoked", revokedAt: new Date() },
+      }),
+      this.prisma.session.create({
+        data: {
+          userId: user.id,
+          refreshTokenHash: issued.refreshTokenHash,
+          expiresAt: issued.refreshTokenExpiresAt,
+          userAgent: meta.userAgent ?? null,
+          ipAddress: meta.ipAddress ?? null,
+        },
+      }),
+    ]);
+
+    return {
+      accessToken: issued.accessToken,
+      refreshToken: issued.refreshToken,
+      user: { id: user.id, email: user.email, roles },
+    };
+  }
+
+  /**
+   * Revoke the session backing the given refresh token. Idempotent — a
+   * missing or already-revoked session is treated as success so logout
+   * never reveals whether a token was valid.
+   */
+  async logout(refreshToken: string | undefined): Promise<{ ok: true }> {
+    if (!refreshToken) return { ok: true };
+    const refreshTokenHash = hashRefresh(refreshToken);
+    await this.prisma.session.updateMany({
+      where: { refreshTokenHash, status: "active" },
+      data: { status: "revoked", revokedAt: new Date() },
+    });
+    return { ok: true };
   }
 }

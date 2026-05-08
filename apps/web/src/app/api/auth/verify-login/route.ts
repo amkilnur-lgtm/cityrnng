@@ -41,15 +41,12 @@ export async function POST(req: Request) {
 
   if (data.accessToken && data.refreshToken) {
     const jar = cookies();
-    jar.set(AT_COOKIE, data.accessToken, {
-      ...SESSION_COOKIE_OPTS,
-      // short-lived; API rotates via refresh
-      maxAge: 60 * 15,
-    });
-    jar.set(RT_COOKIE, data.refreshToken, {
-      ...SESSION_COOKIE_OPTS,
-      maxAge: 60 * 60 * 24 * 30,
-    });
+    // Cookie maxAge is just a backstop — actual session lifetime is
+    // governed by the API's session row (expiresAt + status). Middleware
+    // rotates the access token transparently when its JWT exp is near.
+    const maxAge = 60 * 60 * 24 * 30;
+    jar.set(AT_COOKIE, data.accessToken, { ...SESSION_COOKIE_OPTS, maxAge });
+    jar.set(RT_COOKIE, data.refreshToken, { ...SESSION_COOKIE_OPTS, maxAge });
   }
 
   return NextResponse.json({ user: data.user ?? null });
