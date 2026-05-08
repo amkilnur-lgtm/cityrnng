@@ -190,20 +190,30 @@ DATABASE_URL=$DATABASE_URL pnpm prisma migrate deploy
 
 После каждого нового PR с миграцией — повторить.
 
-## 8. Seed: роли + локации + recurrence rule
+## 8. Seed: роли + локации + партнёры + награды + recurrence rule
 
-Сейчас `apps/api/prisma/seed.ts` закладывает только роли. Для прода **нужно расширить** — добавить:
+`apps/api/prisma/seed.ts` идемпотентно (везде `upsert`) засевает:
 
-1. 3 `city_locations` (Уфа: Центр / Проспект / Черниковка) — с `lat/lng/radius_meters` для Strava-геофенса
-2. Один `event_recurrence_rules` (среда 19:30 90 мин regular) с тремя локациями через junction
-3. Опционально промоут админ-юзера через `SEED_ADMIN_EMAIL`
+1. Роли: `runner`, `admin`, `partner` (всегда)
+2. 3 `city_locations` (Уфа: Центр / Проспект / Черниковка с `lat/lng/radiusMeters` для Strava-геофенса) (всегда)
+3. Партнёров и каталог наград (Monkey Grinder · Surf Coffee, 8 позиций) — **только если** `SEED_ADMIN_EMAIL` указан и юзер с этим email уже существует в БД
+4. Админ-промоут указанного юзера до роли `admin` — **то же гейтование**
+5. Дефолтное `event_recurrence_rules` (среда 19:30, 75 мин, regular, все три локации) — **то же гейтование**
 
-Пример вызова после расширения:
+Двухшаговый bootstrap нужен потому, что записи (4) и (5) требуют валидного `createdById` — то есть админ должен сначала залогиниться через magic-link, чтобы появиться в БД, и только потом seed может прицепить к нему контент.
+
+**Запуск из CI/CD:** seed автоматически выполняется на каждый push в `main` через `.github/workflows/deploy-staging.yml` (шаг `Seed (idempotent)`) после `up -d`. Условие — переменная `SEED_ADMIN_EMAIL` должна быть в `.env.staging` на VM.
+
+**Ручной запуск (локально или для бутстрапа):**
 ```bash
-SEED_ADMIN_EMAIL=admin@cityrnng.ru pnpm --filter @cityrnng/api prisma db seed
+# локально, против локальной БД из ../../.env
+SEED_ADMIN_EMAIL=you@example.com pnpm --filter @cityrnng/api prisma:seed
+
+# на VM против стейджинг-БД (внутри api контейнера)
+docker compose --env-file .env.staging exec -T api npx prisma db seed
 ```
 
-> **TODO**: расширить `prisma/seed.ts` под прод. Сейчас фронт держит эти данные в `apps/web/src/lib/home-mock.ts` — миграция на API убирает эти моки в БД.
+В прод-контейнере `tsx` находится в `dependencies`, поэтому `prisma db seed` (`tsx prisma/seed.ts` per `package.json prisma.seed`) выполняется без devDeps.
 
 ## 9. Запуск сервисов + reverse proxy
 
