@@ -2,6 +2,7 @@ import { resolve } from "node:path";
 import { Module } from "@nestjs/common";
 import { APP_GUARD } from "@nestjs/core";
 import { ConfigModule } from "@nestjs/config";
+import { ThrottlerGuard, ThrottlerModule } from "@nestjs/throttler";
 import { validateEnv } from "./config/env.validation";
 import { PrismaModule } from "./prisma/prisma.module";
 import { HealthModule } from "./health/health.module";
@@ -29,6 +30,9 @@ const monorepoRootEnv = resolve(__dirname, "..", "..", "..", ".env");
       envFilePath: [monorepoRootEnv],
       validate: validateEnv,
     }),
+    ThrottlerModule.forRoot([
+      { name: "default", ttl: 60_000, limit: 100 },
+    ]),
     PrismaModule,
     HealthModule,
     AuthModule,
@@ -42,6 +46,9 @@ const monorepoRootEnv = resolve(__dirname, "..", "..", "..", ".env");
     PointsModule,
     RewardsModule,
   ],
-  providers: [{ provide: APP_GUARD, useClass: JwtAuthGuard }],
+  providers: [
+    { provide: APP_GUARD, useClass: ThrottlerGuard },
+    { provide: APP_GUARD, useClass: JwtAuthGuard },
+  ],
 })
 export class AppModule {}

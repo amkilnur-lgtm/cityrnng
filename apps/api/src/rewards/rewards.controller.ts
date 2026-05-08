@@ -8,6 +8,7 @@ import {
   Post,
   Query,
 } from "@nestjs/common";
+import { Throttle } from "@nestjs/throttler";
 import { CurrentUser } from "../auth/decorators/current-user.decorator";
 import { Public } from "../auth/decorators/public.decorator";
 import type { AuthenticatedUser } from "../auth/types";
@@ -42,6 +43,7 @@ export class RewardsController {
     return this.rewards.getPublicBySlugOrThrow(slug);
   }
 
+  @Throttle({ default: { limit: 10, ttl: 60_000 } })
   @Post("rewards/:slug/redeem")
   @HttpCode(HttpStatus.CREATED)
   redeem(
