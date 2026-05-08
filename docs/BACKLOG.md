@@ -11,24 +11,28 @@
 | Эпик | Статус | Комментарий |
 |---|---|---|
 | 0. Foundation | ✅ | монорепо, docker-compose, CI, env loader |
-| 1. Auth & Profiles | 🔄 | API: magic-link (без email-канала на проде!), sessions, `/me`, profiles, roles + seed. **Frontend:** `/auth` magic-link форма + `/auth/verify`, httpOnly cookies, logout, `/app/profile` view-only. Пока нет: фактическая отправка email (см. DEPLOY-RUNBOOK §gap), `/auth/refresh`, `/auth/logout` API endpoint, редактирование профиля |
-| 2. Events | 🔄 | API: admin CRUD + sync-rules + attendances. **Recurrence (Stage G):** `event_recurrence_rules` + materialized `GET /events/upcoming` ✅. Регистрация заменена на Strava-matching. **Frontend:** `/events` list + `/events/[id]` detail с Badge regular/special/partner ✅. Не хватает: admin UI для recurrence-rules (Epic 6), detail-страница для materialized rule occurrences (`rule:UUID:DATE`) |
+| 1. Auth & Profiles | 🔄 | API: magic-link с реальной отправкой email (✅ канал подключен 2026-05-06), sessions, `/me`, profiles + `PATCH /me`, roles + seed. **Frontend:** `/auth` + `/auth/verify`, httpOnly cookies, logout, `/app/profile` view + edit (server actions). Пока нет: `/auth/refresh`, `/auth/logout` API endpoints |
+| 2. Events | 🔄 | API: admin CRUD + sync-rules + attendances. **Recurrence (Stage G):** `event_recurrence_rules` + materialized `GET /events/upcoming` ✅. Регистрация заменена на Strava-matching. **Frontend:** `/events` list + `/events/[id]` detail с Badge regular/special/partner ✅. Admin UI для recurrence-rules ✅ (см. Epic 6). Не хватает: публичная detail-страница для materialized rule occurrences (`rule:UUID:DATE`) |
 | 3. Check-in | 🔄 заменён | QR-поток отменён. Вместо него: Strava connect → ingestion → `AttendanceMatcherService` → `event_attendances` (auto_approve или ручной approve админом). **Frontend:** `/app/profile` со StravaCard (connect/disconnect через server actions), `/integrations/strava/callback` Next.js wrapper для OAuth-редиректа |
 | 4. Points Engine | 🔄 | Ledger + idempotency, `signup_bonus`, `event_attendance_*`, `manual_adjustment`, `/points/balance`, `/points/history`, admin adjust. **Frontend:** `/app/points` с балансом + Load-more пагинацией. Пока нет: first-run / streak / milestone / returning / campaign / partner bonus'ов, reversal flow, `point_rules` как таблица |
 | 5. Rewards & Partners | 🔄 backend ✅ / frontend ✅ моки | **Backend:** `partners`, `rewards`, `redemptions` таблицы + `reward_redemption` enum value + миграция. `RewardsService` (public + admin), `PartnersService` (admin), `RedemptionsService` (атомарный redeem с debit point_transactions, idempotency, retry на code-collision, cancel+refund). Endpoints: `GET /partners`, `GET /rewards`, `GET /rewards/:slug`, `POST /rewards/:slug/redeem` (authed), `GET /me/redemptions`, `GET /me/redemptions/:code`, admin CRUD + `verify/:code` + `cancel/:id`. **Frontend:** `/shop` + `/shop/[slug]` + `/app/rewards` собраны на моках; ждут switch на API + добавления seed-данных в prisma/seed.ts |
-| 6. Admin Panel | ⭕ | backend-эндпоинты частично готовы (events, locations, attendances, points), UI в `apps/web` отсутствует. Critical для запуска: CRUD recurrence-rules + special events |
+| 6. Admin Panel | 🔄 | UI собран в `apps/web/src/app/admin/`: ✅ CRUD для locations, partners, rewards, events, recurrence-rules. Stub-страницы (нужно дописать функционал): attendances, points-adjust, users. Backend для всех CRUD-секций готов (см. эпики 2/4/5) |
 | 7. Marketing Site | ✅ | Главная (guest+authed), `/auth`, `/events`, `/events/[id]`, `/how-it-works`, `/about`, `/faq`, `/partners`, `/districts` (с Я.Картами), `/journal` + `/journal/[id]`, `/shop`, `/terms`+`/privacy`+`/agreement` (stubs). Дев-toggle `[GUEST\|AUTHED]` для проверки authed-видов без API. C3 design system (Manrope/Space Grotesk/JetBrains Mono + tokens) |
-| 8. Notifications & Analytics | ⭕ | не начинался. **Critical блокер**: email-канал для magic-link |
+| 8. Notifications & Analytics | 🔄 | Email-канал для magic-link подключен ✅ (2026-05-06) — прод-логин разблокирован. Пока нет: транзакционные письма для других сценариев (reward redemption, event reminders), аналитика |
 
-## Q. Frontend-only stage map (актуально на 2026-04-25)
+## Q. Frontend-only stage map (актуально на 2026-05-08)
 
-Большая часть UI собрана на моках, ждёт реальные endpoints:
+UI и backend сошлись почти всюду. Что ещё в режиме «фронт ждёт API» или «фронт-stub без логики»:
 
-- `/shop` + `/app/rewards` — Epic 5 backend
-- Edit profile UI — нужен `PATCH /me`
-- Admin panel — Epic 6 целиком
-- Recurrence rules admin — Epic 6 partial
-- Email-доставка magic-link — Epic 8 (на ней блочится прод-логин)
+- `/shop` + `/shop/[slug]` + `/app/rewards` — backend готов, фронт всё ещё читает моки. Нужен switch на API + seed-данные `partners/rewards/redemptions` в `prisma/seed.ts`
+- Admin stubs без бизнес-логики: `/admin/attendances`, `/admin/points`, `/admin/users` — страницы есть, нужны действия (approve/reject attendance, manual points adjust UI, user role toggle)
+- Публичная detail-страница для materialized recurrence-occurrences (`/events/rule:UUID:DATE`)
+
+✅ Закрыто (было в этом списке раньше):
+- ~~Edit profile UI~~ — `PATCH /me` + форма работают
+- ~~Admin panel целиком~~ — locations/partners/rewards/events/recurrence CRUD собран
+- ~~Recurrence rules admin~~ — собран в `/admin/recurrence/`
+- ~~Email-доставка magic-link~~ — канал подключен 2026-05-06, прод-логин разблокирован
 
 Дополнительно влито: идемпотентный Prisma seed для ролей `runner/admin/partner` + опциональное повышение known-email в admin (`SEED_ADMIN_EMAIL`). Это prerequisite для admin-protected flows, не самостоятельный эпик.
 
