@@ -98,6 +98,19 @@ jobs:
             docker compose --env-file .env.staging --profile app pull && \
             docker compose --env-file .env.staging --profile app up -d"
 
+      - name: Seed (idempotent)
+        # Reads SEED_ADMIN_EMAIL from .env.staging via the api service's
+        # env_file. Seed is upsert-only, so re-running on every deploy is
+        # safe — partners/rewards/recurrence-rule converge to the values
+        # in apps/api/prisma/seed.ts. Failure does not abort deploy: if
+        # SEED_ADMIN_EMAIL is not set or the user doesn't exist yet, seed
+        # logs a warning and exits 0.
+        run: |
+          ssh "${{ secrets.STAGING_USER }}@${{ secrets.STAGING_HOST }}" "set -e; \
+            cd /opt/cityrnng && \
+            docker compose --env-file .env.staging exec -T api npx prisma db seed" || \
+            echo "Seed step failed — check api container logs; deploy not aborted."
+
       - name: Health check
         run: |
           for i in 1 2 3 4 5 6 7 8 9 10; do
