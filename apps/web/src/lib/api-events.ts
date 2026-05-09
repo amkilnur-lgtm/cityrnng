@@ -106,13 +106,21 @@ export async function listPublicEvents(query: ListEventsQuery = {}): Promise<
 }
 
 export async function getPublicEvent(id: string): Promise<ApiEvent | null> {
+  const url = `${API_BASE_URL}/events/${encodeURIComponent(id)}`;
   try {
-    const res = await fetch(`${API_BASE_URL}/events/${encodeURIComponent(id)}`, {
-      cache: "no-store",
-    });
-    if (!res.ok) return null;
+    const res = await fetch(url, { cache: "no-store" });
+    if (!res.ok) {
+      console.error("[getPublicEvent] non-OK", { id, url, status: res.status });
+      return null;
+    }
     return (await res.json()) as ApiEvent;
-  } catch {
+  } catch (err) {
+    console.error("[getPublicEvent] threw", {
+      id,
+      url,
+      message: (err as Error).message,
+      cause: (err as { cause?: unknown }).cause,
+    });
     return null;
   }
 }
