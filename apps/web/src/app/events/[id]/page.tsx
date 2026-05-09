@@ -1,9 +1,14 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
+import { EventRsvp } from "@/components/events/event-rsvp";
 import { SiteFooter } from "@/components/site/footer";
 import { SiteNav } from "@/components/site/nav";
 import { Wrap } from "@/components/site/wrap";
 import { Badge } from "@/components/ui/badge";
+import {
+  getInterestCounts,
+  getMyInterest,
+} from "@/lib/api-event-interest";
 import { getPublicEvent, type ApiEvent } from "@/lib/api-events";
 import { CLUB, DISTANCE_RANGE } from "@/lib/club";
 import { UPCOMING_EVENTS } from "@/lib/home-mock";
@@ -70,9 +75,11 @@ export default async function EventDetailPage({
 }: {
   params: { id: string };
 }) {
-  const [state, apiEvent] = await Promise.all([
+  const [state, apiEvent, myInterest, counts] = await Promise.all([
     getSiteState(),
     getPublicEvent(params.id),
+    getMyInterest(params.id),
+    getInterestCounts(params.id),
   ]);
   // Fall back to mock UPCOMING_EVENTS so non-UUID ids (e.g. "spec-25") still resolve.
   const event = apiEvent ?? mockToApiEvent(params.id);
@@ -80,6 +87,9 @@ export default async function EventDetailPage({
   const startDate = formatFullDate(event.startsAt);
   const startTime = formatTime(event.startsAt);
   const locations = event.syncRule?.locations ?? [];
+  const countsByLocation = Object.fromEntries(
+    counts.map((c) => [c.locationId, c.count]),
+  );
 
   return (
     <>
@@ -147,7 +157,20 @@ export default async function EventDetailPage({
                   </p>
                 )}
 
-                {locations.length > 0 ? (
+                {state.isAuthed && locations.length > 0 ? (
+                  <EventRsvp
+                    eventKey={params.id}
+                    locations={locations.map((l) => ({
+                      id: l.id,
+                      name: l.name,
+                      city: l.city,
+                    }))}
+                    myLocationId={myInterest?.locationId ?? null}
+                    countsByLocation={countsByLocation}
+                  />
+                ) : null}
+
+                {!state.isAuthed && locations.length > 0 ? (
                   <div className="flex flex-col gap-2">
                     <span className="type-mono-caps">точки старта</span>
                     <ul className="flex flex-col">
