@@ -27,32 +27,24 @@ export function PersonalDashboard({
   return (
     <section className="border-b border-ink bg-paper-2/60">
       <Wrap className="py-16 lg:py-24">
-        <div className="mb-10 flex flex-col items-start justify-between gap-6 lg:flex-row lg:items-end">
-          <div className="flex flex-col gap-3">
-            <div className="flex items-center gap-2.5">
-              <span className="h-px w-9 bg-ink" />
-              <span className="type-mono-caps">
-                Вторник · 21&nbsp;апреля · {CLUB.city}
-              </span>
-            </div>
-            <h2 className="type-h2">
-              Привет, <em className="not-italic text-brand-red">{user.name}</em>.
-              <br />
-              До&nbsp;среды 1&nbsp;день.
-            </h2>
-            <p className="type-lede max-w-[560px]">
-              На&nbsp;прошлой среде —{" "}
-              <b className="font-semibold text-ink">{lastKm}&nbsp;км</b>,{" "}
-              <b className="font-semibold text-ink">+{lastPoints}&nbsp;Б</b>.
-              Завтра в&nbsp;19:30 ждём снова.
-            </p>
+        <div className="mb-10 flex flex-col gap-3">
+          <div className="flex items-center gap-2.5">
+            <span className="h-px w-9 bg-ink" />
+            <span className="type-mono-caps">
+              Вторник · 21&nbsp;апреля · {CLUB.city}
+            </span>
           </div>
-          <Link
-            href={nextEvent ? `/events/${nextEvent.id}` : "/events"}
-            className="inline-flex h-14 items-center border border-brand-red bg-brand-red px-6 font-sans text-[15px] font-semibold text-paper transition-colors hover:bg-brand-red-ink"
-          >
-            Маршрут и&nbsp;точка старта →
-          </Link>
+          <h2 className="type-h2">
+            Привет, <em className="not-italic text-brand-red">{user.name}</em>.
+            <br />
+            До&nbsp;среды 1&nbsp;день.
+          </h2>
+          <p className="type-lede max-w-[560px]">
+            На&nbsp;прошлой среде —{" "}
+            <b className="font-semibold text-ink">{lastKm}&nbsp;км</b>,{" "}
+            <b className="font-semibold text-ink">+{lastPoints}&nbsp;Б</b>.
+            Завтра в&nbsp;19:30 ждём снова.
+          </p>
         </div>
 
         <div className="border border-ink bg-paper">
@@ -115,7 +107,6 @@ function WeekCellView({
 }) {
   if (cell.kind === "tomorrow") {
     const time = nextEvent?.time ?? cell.time;
-    const place = nextEvent?.venue ?? cell.place;
     return (
       <div className="flex flex-col gap-2 bg-brand-red px-5 py-5 text-paper md:px-6">
         <div className="flex items-center gap-2">
@@ -129,9 +120,12 @@ function WeekCellView({
         <span className="font-display text-[24px] font-bold leading-tight">
           {time}
         </span>
-        <span className="text-[13px] leading-tight opacity-90">
-          {place ?? "место уточняется"}
-        </span>
+        <Link
+          href={nextEvent ? `/events/${nextEvent.id}` : "/events"}
+          className="font-sans text-[14px] font-semibold leading-tight text-paper underline-offset-4 hover:underline"
+        >
+          Маршрут и&nbsp;точка старта →
+        </Link>
         <span className="font-mono text-[12px] font-medium uppercase tracking-[0.08em] opacity-90">
           {DISTANCE_RANGE} · выбираешь на&nbsp;старте
         </span>

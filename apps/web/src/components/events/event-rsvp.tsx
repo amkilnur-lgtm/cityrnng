@@ -43,6 +43,15 @@ function formatPace(secondsPerKm: number): string {
   return `${m}:${String(s).padStart(2, "0")}`;
 }
 
+function goingLabel(count: number, isMine: boolean): string | null {
+  if (count === 0) return "будь первым";
+  if (isMine) {
+    if (count === 1) return "ты идёшь";
+    return `ты и ещё ${count - 1} идут`;
+  }
+  return `${count} идут`;
+}
+
 /**
  * Unified event-locations block: each starting point is a card showing its
  * pace groups + live "N идут" counter. For authed users the cards are
@@ -123,22 +132,18 @@ export function EventRsvp({
             ? "cursor-pointer hover:border-ink"
             : "";
 
+          const label = goingLabel(count, isMine);
           const inner = (
             <>
               <div className="flex items-start justify-between gap-3">
                 <span className="font-sans text-[15px] font-semibold leading-tight text-ink">
                   {loc.name}
                 </span>
-                <span className="whitespace-nowrap font-mono text-[11px] tracking-[0.04em] text-muted">
-                  {count > 0 ? (
-                    <>
-                      <span className="text-brand-red">●</span>{" "}
-                      {count}&nbsp;идут
-                    </>
-                  ) : (
-                    "будь первым"
-                  )}
-                </span>
+                {label ? (
+                  <span className="whitespace-nowrap font-mono text-[11px] tracking-[0.04em] text-brand-red">
+                    {label}
+                  </span>
+                ) : null}
               </div>
 
               {variant === "full" ? (

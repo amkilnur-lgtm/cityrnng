@@ -9,6 +9,15 @@ function formatPace(secondsPerKm: number): string {
   return `${m}:${String(s).padStart(2, "0")}`;
 }
 
+function goingLabel(count: number, isMine: boolean): string | null {
+  if (count === 0) return "будь первым";
+  if (isMine) {
+    if (count === 1) return "ты идёшь";
+    return `ты и ещё ${count - 1} идут`;
+  }
+  return `${count} идут`;
+}
+
 type Props = {
   locations: EventLocation[];
   countsByLocation: Record<string, number>;
@@ -33,6 +42,7 @@ export function EventLocationsDisplay({
         {locations.map((loc) => {
           const count = countsByLocation[loc.id] ?? 0;
           const isMine = myLocationId === loc.id;
+          const label = goingLabel(count, isMine);
           const accent = isMine
             ? "border-brand-red/50 bg-brand-tint/40"
             : "border-ink/30 bg-paper";
@@ -45,16 +55,11 @@ export function EventLocationsDisplay({
                   <span className="font-sans text-[15px] font-semibold leading-tight text-ink">
                     {loc.name}
                   </span>
-                  <span className="whitespace-nowrap font-mono text-[11px] tracking-[0.04em] text-muted">
-                    {count > 0 ? (
-                      <>
-                        <span className="text-brand-red">●</span>{" "}
-                        {count}&nbsp;идут
-                      </>
-                    ) : (
-                      "будь первым"
-                    )}
-                  </span>
+                  {label ? (
+                    <span className="whitespace-nowrap font-mono text-[11px] tracking-[0.04em] text-brand-red">
+                      {label}
+                    </span>
+                  ) : null}
                 </div>
                 {loc.paceGroups && loc.paceGroups.length > 0 ? (
                   <ul className="flex flex-col gap-1">
