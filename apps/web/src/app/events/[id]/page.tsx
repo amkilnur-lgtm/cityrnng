@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { EventRsvp } from "@/components/events/event-rsvp";
+import { EventLocationsDisplay } from "@/components/events/event-locations-display";
 import { SiteFooter } from "@/components/site/footer";
 import { SiteNav } from "@/components/site/nav";
 import { Wrap } from "@/components/site/wrap";
@@ -158,8 +158,7 @@ export default async function EventDetailPage({
                 )}
 
                 {locations.length > 0 ? (
-                  <EventRsvp
-                    eventKey={params.id}
+                  <EventLocationsDisplay
                     locations={locations.map((l) => ({
                       id: l.id,
                       name: l.name,
@@ -168,29 +167,28 @@ export default async function EventDetailPage({
                     }))}
                     myLocationId={myInterest?.locationId ?? null}
                     countsByLocation={countsByLocation}
-                    isAuthed={state.isAuthed}
                   />
                 ) : null}
 
-                <div className="mt-auto flex flex-wrap gap-3 pt-4">
+                <div className="mt-auto grid grid-cols-1 gap-3 pt-4 sm:grid-cols-2">
                   {state.isAuthed ? (
                     <Link
                       href="/app/profile"
-                      className="inline-flex h-12 items-center border border-ink bg-paper px-5 font-sans text-[14px] font-semibold text-ink hover:bg-ink hover:text-paper"
+                      className="inline-flex h-12 items-center justify-center border border-ink bg-paper px-5 font-sans text-[14px] font-semibold text-ink hover:bg-ink hover:text-paper"
                     >
                       Подключить Strava →
                     </Link>
                   ) : (
                     <Link
                       href="/auth"
-                      className="inline-flex h-12 items-center border border-brand-red bg-brand-red px-5 font-sans text-[14px] font-semibold text-paper hover:bg-brand-red-ink"
+                      className="inline-flex h-12 items-center justify-center border border-brand-red bg-brand-red px-5 font-sans text-[14px] font-semibold text-paper hover:bg-brand-red-ink"
                     >
                       Войти в клуб →
                     </Link>
                   )}
                   <Link
                     href={`/districts#${locations[0]?.id ?? ""}`}
-                    className="inline-flex h-12 items-center border border-ink bg-paper px-5 font-sans text-[14px] font-semibold text-ink hover:bg-ink hover:text-paper"
+                    className="inline-flex h-12 items-center justify-center border border-ink bg-paper px-5 font-sans text-[14px] font-semibold text-ink hover:bg-ink hover:text-paper"
                   >
                     Карта маршрутов
                   </Link>
