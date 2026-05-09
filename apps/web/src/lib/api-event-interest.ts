@@ -16,6 +16,19 @@ export type LocationCount = {
   count: number;
 };
 
+/**
+ * Next 14's App Router hands route params back still percent-encoded for
+ * reserved chars like `:` (so `rule:UUID:DATE` arrives as `rule%3AUUID%3ADATE`).
+ * Naively `encodeURIComponent`-ing again would double-encode (`%3A` → `%253A`)
+ * and the API regex wouldn't match — returning 404 and leaving the user's
+ * RSVP invisible. Decode-then-encode normalises both already-encoded params
+ * and clean strings (e.g. ids returned by listUpcomingEvents) into a single
+ * encoding pass.
+ */
+function safeEventKey(eventKey: string): string {
+  return encodeURIComponent(decodeURIComponent(eventKey));
+}
+
 /** Server-only — checks if the current user has an active RSVP for the event. */
 export async function getMyInterest(
   eventKey: string,
@@ -24,7 +37,7 @@ export async function getMyInterest(
   if (!token) return null;
   try {
     const res = await fetch(
-      `${API_BASE_URL}/events/${encodeURIComponent(eventKey)}/interest/me`,
+      `${API_BASE_URL}/events/${safeEventKey(eventKey)}/interest/me`,
       {
         headers: { Authorization: `Bearer ${token}` },
         cache: "no-store",
@@ -44,7 +57,7 @@ export async function getInterestCounts(
 ): Promise<LocationCount[]> {
   try {
     const res = await fetch(
-      `${API_BASE_URL}/events/${encodeURIComponent(eventKey)}/interest/counts`,
+      `${API_BASE_URL}/events/${safeEventKey(eventKey)}/interest/counts`,
       { cache: "no-store" },
     );
     if (!res.ok) return [];
