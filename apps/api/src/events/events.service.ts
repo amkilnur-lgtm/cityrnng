@@ -159,6 +159,15 @@ export const publicSyncRuleInclude = Prisma.validator<Prisma.EventSyncRuleDefaul
             lat: true,
             lng: true,
             radiusMeters: true,
+            paceGroups: {
+              orderBy: [{ distanceKm: "asc" }, { paceSecondsPerKm: "asc" }],
+              select: {
+                id: true,
+                distanceKm: true,
+                paceSecondsPerKm: true,
+                pacerName: true,
+              },
+            },
           },
         },
       },

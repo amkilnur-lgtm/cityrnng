@@ -58,7 +58,15 @@ const ruleInclude = Prisma.validator<Prisma.EventRecurrenceRuleDefaultArgs>()({
   include: {
     locations: {
       where: { location: { status: CityLocationStatus.active } },
-      include: { location: true },
+      include: {
+        location: {
+          include: {
+            paceGroups: {
+              orderBy: [{ distanceKm: "asc" }, { paceSecondsPerKm: "asc" }],
+            },
+          },
+        },
+      },
     },
   },
 });
@@ -155,6 +163,12 @@ export class EventOccurrenceService {
           lat: rl.location.lat,
           lng: rl.location.lng,
           radiusMeters: null,
+          paceGroups: rl.location.paceGroups.map((pg) => ({
+            id: pg.id,
+            distanceKm: pg.distanceKm,
+            paceSecondsPerKm: pg.paceSecondsPerKm,
+            pacerName: pg.pacerName,
+          })),
         })),
       },
     };

@@ -412,10 +412,29 @@ model CityLocation {
   syncRules       EventSyncRuleLocation[]
   recurrenceRules EventRecurrenceRuleLocation[] @relation("CityLocationRecurrenceRules")
   eventInterests  EventInterest[]
+  paceGroups      LocationPaceGroup[]
 
   @@index([city])
   @@index([status])
   @@map("city_locations")
+}
+
+/// Pace-group offerings for a location used by regular weekly cityrnng
+/// runs. Shown on event detail under each starting point. Pace is stored
+/// as integer seconds-per-km so 5:30 → 330. Optional `pacerName` if a
+/// specific pacer is leading the group.
+model LocationPaceGroup {
+  id               String   @id @default(uuid()) @db.Uuid
+  locationId       String   @map("location_id") @db.Uuid
+  distanceKm       Int      @map("distance_km")
+  paceSecondsPerKm Int      @map("pace_seconds_per_km")
+  pacerName        String?  @map("pacer_name")
+  createdAt        DateTime @default(now()) @map("created_at")
+
+  location CityLocation @relation(fields: [locationId], references: [id], onDelete: Cascade)
+
+  @@unique([locationId, distanceKm, paceSecondsPerKm], map: "uq_location_pace_group")
+  @@map("location_pace_groups")
 }
 
 /// Soft RSVP — "I'm coming". Captures intent (location chosen) but does not

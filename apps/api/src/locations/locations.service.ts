@@ -4,6 +4,7 @@ import { PrismaService } from "../prisma/prisma.service";
 import { CreateLocationDto } from "./dto/create-location.dto";
 import { ListLocationsQuery } from "./dto/list-locations.query";
 import { UpdateLocationDto } from "./dto/update-location.dto";
+import { UpsertPaceGroupDto } from "./dto/upsert-pace-group.dto";
 
 @Injectable()
 export class LocationsService {
@@ -62,6 +63,46 @@ export class LocationsService {
       }
       throw err;
     }
+  }
+
+  // -- pace groups --
+
+  listPaceGroups(locationId: string) {
+    return this.prisma.locationPaceGroup.findMany({
+      where: { locationId },
+      orderBy: [{ distanceKm: "asc" }, { paceSecondsPerKm: "asc" }],
+    });
+  }
+
+  async addPaceGroup(locationId: string, dto: UpsertPaceGroupDto) {
+    const loc = await this.prisma.cityLocation.findUnique({ where: { id: locationId } });
+    if (!loc) throw new NotFoundException({ code: "LOCATION_NOT_FOUND" });
+    try {
+      return await this.prisma.locationPaceGroup.create({
+        data: {
+          locationId,
+          distanceKm: dto.distanceKm,
+          paceSecondsPerKm: dto.paceSecondsPerKm,
+          pacerName: dto.pacerName ?? null,
+        },
+      });
+    } catch (err) {
+      if (err instanceof Prisma.PrismaClientKnownRequestError && err.code === "P2002") {
+        throw new ConflictException({ code: "PACE_GROUP_DUPLICATE" });
+      }
+      throw err;
+    }
+  }
+
+  async deletePaceGroup(locationId: string, paceGroupId: string) {
+    const row = await this.prisma.locationPaceGroup.findUnique({
+      where: { id: paceGroupId },
+    });
+    if (!row || row.locationId !== locationId) {
+      throw new NotFoundException({ code: "PACE_GROUP_NOT_FOUND" });
+    }
+    await this.prisma.locationPaceGroup.delete({ where: { id: paceGroupId } });
+    return { ok: true };
   }
 }
 

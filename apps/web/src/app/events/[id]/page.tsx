@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { EventRsvp } from "@/components/events/event-rsvp";
+import { PaceGroupsDisplay } from "@/components/events/pace-groups-display";
 import { SiteFooter } from "@/components/site/footer";
 import { SiteNav } from "@/components/site/nav";
 import { Wrap } from "@/components/site/wrap";
@@ -156,6 +157,10 @@ export default async function EventDetailPage({
                     приходи, Strava зафиксирует.
                   </p>
                 )}
+
+                {locations.length > 0 ? (
+                  <PaceGroupsDisplay locations={locations} />
+                ) : null}
 
                 {state.isAuthed && locations.length > 0 ? (
                   <EventRsvp
