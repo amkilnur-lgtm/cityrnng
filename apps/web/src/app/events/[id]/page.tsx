@@ -170,27 +170,21 @@ export default async function EventDetailPage({
                   />
                 ) : null}
 
-                <div className="mt-auto grid grid-cols-1 gap-3 pt-4 sm:grid-cols-2">
-                  {state.isAuthed ? (
-                    <Link
-                      href="/app/profile"
-                      className="inline-flex h-12 items-center justify-center border border-ink bg-paper px-5 font-sans text-[14px] font-semibold text-ink hover:bg-ink hover:text-paper"
-                    >
-                      Подключить Strava →
-                    </Link>
-                  ) : (
-                    <Link
-                      href="/auth"
-                      className="inline-flex h-12 items-center justify-center border border-brand-red bg-brand-red px-5 font-sans text-[14px] font-semibold text-paper hover:bg-brand-red-ink"
-                    >
-                      Войти в клуб →
-                    </Link>
-                  )}
+                {!state.isAuthed ? (
+                  <Link
+                    href="/auth"
+                    className="inline-flex h-12 w-full items-center justify-center border border-brand-red bg-brand-red px-5 font-sans text-[14px] font-semibold text-paper hover:bg-brand-red-ink md:hidden"
+                  >
+                    Войти в клуб →
+                  </Link>
+                ) : null}
+
+                <div className="mt-auto pt-4">
                   <Link
                     href={`/districts#${locations[0]?.id ?? ""}`}
-                    className="inline-flex h-12 items-center justify-center border border-ink bg-paper px-5 font-sans text-[14px] font-semibold text-ink hover:bg-ink hover:text-paper"
+                    className="inline-flex h-10 items-center border border-ink bg-paper px-4 font-sans text-[13px] font-semibold text-ink hover:bg-ink hover:text-paper"
                   >
-                    Карта маршрутов
+                    Карта маршрутов →
                   </Link>
                 </div>
               </div>

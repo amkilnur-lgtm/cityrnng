@@ -51,61 +51,8 @@ export function NextEvent({
           </Link>
         </div>
 
-        <article className="grid grid-cols-1 border border-ink lg:grid-cols-[280px_1fr_auto]">
-          <div className="flex flex-col gap-1 border-b border-ink bg-paper-2 p-6 md:p-8 lg:border-b-0 lg:border-r">
-            <span className="type-mono-caps">{e.dayOfWeek}</span>
-            <span className="font-display text-[96px] font-bold leading-[0.85] tracking-[-0.04em] text-ink">
-              {e.dateBig}
-            </span>
-            <span className="mt-2 font-mono text-[13px] font-medium tracking-[0.04em] text-ink">
-              {e.time}
-            </span>
-          </div>
-
-          <div className="flex flex-col gap-4 border-b border-ink p-6 md:p-8 lg:border-b-0 lg:border-r">
-            <h3 className="font-display text-[32px] font-bold leading-none tracking-[-0.02em] text-ink md:text-[40px]">
-              Три локации на&nbsp;выбор
-            </h3>
-            <ul className="flex flex-col">
-              {locations.map((loc) => (
-                <li
-                  key={loc.slug}
-                  className="grid grid-cols-[120px_1fr] items-baseline gap-3 border-b border-ink/15 py-2.5 text-[14px] last:border-b-0 md:grid-cols-[160px_1fr]"
-                >
-                  <span className="font-semibold text-ink">{loc.district}</span>
-                  <span className="text-graphite">
-                    {loc.venue ?? "место уточняется"}
-                  </span>
-                </li>
-              ))}
-            </ul>
-            <div className="mt-2 flex flex-wrap gap-2">
-              {e.distances.map((d) => (
-                <span
-                  key={d}
-                  className="inline-flex h-8 items-center border border-ink bg-paper px-3 font-mono text-[13px] font-medium tracking-[0.04em] text-ink"
-                >
-                  {d}&nbsp;км
-                </span>
-              ))}
-              <span className="inline-flex h-8 items-center border border-ink/30 px-3 font-mono text-[13px] font-medium tracking-[0.04em] text-muted">
-                {CLUB.runTime}
-              </span>
-            </div>
-          </div>
-
-          <div className="flex flex-col bg-paper">
-            <Link
-              href={`/events/${e.id}`}
-              className="flex flex-1 items-center justify-center bg-ink px-8 py-5 font-sans text-[15px] font-semibold text-paper transition-colors hover:bg-graphite lg:min-w-[240px]"
-            >
-              Маршрут и&nbsp;точка старта →
-            </Link>
-          </div>
-        </article>
-
         {showInlineRsvp && rsvp ? (
-          <div className="mt-6 border border-ink bg-paper p-5 md:p-6">
+          <div className="border border-ink bg-paper p-5 md:p-6">
             <EventRsvp
               eventKey={rsvp.eventKey}
               locations={rsvp.locations}
@@ -115,7 +62,69 @@ export function NextEvent({
               variant="compact"
             />
           </div>
-        ) : null}
+        ) : (
+          <>
+            <article className="grid grid-cols-1 border border-ink lg:grid-cols-[280px_1fr_auto]">
+              <div className="flex flex-col gap-1 border-b border-ink bg-paper-2 p-6 md:p-8 lg:border-b-0 lg:border-r">
+                <span className="type-mono-caps">{e.dayOfWeek}</span>
+                <span className="font-display text-[96px] font-bold leading-[0.85] tracking-[-0.04em] text-ink">
+                  {e.dateBig}
+                </span>
+                <span className="mt-2 font-mono text-[13px] font-medium tracking-[0.04em] text-ink">
+                  {e.time}
+                </span>
+              </div>
+
+              <div className="flex flex-col gap-4 border-b border-ink p-6 md:p-8 lg:border-b-0 lg:border-r">
+                <h3 className="font-display text-[32px] font-bold leading-none tracking-[-0.02em] text-ink md:text-[40px]">
+                  Три локации на&nbsp;выбор
+                </h3>
+                <ul className="flex flex-col">
+                  {locations.map((loc) => (
+                    <li
+                      key={loc.slug}
+                      className="grid grid-cols-[120px_1fr] items-baseline gap-3 border-b border-ink/15 py-2.5 text-[14px] last:border-b-0 md:grid-cols-[160px_1fr]"
+                    >
+                      <span className="font-semibold text-ink">{loc.district}</span>
+                      <span className="text-graphite">
+                        {loc.venue ?? "место уточняется"}
+                      </span>
+                    </li>
+                  ))}
+                </ul>
+                <div className="mt-2 flex flex-wrap gap-2">
+                  {e.distances.map((d) => (
+                    <span
+                      key={d}
+                      className="inline-flex h-8 items-center border border-ink bg-paper px-3 font-mono text-[13px] font-medium tracking-[0.04em] text-ink"
+                    >
+                      {d}&nbsp;км
+                    </span>
+                  ))}
+                  <span className="inline-flex h-8 items-center border border-ink/30 px-3 font-mono text-[13px] font-medium tracking-[0.04em] text-muted">
+                    {CLUB.runTime}
+                  </span>
+                </div>
+              </div>
+
+              <div className="flex flex-col bg-paper">
+                <Link
+                  href={`/events/${e.id}`}
+                  className="flex flex-1 items-center justify-center bg-ink px-8 py-5 font-sans text-[15px] font-semibold text-paper transition-colors hover:bg-graphite lg:min-w-[240px]"
+                >
+                  Маршрут и&nbsp;точка старта →
+                </Link>
+              </div>
+            </article>
+
+            <Link
+              href="/auth"
+              className="mt-4 inline-flex h-12 w-full items-center justify-center border border-brand-red bg-brand-red px-5 font-sans text-[14px] font-semibold text-paper transition-colors hover:bg-brand-red-ink md:hidden"
+            >
+              Войти в клуб →
+            </Link>
+          </>
+        )}
       </Wrap>
     </section>
   );
