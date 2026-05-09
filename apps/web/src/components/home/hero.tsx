@@ -60,7 +60,7 @@ function HeroSide() {
           alt="Бегуны Ситираннинг"
           fill
           sizes="(max-width: 1024px) 100vw, 40vw"
-          style={{ objectFit: "contain", padding: "8%" }}
+          style={{ objectFit: "contain", padding: "18%" }}
           priority
         />
       </div>
