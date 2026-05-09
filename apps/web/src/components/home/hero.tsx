@@ -47,8 +47,8 @@ function HeroMain() {
 function HeroSide() {
   const districts = Object.values(LOCATIONS).map((l) => l.district);
   return (
-    <aside className="flex flex-col lg:sticky lg:top-24 lg:self-start">
-      <div className="relative aspect-square border border-ink bg-paper-2">
+    <aside className="flex flex-col">
+      <div className="relative aspect-square border border-ink bg-paper-2 lg:aspect-auto lg:flex-1">
         <div className="absolute left-5 top-5 flex flex-col gap-0.5">
           <span className="type-mono-caps">Три маршрута</span>
           <span className="font-sans text-[13px] font-medium text-ink">
@@ -65,7 +65,7 @@ function HeroSide() {
         />
       </div>
 
-      <div className="grid grid-cols-3 border border-t-0 border-ink bg-paper">
+      <div className="grid h-14 grid-cols-3 border border-t-0 border-ink bg-paper">
         <BrandFact label="День" value={CLUB.runDayLong} />
         <BrandFact label="Время" value={CLUB.runTime} accent />
         <BrandFact label="Дистанции" value={`${CLUB.distances.join(" / ")} км`} />
@@ -84,11 +84,11 @@ function BrandFact({
   accent?: boolean;
 }) {
   return (
-    <div className="flex flex-col gap-1 px-4 py-4 [&+&]:border-l [&+&]:border-ink">
-      <span className="type-mono-caps">{label}</span>
+    <div className="flex h-full flex-col justify-center px-4 [&+&]:border-l [&+&]:border-ink">
+      <span className="type-mono-caps text-[10px] leading-none">{label}</span>
       <span
         className={
-          "font-display text-[20px] font-bold leading-none tracking-[-0.02em] " +
+          "mt-1 font-display text-[16px] font-bold leading-none tracking-[-0.02em] " +
           (accent ? "text-brand-red" : "text-ink")
         }
       >
