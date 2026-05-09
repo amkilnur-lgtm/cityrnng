@@ -162,6 +162,12 @@ Planned:
 3. После верификации создается `user`, `profile`, `point_account`.
 4. Записывается welcome transaction.
 
+### RSVP — «я иду»
+
+Soft-намерение, не влияет на attendance/баллы (учёт остаётся за Strava-matching). Реализован через таблицу `event_interests` и REST-эндпоинты `/events/:eventKey/interest`. Управление RSVP сосредоточено на `/app`: интерактивная панель `EventRsvp` рендерит ближайшее событие с точками старта и pace groups; `events/[id]` остаётся read-only витриной (компонент `EventLocationsDisplay`). Compact-вариант той же панели встроен в главную для authed.
+
+`event_key` — строка, поддерживает UUID явных событий и синтетический `rule:UUID:YYYY-MM-DD` для материализованных occurrences рекуррентных правил, что позволяет RSVP-нуть без создания DB-row под каждое occurrence.
+
 ### Подтверждение участия
 
 QR-поток из ранней версии архитектуры заменён на подтверждение через внешнюю активность (Strava). Событие не требует предварительной регистрации — пользователь просто пробежал маршрут и активность автоматически сопоставляется с событием.
@@ -279,22 +285,25 @@ QR-поток из ранней версии архитектуры заменё
 
 - `/`
 - `/how-it-works`
-- `/events`
+- `/events`, `/events/[id]`
 - `/partners`
+- `/districts`
+- `/journal`, `/journal/[id]`
+- `/shop`, `/shop/[slug]`
 - `/about`
 - `/faq`
-- `/login`
-- `/signup`
+- `/auth`, `/auth/verify` (заменили исходные `/login`/`/signup` — единый magic-link flow)
+- `/terms`, `/privacy`, `/agreement` (stub-страницы юр. документов)
+- `/design/foundation` (внутренний design-system reference)
 
 ### App pages
 
-- `/app`
-- `/app/profile`
-- `/app/events`
+- `/app` — личный кабинет (балансы + dashboard + RSVP-панель ближайшего события)
+- `/app/profile` (с StravaCard для connect/disconnect)
 - `/app/points`
 - `/app/rewards`
-- `/app/redemptions`
-- `/app/settings`
+
+`/app/events`, `/app/redemptions`, `/app/settings` из ранней разметки в текущем UI не нужны: events/[id] публичен, redemption-история живёт в `/app/rewards`, отдельный settings не выделен.
 
 ### Partner pages
 
@@ -303,17 +312,19 @@ QR-поток из ранней версии архитектуры заменё
 - `/partner/redemptions`
 - `/partner/verify`
 
+Не реализованы — partner-flow в Phase 3.
+
 ### Admin pages
 
 - `/admin`
 - `/admin/users`
-- `/admin/events`
-- `/admin/checkins`
+- `/admin/events`, `/admin/events/new`, `/admin/events/[id]`
+- `/admin/recurrence`, `/admin/recurrence/new`, `/admin/recurrence/[id]`
+- `/admin/locations`, `/admin/locations/new`, `/admin/locations/[id]` (включая управление pace groups)
+- `/admin/attendances` (заменил концепт `/admin/checkins` после отмены QR)
 - `/admin/points`
-- `/admin/rewards`
-- `/admin/partners`
-- `/admin/content`
-- `/admin/logs`
+- `/admin/rewards`, `/admin/rewards/new`, `/admin/rewards/[id]`
+- `/admin/partners`, `/admin/partners/new`, `/admin/partners/[id]`
 
 ## 14. Architectural decisions for cloud-agent
 

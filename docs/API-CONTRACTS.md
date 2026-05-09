@@ -84,7 +84,42 @@ This endpoint is the source of truth for `/events` page and the home «next even
 
 ### `GET /api/v1/events/:id`
 
-Детальная карточка явного события (UUID). Materialized-occurrences пока не имеют отдельного detail-эндпоинта — frontend использует список `/events/upcoming` и при необходимости резолвит на `/districts`.
+Детальная карточка события. `:id` принимает оба формата — UUID для явных Event-row и синтетический `rule:UUID:YYYY-MM-DD` для materialized-occurrences рекуррентного правила. Если на конкретную occurrence есть override-row (тот же recurrenceRuleId + overridesOccurrenceAt), он отдаётся вместо материализации; иначе ответ собирается из `EventRecurrenceRule` на лету. Возвращает `syncRule.locations` с привязанными `paceGroups` (используется фронтом для рендера точек старта с темпами).
+
+## 4.5 Event Interest — RSVP «я иду»
+
+Soft RSVP: пользователь фиксирует намерение прийти и выбирает точку старта. Не влияет на attendance/баллы — это всё ещё закрывается через Strava-matching. Endpoints живут под общим префиксом `/events/:eventKey/interest`. `eventKey` — UUID для явного события или синтетический `rule:UUID:YYYY-MM-DD` для материализованной occurrence.
+
+### `POST /api/v1/events/:eventKey/interest`
+
+Authed. Создаёт или переустанавливает RSVP — один пользователь = одно активное намерение на событие, повторный POST с другой `locationId` атомарно переносит точку.
+
+Request:
+
+```json
+{ "locationId": "<uuid>" }
+```
+
+### `DELETE /api/v1/events/:eventKey/interest`
+
+Authed. Отменяет RSVP (status → `cancelled`). Идемпотентно.
+
+### `GET /api/v1/events/:eventKey/interest/me`
+
+Authed. Возвращает текущий RSVP пользователя или `null`, если не отмечался.
+
+### `GET /api/v1/events/:eventKey/interest/counts` (public)
+
+Публичный счётчик «N идут» по точкам старта. Используется на event detail и в карточках главной/`/app`.
+
+Response:
+
+```json
+[
+  { "locationId": "<uuid>", "count": 3 },
+  { "locationId": "<uuid>", "count": 0 }
+]
+```
 
 ## 5. Points
 
@@ -418,7 +453,7 @@ Points:
 
 ### Events — user flow (не планируется в текущем виде)
 
-- `POST /api/v1/events/:id/register` / `DELETE /api/v1/events/:id/register` — заменены Strava-matching'ом. Пользователь не регистрируется заранее, а сопоставляется через синк активности.
+- `POST /api/v1/events/:id/register` / `DELETE /api/v1/events/:id/register` — жёсткой регистрации с местами больше нет. Учёт участия идёт через Strava-matching → `event_attendances`. Soft-RSVP «я иду» (выбор точки старта без бронирования) реализован через `/events/:eventKey/interest`, см. §4.5.
 - `POST /api/v1/checkins/scan` — QR-flow отменён в пользу `event_attendances` + matcher.
 - `POST /api/v1/admin/events/:id/checkin-token` — аналогично.
 
