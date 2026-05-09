@@ -1,8 +1,9 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { LocationForm } from "@/components/admin/location-form";
+import { PaceGroupsForm } from "@/components/admin/pace-groups-form";
 import { Wrap } from "@/components/site/wrap";
-import { listAdminLocations } from "@/lib/api-admin";
+import { listAdminLocations, listAdminPaceGroups } from "@/lib/api-admin";
 import { updateLocationAction } from "../actions";
 
 export const metadata = { title: "Локация · Admin · CITYRNNG" };
@@ -12,7 +13,10 @@ export default async function EditLocationPage({
 }: {
   params: { id: string };
 }) {
-  const locations = await listAdminLocations();
+  const [locations, paceGroups] = await Promise.all([
+    listAdminLocations(),
+    listAdminPaceGroups(params.id),
+  ]);
   const loc = locations.find((l) => l.id === params.id);
   if (!loc) notFound();
 
@@ -51,6 +55,16 @@ export default async function EditLocationPage({
             }}
             submitLabel="Сохранить"
           />
+        </Wrap>
+      </section>
+      <section className="border-b border-ink">
+        <Wrap className="max-w-2xl py-10">
+          <h2 className="type-h3 mb-4">Пейс-группы</h2>
+          <p className="mb-4 max-w-prose text-[13px] text-graphite">
+            Доступные на&nbsp;этой точке темпы — отображаются на&nbsp;странице
+            каждого регулярного ситираннинга, который стартует отсюда.
+          </p>
+          <PaceGroupsForm locationId={params.id} groups={paceGroups} />
         </Wrap>
       </section>
     </main>

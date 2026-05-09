@@ -30,6 +30,12 @@ export type ApiEvent = {
       lat: number | string | null;
       lng: number | string | null;
       radiusMeters: number | null;
+      paceGroups?: Array<{
+        id: string;
+        distanceKm: number;
+        paceSecondsPerKm: number;
+        pacerName: string | null;
+      }>;
     }>;
   } | null;
 };

@@ -48,6 +48,27 @@ export async function listAdminLocations(): Promise<AdminLocation[]> {
   return (await fetchJson<AdminLocation[]>("/admin/locations")) ?? [];
 }
 
+// === Pace groups (per location) ===
+
+export type AdminPaceGroup = {
+  id: string;
+  locationId: string;
+  distanceKm: number;
+  paceSecondsPerKm: number;
+  pacerName: string | null;
+  createdAt: string;
+};
+
+export async function listAdminPaceGroups(
+  locationId: string,
+): Promise<AdminPaceGroup[]> {
+  return (
+    (await fetchJson<AdminPaceGroup[]>(
+      `/admin/locations/${locationId}/pace-groups`,
+    )) ?? []
+  );
+}
+
 // === Partner admin types ===
 
 export type AdminPartner = {
