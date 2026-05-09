@@ -47,10 +47,11 @@ function HeroMain() {
 function HeroSide() {
   const districts = Object.values(LOCATIONS).map((l) => l.district);
   return (
-    <aside className="flex flex-col lg:pb-11">
-      {/* lg:pb-11 (44px) on the right column matches the microcopy + form
-          gaps on the left, so the brand strip's top/bottom land on the
-          same y-coordinates as the email input above it. */}
+    <aside className="flex flex-col lg:pb-8">
+      {/* lg:pb-8 (32px) lifts the strip by exactly the microcopy block on
+          the left (gap-3 + p#hero-email-help ≈ 12 + 20). The error
+          placeholder above microcopy is sr-only with position:absolute,
+          so it doesn't take part in flex flow — no extra gap to count. */}
       <div className="relative aspect-square border border-ink bg-paper-2 lg:aspect-auto lg:flex-1">
         <div className="absolute left-5 top-5 flex flex-col gap-0.5">
           <span className="type-mono-caps">Три маршрута</span>
