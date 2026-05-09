@@ -7,7 +7,7 @@ import { PersonalDashboard } from "@/components/home/personal-dashboard";
 import { ShopPreview } from "@/components/home/shop-preview";
 import { SiteFooter } from "@/components/site/footer";
 import { SiteNav } from "@/components/site/nav";
-import { getDisplayNextEvent } from "@/lib/display-event";
+import { getDisplayNextEvent, getNextEventRsvp } from "@/lib/display-event";
 import { getSiteState } from "@/lib/site-state";
 
 type SearchParams = { state?: string };
@@ -21,6 +21,7 @@ export default async function HomePage({
     getSiteState(searchParams.state),
     getDisplayNextEvent(),
   ]);
+  const rsvp = state.isAuthed ? await getNextEventRsvp() : null;
 
   return (
     <>
@@ -29,7 +30,7 @@ export default async function HomePage({
         {state.isAuthed ? (
           <>
             <PersonalDashboard user={state.user} nextEvent={nextEvent} />
-            <NextEvent event={nextEvent} />
+            <NextEvent event={nextEvent} rsvp={rsvp} isAuthed />
             <ShopPreview user={state.user} />
             <Journal />
             <FinalCta isAuthed />

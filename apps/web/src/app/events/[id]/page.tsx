@@ -1,7 +1,6 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { EventRsvp } from "@/components/events/event-rsvp";
-import { PaceGroupsDisplay } from "@/components/events/pace-groups-display";
 import { SiteFooter } from "@/components/site/footer";
 import { SiteNav } from "@/components/site/nav";
 import { Wrap } from "@/components/site/wrap";
@@ -159,39 +158,18 @@ export default async function EventDetailPage({
                 )}
 
                 {locations.length > 0 ? (
-                  <PaceGroupsDisplay locations={locations} />
-                ) : null}
-
-                {state.isAuthed && locations.length > 0 ? (
                   <EventRsvp
                     eventKey={params.id}
                     locations={locations.map((l) => ({
                       id: l.id,
                       name: l.name,
                       city: l.city,
+                      paceGroups: l.paceGroups,
                     }))}
                     myLocationId={myInterest?.locationId ?? null}
                     countsByLocation={countsByLocation}
+                    isAuthed={state.isAuthed}
                   />
-                ) : null}
-
-                {!state.isAuthed && locations.length > 0 ? (
-                  <div className="flex flex-col gap-2">
-                    <span className="type-mono-caps">точки старта</span>
-                    <ul className="flex flex-col">
-                      {locations.map((loc) => (
-                        <li
-                          key={loc.id}
-                          className="flex items-center justify-between border-b border-ink/15 py-2 text-[14px]"
-                        >
-                          <span className="text-ink">{loc.name}</span>
-                          <span className="font-mono text-[12px] tracking-[0.04em] text-muted">
-                            {loc.city}
-                          </span>
-                        </li>
-                      ))}
-                    </ul>
-                  </div>
                 ) : null}
 
                 <div className="mt-auto flex flex-wrap gap-3 pt-4">

@@ -3,6 +3,10 @@ import { SiteFooter } from "@/components/site/footer";
 import { SiteNav } from "@/components/site/nav";
 import { Wrap } from "@/components/site/wrap";
 import { Badge } from "@/components/ui/badge";
+import {
+  getInterestCounts,
+  getMyInterest,
+} from "@/lib/api-event-interest";
 import { CLUB, DISTANCE_RANGE } from "@/lib/club";
 import { getDisplayUpcomingList, type ListedEvent } from "@/lib/display-event";
 import { getSiteState } from "@/lib/site-state";
@@ -25,11 +29,20 @@ function formatDate(iso: string) {
   };
 }
 
+type EventSignals = {
+  /** Total runners who RSVPed across all locations. */
+  totalGoing: number;
+  /** Whether the current user is RSVPed (authed only). */
+  iAmGoing: boolean;
+};
+
 export default async function EventsPage() {
   const [state, events] = await Promise.all([
     getSiteState(),
     getDisplayUpcomingList(8),
   ]);
+
+  const signals = await loadSignals(events, state.isAuthed);
 
   return (
     <>
@@ -62,7 +75,12 @@ export default async function EventsPage() {
                     key={e.id}
                     className={idx > 0 ? "border-t border-ink" : undefined}
                   >
-                    <EventRow event={e} />
+                    <EventRow
+                      event={e}
+                      signals={
+                        signals[e.id] ?? { totalGoing: 0, iAmGoing: false }
+                      }
+                    />
                   </li>
                 ))}
               </ul>
@@ -75,7 +93,32 @@ export default async function EventsPage() {
   );
 }
 
-function EventRow({ event }: { event: ListedEvent }) {
+async function loadSignals(
+  events: ListedEvent[],
+  isAuthed: boolean,
+): Promise<Record<string, EventSignals>> {
+  if (events.length === 0) return {};
+  const counts = await Promise.all(events.map((e) => getInterestCounts(e.id)));
+  const mine = isAuthed
+    ? await Promise.all(events.map((e) => getMyInterest(e.id)))
+    : events.map(() => null);
+  const out: Record<string, EventSignals> = {};
+  events.forEach((e, i) => {
+    out[e.id] = {
+      totalGoing: counts[i].reduce((s, c) => s + c.count, 0),
+      iAmGoing: mine[i] !== null,
+    };
+  });
+  return out;
+}
+
+function EventRow({
+  event,
+  signals,
+}: {
+  event: ListedEvent;
+  signals: EventSignals;
+}) {
   const d = formatDate(event.startsAt);
 
   return (
@@ -104,16 +147,30 @@ function EventRow({ event }: { event: ListedEvent }) {
           ) : (
             <Badge variant="default">Среда</Badge>
           )}
+          {signals.iAmGoing ? (
+            <span className="inline-flex items-center gap-1.5 border border-brand-red bg-brand-red px-2 py-0.5 font-mono text-[10px] font-semibold uppercase tracking-[0.14em] text-paper">
+              <span className="block h-1.5 w-1.5 bg-paper" />
+              ты&nbsp;идёшь
+            </span>
+          ) : null}
           <h3 className="type-h3">{event.title}</h3>
         </div>
         {event.locationName ? (
           <p className="text-[13px] text-graphite">{event.locationName}</p>
         ) : null}
-        {event.isPointsEligible && event.basePointsAward > 0 ? (
-          <span className="font-mono text-[12px] font-medium tracking-[0.04em] text-brand-red">
-            +{event.basePointsAward}&nbsp;Б
-          </span>
-        ) : null}
+        <div className="flex flex-wrap items-center gap-x-4 gap-y-1">
+          {event.isPointsEligible && event.basePointsAward > 0 ? (
+            <span className="font-mono text-[12px] font-medium tracking-[0.04em] text-brand-red">
+              +{event.basePointsAward}&nbsp;Б
+            </span>
+          ) : null}
+          {signals.totalGoing > 0 ? (
+            <span className="font-mono text-[12px] tracking-[0.04em] text-muted">
+              <span className="text-brand-red">●</span>{" "}
+              {signals.totalGoing}&nbsp;идут
+            </span>
+          ) : null}
+        </div>
       </div>
 
       <span className="font-sans text-[14px] font-medium text-ink md:justify-self-end">

@@ -41,6 +41,9 @@ export async function markGoingAction(
       };
     }
     revalidatePath(`/events/${eventKey}`);
+    revalidatePath("/events");
+    revalidatePath("/app");
+    revalidatePath("/");
     return { ok: true };
   } catch {
     return { ok: false, message: "Не получилось связаться с сервером." };
@@ -59,6 +62,9 @@ export async function cancelGoingAction(eventKey: string): Promise<Result> {
       return { ok: false, message: `HTTP ${res.status}` };
     }
     revalidatePath(`/events/${eventKey}`);
+    revalidatePath("/events");
+    revalidatePath("/app");
+    revalidatePath("/");
     return { ok: true };
   } catch {
     return { ok: false, message: "Не получилось связаться с сервером." };
