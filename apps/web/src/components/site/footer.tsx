@@ -25,7 +25,7 @@ const COLUMNS: Column[] = [
   {
     title: "Связь",
     links: [
-      { href: "mailto:hello@cityrnng.ru", label: "hello@cityrnng.ru" },
+      { href: "mailto:hello@cityrunning.online", label: "hello@cityrunning.online" },
       { href: "https://t.me/cityrnng", label: "Telegram-канал" },
       { href: "https://instagram.com/cityrnng", label: "Instagram" },
     ],

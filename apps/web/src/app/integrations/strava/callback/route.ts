@@ -3,7 +3,7 @@ import { API_BASE_URL } from "@/lib/api-config";
 
 /**
  * Strava OAuth callback wrapper. Configure STRAVA_REDIRECT_URI on the
- * API to point here (e.g. https://cityrnng.ru/integrations/strava/callback).
+ * API to point here (e.g. https://cityrunning.online/integrations/strava/callback).
  *
  * Flow:
  * 1. Strava → here with ?code=... or ?error=...
