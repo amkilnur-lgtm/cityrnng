@@ -1,9 +1,15 @@
 /**
- * Base URL for the CITYRNNG API. Overridable via NEXT_PUBLIC_API_URL
- * for staging/prod builds. Default assumes local dev server on :4000.
+ * Base URL for the CITYRNNG API. Server-side code prefers
+ * `API_INTERNAL_URL` (typically the docker-network hostname like
+ * `http://api:4000/api/v1`) so requests don't loop out through Cloudflare
+ * + Caddy on every fetch. Browser bundles only see `NEXT_PUBLIC_API_URL`
+ * because non-public env vars aren't inlined client-side, so the same
+ * import works in both contexts.
  */
 export const API_BASE_URL =
-  process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:4000/api/v1";
+  process.env.API_INTERNAL_URL ??
+  process.env.NEXT_PUBLIC_API_URL ??
+  "http://localhost:4000/api/v1";
 
 /** httpOnly cookie holding the JWT access token. */
 export const AT_COOKIE = "cityrnng_at";
