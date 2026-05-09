@@ -21,7 +21,9 @@
 - `event_recurrence_rules`
 - `event_recurrence_rule_locations`
 - `event_attendances`
+- `event_interests` (RSVP intent)
 - `city_locations`
+- `location_pace_groups`
 
 ### External integrations
 
@@ -196,6 +198,34 @@ Junction правило ↔ `city_locations`. Все локации правил
 - `status` active|archived (индекс)
 - `created_at`
 - `updated_at`
+
+## `location_pace_groups`
+
+Pace-group offerings под конкретной точкой старта. Показываются на event detail внутри карточки точки. Pace хранится integer-секунды на километр (5:30 → 330), форматируется на фронте как `M:SS`. `pacer_name` опционален.
+
+- `id`
+- `location_id` FK → `city_locations.id` `on delete CASCADE`
+- `distance_km` int
+- `pace_seconds_per_km` int
+- `pacer_name` nullable
+- `created_at`
+- unique(`location_id`, `distance_km`, `pace_seconds_per_km`)
+
+## `event_interests`
+
+Soft RSVP — «я иду». Захватывает намерение (точку старта), не влияет на attendance/баллы (это отдельная цепочка через Strava-matching). Дистанция и темп выбираются на месте, в RSVP не сохраняются.
+
+`event_key` — строка, не FK. Так одна модель обслуживает и UUID-события (явные one-off / override-row), и материализованные occurrences рекуррентного правила (синтетический id `rule:UUID:YYYY-MM-DD`). По синтетическим id отдельный DB-row не создаётся — RSVP индексируется по строковому ключу.
+
+- `id`
+- `user_id` FK → `users.id` `on delete CASCADE`
+- `event_key` строка (UUID или `rule:UUID:YYYY-MM-DD`)
+- `location_id` FK → `city_locations.id`
+- `status` `going` | `cancelled` (`@default(going)`)
+- `created_at`
+- `cancelled_at` nullable
+- unique(`user_id`, `event_key`) — один пользователь = одно намерение на событие
+- индекс: (`event_key`)
 
 ## `event_attendances`
 

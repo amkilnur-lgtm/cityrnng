@@ -20,7 +20,7 @@
 | 7. Marketing Site | ✅ | Главная (guest+authed), `/auth`, `/events`, `/events/[id]`, `/how-it-works`, `/about`, `/faq`, `/partners`, `/districts` (с Я.Картами), `/journal` + `/journal/[id]`, `/shop`, `/terms`+`/privacy`+`/agreement` (stubs). Дев-toggle `[GUEST\|AUTHED]` для проверки authed-видов без API. C3 design system (Manrope/Space Grotesk/JetBrains Mono + tokens) |
 | 8. Notifications & Analytics | 🔄 | Email-канал для magic-link подключен ✅ (2026-05-06) — прод-логин разблокирован. Пока нет: транзакционные письма для других сценариев (reward redemption, event reminders), аналитика |
 
-## Q. Frontend-only stage map (актуально на 2026-05-09)
+## Q. Frontend-only stage map (актуально на 2026-05-10)
 
 UI и backend сошлись по всем стабам — ни одной фронтовой заглушки без логики не осталось. Раздел оставлен как trail для будущих расхождений.
 
@@ -50,6 +50,18 @@ UI и backend сошлись по всем стабам — ни одной фр
 - PR #74 — Pace groups: `LocationPaceGroup` (`locationId`, `distanceKm`, `paceSecondsPerKm`, `pacerName?`). Pace хранится integer-секунды (5:30 → 330). Admin UI в `/admin/locations/[id]`. Public display на event detail — 3 карточки по точкам с темпами `M:SS`. **EventPaceGroup для override спец-событий** отложен.
 
 **Phase 3 — осталось:** partner-side flow (отдельный логин для роли partner + страница верификации redemption-кодов), Strava background job (BullMQ воркер), notifications (email/Telegram), avatar upload.
+
+## S. RSVP-flow polish (2026-05-10)
+
+Серия итераций после первого выкатанного RSVP. Куда RSVP сел в итоге: интерактивный блок живёт на `/app` (одна точка управления), `events/[id]` стала read-only витриной, на главной для authed заголовок + компактная панель «ты идёшь», большая article-карточка остаётся только гостям.
+
+- PR #76 — добавили MyUpcomingRsvps + CancelRsvpButton на `/app`. Откатилось в #77.
+- PR #77 — RSVP перенесён с `events/[id]` на `/app`. Новый read-only `EventLocationsDisplay` рендерит ту же сетку карточек + pace groups без submit/cancel. `getNextEventRsvp` дозагружает `GET /events/:id`, чтобы привязать `paceGroups` к локациям (materialized-payload их не несёт). Кнопки «Подключить Strava» и «Карта маршрутов» на detail выровнены 2-col grid'ом. `MyUpcomingRsvps` и `CancelRsvpButton` удалены.
+- PR #78 — финальная полировка:
+  - `NextEvent`, authed: убран `<article>` (date column + venues list + чёрный CTA), осталось только заголовок + compact `EventRsvp`. Гостевой view не тронут + mobile-only «Войти в клуб» под article'ом.
+  - `PersonalDashboard`: standalone «Маршрут и точка старта» из шапки удалён, встроен в красную «ЗАВТРА»-ячейку — на месте строки с одним venue (три точки старта делают единственный адрес неактуальным).
+  - `events/[id]`: «Подключить Strava» удалён; «Карта маршрутов» сжата до compact outline (h-10, content-width); guest на mobile получает «Войти в клуб» возле локаций (скрыт на desktop).
+  - Угловой текст карточек локаций (full + compact + read-only display): красный, с user-aware формулировкой — `ты идёшь` / `ты и ещё N идут` / `N идут` / `будь первым`.
 
 ## Epic 0. Foundation
 
