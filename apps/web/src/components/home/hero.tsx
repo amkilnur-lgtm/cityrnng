@@ -48,7 +48,7 @@ function HeroSide() {
   const districts = Object.values(LOCATIONS).map((l) => l.district);
   return (
     <aside className="flex flex-col lg:sticky lg:top-24 lg:self-start">
-      <div className="relative aspect-[4/3] border border-ink bg-paper-2">
+      <div className="relative aspect-square border border-ink bg-paper-2">
         <div className="absolute left-5 top-5 flex flex-col gap-0.5">
           <span className="type-mono-caps">Три маршрута</span>
           <span className="font-sans text-[13px] font-medium text-ink">
@@ -60,7 +60,7 @@ function HeroSide() {
           alt="Бегуны Ситираннинг"
           fill
           sizes="(max-width: 1024px) 100vw, 40vw"
-          style={{ objectFit: "contain", padding: "18%" }}
+          style={{ objectFit: "contain", padding: "8%" }}
           priority
         />
       </div>
