@@ -23,7 +23,9 @@ export default withSentryConfig(nextConfig, {
   // Upload a wider set of client source files so production stack traces
   // resolve cleanly to original source.
   widenClientFileUpload: true,
-  // Proxy Sentry events through a Next.js API route — defeats ad-blockers
-  // that drop requests to *.sentry.io. Path is excluded from middleware.
-  tunnelRoute: "/monitoring",
+  // tunnelRoute disabled: the staging VPS times out on outbound
+  // connections to Sentry's German ingestion IPs (34.160.x.x range),
+  // which makes the proxied path 500. Browser SDK now sends directly
+  // to *.sentry.io. Trade-off: ad-blockers may drop those requests in
+  // production. Re-enable once VPS network egress is sorted.
 });
