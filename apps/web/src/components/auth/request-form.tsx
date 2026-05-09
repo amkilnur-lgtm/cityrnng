@@ -100,8 +100,8 @@ export function AuthRequestForm({ initialEmail = "" }: { initialEmail?: string }
       </button>
 
       <p className="text-[13px] text-muted">
-        Пришлём ссылку на&nbsp;email — без пароля. 20&nbsp;секунд —
-        и&nbsp;ты&nbsp;в&nbsp;клубе.
+        Ссылка придёт за&nbsp;пару секунд. Открой её в&nbsp;этом
+        же&nbsp;браузере.
       </p>
     </form>
   );

@@ -116,8 +116,7 @@ export function HeroAuthForm() {
       </p>
 
       <p id="hero-email-help" className="text-[13px] text-muted">
-        Пришлём ссылку на&nbsp;email — без пароля. 20&nbsp;секунд —
-        и&nbsp;ты&nbsp;в&nbsp;клубе.
+        Без паролей: жми по&nbsp;ссылке из&nbsp;письма и&nbsp;заходи.
       </p>
     </form>
   );
