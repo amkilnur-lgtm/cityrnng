@@ -34,7 +34,7 @@ export function SiteNav({ state }: { state: SiteState }) {
     <nav
       aria-label="Primary"
       className={cn(
-        "sticky top-0 z-10 border-b border-ink bg-paper",
+        "sticky top-0 z-20 border-b border-ink bg-paper",
         stacked
           ? "flex flex-col md:h-[70px] md:flex-row md:items-center md:justify-between md:gap-6 md:px-12"
           : "flex h-[70px] items-center justify-between gap-6 px-6 lg:px-12",
