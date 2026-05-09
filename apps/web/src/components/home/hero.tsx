@@ -47,7 +47,10 @@ function HeroMain() {
 function HeroSide() {
   const districts = Object.values(LOCATIONS).map((l) => l.district);
   return (
-    <aside className="flex flex-col">
+    <aside className="flex flex-col lg:pb-11">
+      {/* lg:pb-11 (44px) on the right column matches the microcopy + form
+          gaps on the left, so the brand strip's top/bottom land on the
+          same y-coordinates as the email input above it. */}
       <div className="relative aspect-square border border-ink bg-paper-2 lg:aspect-auto lg:flex-1">
         <div className="absolute left-5 top-5 flex flex-col gap-0.5">
           <span className="type-mono-caps">Три маршрута</span>
