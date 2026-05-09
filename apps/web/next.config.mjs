@@ -7,12 +7,14 @@ const nextConfig = {
   // production Docker image so the runtime stage doesn't need node_modules.
   output: "standalone",
   images: {
-    // Default is 60s — far too short. The Next image optimizer key is
-    // (source URL, width, quality), so the same generated derivative
-    // is stable across builds and safe to cache for a year. Without
-    // this, Cloudflare returns DYNAMIC and every user re-runs the
-    // optimizer in the container.
-    minimumCacheTTL: 31536000,
+    // Disable the on-the-fly image optimizer. In standalone mode Next's
+    // optimizer fetches the source via the public URL — that loops back
+    // through Cloudflare and was returning empty bodies, making sharp
+    // throw "Input Buffer is empty" and serve 500s. Our brand assets are
+    // small PNGs in /public, served directly by the static handler with
+    // cache-control headers Cloudflare already honours, so optimization
+    // adds cost without meaningful payoff.
+    unoptimized: true,
   },
 };
 
