@@ -15,6 +15,16 @@ function authHeaders(): HeadersInit | null {
   };
 }
 
+/**
+ * eventKey may arrive as either the clean form `rule:UUID:DATE` (from /app's
+ * getNextEventRsvp → MaterializedApiEvent.id) or already percent-encoded by
+ * Next router params on a future caller. Decode-then-encode normalises both
+ * into a single pass — same defensive pattern as getPublicEvent.
+ */
+function safeEventKey(eventKey: string): string {
+  return encodeURIComponent(decodeURIComponent(eventKey));
+}
+
 export async function markGoingAction(
   eventKey: string,
   locationId: string,
@@ -23,7 +33,7 @@ export async function markGoingAction(
   if (!headers) return { ok: false, message: "Войди, чтобы записаться." };
   try {
     const res = await fetch(
-      `${API_BASE_URL}/events/${encodeURIComponent(eventKey)}/interest`,
+      `${API_BASE_URL}/events/${safeEventKey(eventKey)}/interest`,
       {
         method: "POST",
         headers,
@@ -55,7 +65,7 @@ export async function cancelGoingAction(eventKey: string): Promise<Result> {
   if (!headers) return { ok: false, message: "Войди, чтобы изменить." };
   try {
     const res = await fetch(
-      `${API_BASE_URL}/events/${encodeURIComponent(eventKey)}/interest`,
+      `${API_BASE_URL}/events/${safeEventKey(eventKey)}/interest`,
       { method: "DELETE", headers },
     );
     if (!res.ok) {
