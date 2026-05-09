@@ -35,6 +35,22 @@ UI и backend сошлись по всем стабам — ни одной фр
 
 Дополнительно влито: идемпотентный Prisma seed для ролей `runner/admin/partner` + опциональное повышение known-email в admin (`SEED_ADMIN_EMAIL`). Это prerequisite для admin-protected flows, не самостоятельный эпик.
 
+## R. Phase 2 hardening + new features (2026-05-08–09)
+
+**Phase 2 hardening — закрыты пункты 1, 2, 6:**
+- PR #48 — rate-limit `/auth/request-login` (3/мин), `/rewards/:slug/redeem` (10/мин), 100/мин global backstop, `trust-proxy=loopback`.
+- PR #49 — refresh-token flow с rotation: `POST /auth/refresh` + `/auth/logout`, web middleware прозрачно меняет access-токен.
+- PRs #50/51/52/55/56 — observability live: `@sentry/nestjs` + `nestjs-pino` + `/health/email` на API; `@sentry/nextjs` (browser + server + edge) на web; два Sentry-проекта (`cityrnng-api`, `cityrnng-web`). `tunnelRoute` отключён — VPS таймаутит outbound в `34.160.0.0/16` (GCP), нужно отдельно дебажить.
+
+**Phase 2 — осталось:** admin_audit_log, backup automation, email deliverability (DKIM/SPF/DMARC), VPS egress fix.
+
+**Bonus features (часть Phase 3 + UX-improvements) — закрыто 2026-05-09:**
+- PR #72 — копирайт-pass: 11 правок hero/auth/events/shop/footer/how-it-works.
+- PR #73 — RSVP «Я иду»: новая модель `EventInterest` (`userId`, `eventKey: string`, `locationId`, `status`). `eventKey` поддерживает и UUID-события, и `rule:UUID:YYYY-MM-DD`. Endpoints: `POST/DELETE /events/:eventKey/interest`, `GET /events/:eventKey/interest/me`, public `GET /events/:eventKey/interest/counts`. UI: красная кнопка с location-selector + counter «N идут». **Authed-only** — guest flow отложен.
+- PR #74 — Pace groups: `LocationPaceGroup` (`locationId`, `distanceKm`, `paceSecondsPerKm`, `pacerName?`). Pace хранится integer-секунды (5:30 → 330). Admin UI в `/admin/locations/[id]`. Public display на event detail — 3 карточки по точкам с темпами `M:SS`. **EventPaceGroup для override спец-событий** отложен.
+
+**Phase 3 — осталось:** partner-side flow (отдельный логин для роли partner + страница верификации redemption-кодов), Strava background job (BullMQ воркер), notifications (email/Telegram), avatar upload.
+
 ## Epic 0. Foundation
 
 Цель:
