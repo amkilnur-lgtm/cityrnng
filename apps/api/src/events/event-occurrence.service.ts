@@ -1,4 +1,4 @@
-import { Injectable } from "@nestjs/common";
+import { Injectable, NotFoundException } from "@nestjs/common";
 import {
   CityLocation,
   CityLocationStatus,
@@ -11,6 +11,7 @@ import {
   RecurrenceRuleStatus,
 } from "@prisma/client";
 import { PrismaService } from "../prisma/prisma.service";
+import { mapEventPublic, publicSyncRuleInclude } from "./events.service";
 
 /**
  * Uniform shape for both materialized recurrence occurrences and explicit
@@ -77,9 +78,99 @@ const explicitInclude = Prisma.validator<Prisma.EventDefaultArgs>()({
 });
 type ExplicitEvent = Prisma.EventGetPayload<typeof explicitInclude>;
 
+const RULE_OCCURRENCE_ID = /^rule:([0-9a-f-]{36}):(\d{4}-\d{2}-\d{2})$/i;
+
 @Injectable()
 export class EventOccurrenceService {
   constructor(private readonly prisma: PrismaService) {}
+
+  /**
+   * Resolve a synthetic `rule:<UUID>:<YYYY-MM-DD>` id back to an event-shaped
+   * payload — same shape as `EventsService.getByIdOrThrow`. If an explicit
+   * override exists for that occurrence, it wins; otherwise we materialize
+   * straight from the rule. Returns 404 for malformed ids, unknown rules,
+   * dates that don't fall on the rule's weekday, or dates outside the
+   * rule's active range.
+   */
+  async getRuleOccurrenceById(id: string) {
+    const match = id.match(RULE_OCCURRENCE_ID);
+    if (!match) throw new NotFoundException({ code: "EVENT_NOT_FOUND" });
+    const [, ruleId, dateStr] = match;
+
+    const rule = await this.prisma.eventRecurrenceRule.findUnique({
+      where: { id: ruleId },
+      ...ruleInclude,
+    });
+    if (!rule || rule.status !== RecurrenceRuleStatus.active) {
+      throw new NotFoundException({ code: "EVENT_NOT_FOUND" });
+    }
+
+    const startsAt = this.composeOccurrence(rule, dateStr);
+    if (!startsAt || startsAt.getDay() !== rule.dayOfWeek) {
+      throw new NotFoundException({ code: "EVENT_NOT_FOUND" });
+    }
+    if (startsAt < rule.startsFromDate) {
+      throw new NotFoundException({ code: "EVENT_NOT_FOUND" });
+    }
+    if (rule.endsAtDate && startsAt > rule.endsAtDate) {
+      throw new NotFoundException({ code: "EVENT_NOT_FOUND" });
+    }
+
+    // Override (explicit Event row tied to this rule + date) takes precedence.
+    const override = await this.prisma.event.findFirst({
+      where: {
+        recurrenceRuleId: rule.id,
+        overridesOccurrenceAt: this.dayOnly(startsAt),
+      },
+      include: { syncRule: { include: publicSyncRuleInclude.include } },
+    });
+    if (override) return mapEventPublic(override);
+
+    // No override — return the materialized rule occurrence in the same
+    // shape the public /events endpoint serves.
+    const endsAt = new Date(startsAt.getTime() + rule.durationMinutes * 60_000);
+    return {
+      id,
+      title: rule.title,
+      slug: `rule-${rule.id}-${dateStr}`,
+      description: null,
+      type: rule.type,
+      status: EventStatus.published,
+      startsAt,
+      endsAt,
+      locationName: null,
+      locationAddress: null,
+      locationLat: null,
+      locationLng: null,
+      capacity: null,
+      registrationOpenAt: null,
+      registrationCloseAt: null,
+      isPointsEligible: rule.isPointsEligible,
+      basePointsAward: rule.basePointsAward,
+      syncRule: {
+        locations: rule.locations.map((rl) => ({
+          id: rl.location.id,
+          name: rl.location.name,
+          city: rl.location.city,
+          lat: rl.location.lat,
+          lng: rl.location.lng,
+          radiusMeters: null,
+        })),
+      },
+    };
+  }
+
+  private composeOccurrence(
+    rule: EventRecurrenceRule,
+    dateStr: string,
+  ): Date | null {
+    const [h, m] = rule.timeOfDay.split(":").map((s) => Number.parseInt(s, 10));
+    if (Number.isNaN(h) || Number.isNaN(m)) return null;
+    const d = new Date(`${dateStr}T00:00:00`);
+    if (Number.isNaN(d.getTime())) return null;
+    d.setHours(h, m, 0, 0);
+    return d;
+  }
 
   async listUpcoming(weeksAhead = 8): Promise<MaterializedEvent[]> {
     const now = new Date();

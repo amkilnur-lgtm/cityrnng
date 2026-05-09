@@ -78,15 +78,10 @@ export default async function EventsPage() {
 
 function EventRow({ event }: { event: ListedEvent }) {
   const d = formatDate(event.startsAt);
-  // Materialized rule occurrences ("rule:UUID:DATE") have no detail page yet —
-  // route them to /districts. Everything else (real events + mocks) goes to detail.
-  const detailHref = event.id.startsWith("rule:")
-    ? "/districts"
-    : `/events/${event.id}`;
 
   return (
     <Link
-      href={detailHref}
+      href={`/events/${encodeURIComponent(event.id)}`}
       className="grid grid-cols-1 gap-4 p-6 transition-colors hover:bg-paper-2 md:grid-cols-[140px_1fr_auto] md:items-center md:gap-8 md:p-8"
     >
       <div className="flex flex-col gap-0.5">
