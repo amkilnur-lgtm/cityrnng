@@ -20,19 +20,18 @@
 | 7. Marketing Site | ✅ | Главная (guest+authed), `/auth`, `/events`, `/events/[id]`, `/how-it-works`, `/about`, `/faq`, `/partners`, `/districts` (с Я.Картами), `/journal` + `/journal/[id]`, `/shop`, `/terms`+`/privacy`+`/agreement` (stubs). Дев-toggle `[GUEST\|AUTHED]` для проверки authed-видов без API. C3 design system (Manrope/Space Grotesk/JetBrains Mono + tokens) |
 | 8. Notifications & Analytics | 🔄 | Email-канал для magic-link подключен ✅ (2026-05-06) — прод-логин разблокирован. Пока нет: транзакционные письма для других сценариев (reward redemption, event reminders), аналитика |
 
-## Q. Frontend-only stage map (актуально на 2026-05-08)
+## Q. Frontend-only stage map (актуально на 2026-05-09)
 
-UI и backend сошлись почти всюду. Что ещё в режиме «фронт-stub без логики» или «не реализовано»:
+UI и backend сошлись по всем стабам — ни одной фронтовой заглушки без логики не осталось. Раздел оставлен как trail для будущих расхождений.
 
-- Admin stubs без бизнес-логики: `/admin/attendances`, `/admin/points`, `/admin/users` — страницы есть, нужны действия (approve/reject attendance, manual points adjust UI, user role toggle)
-- Публичная detail-страница для materialized recurrence-occurrences (`/events/rule:UUID:DATE`)
-
-✅ Закрыто (было в этом списке раньше):
+✅ Закрыто:
 - ~~Edit profile UI~~ — `PATCH /me` + форма работают
 - ~~Admin panel целиком~~ — locations/partners/rewards/events/recurrence CRUD собран
 - ~~Recurrence rules admin~~ — собран в `/admin/recurrence/`
 - ~~Email-доставка magic-link~~ — канал подключен 2026-05-06, прод-логин разблокирован
 - ~~Switch `/shop` + `/app/rewards` с моков на API~~ — фронт API-first, моки только fallback. Seed данных партнёров/наград автоматизирован через `deploy-staging.yml` (см. DEPLOY-RUNBOOK §8) и `apps/api/prisma/seed.ts`.
+- ~~Admin stubs (`/admin/attendances`, `/admin/points`, `/admin/users`)~~ — все три полностью функциональны: approve/reject attendance, ручной debit/credit с idempotency-key, grant/revoke ролей.
+- ~~Публичная detail-страница для materialized recurrence-occurrences (`/events/rule:UUID:DATE`)~~ — `GET /events/:id` принимает оба формата (UUID и `rule:UUID:DATE`); правило с override отдаётся override'ом, иначе материализуется из `EventRecurrenceRule`.
 
 Дополнительно влито: идемпотентный Prisma seed для ролей `runner/admin/partner` + опциональное повышение known-email в admin (`SEED_ADMIN_EMAIL`). Это prerequisite для admin-protected flows, не самостоятельный эпик.
 

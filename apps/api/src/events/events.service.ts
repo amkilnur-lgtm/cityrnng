@@ -146,7 +146,7 @@ function isUniqueViolation(err: unknown, field: string): boolean {
   return false;
 }
 
-const publicSyncRuleInclude = Prisma.validator<Prisma.EventSyncRuleDefaultArgs>()({
+export const publicSyncRuleInclude = Prisma.validator<Prisma.EventSyncRuleDefaultArgs>()({
   include: {
     locations: {
       where: { location: { status: CityLocationStatus.active } },
@@ -166,13 +166,13 @@ const publicSyncRuleInclude = Prisma.validator<Prisma.EventSyncRuleDefaultArgs>(
   },
 });
 
-type EventWithPublicSyncRule = Prisma.EventGetPayload<{
+export type EventWithPublicSyncRule = Prisma.EventGetPayload<{
   include: {
     syncRule: typeof publicSyncRuleInclude;
   };
 }>;
 
-function mapEventPublic(event: EventWithPublicSyncRule) {
+export function mapEventPublic(event: EventWithPublicSyncRule) {
   const { syncRule, ...rest } = event;
   if (!syncRule) return { ...rest, syncRule: null };
   const { locations, geofenceLat, geofenceLng, geofenceRadiusMeters, autoApprove, createdAt, updatedAt, ...publicRule } =
