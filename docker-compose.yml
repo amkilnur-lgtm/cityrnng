@@ -62,10 +62,17 @@ services:
       args:
         # NEXT_PUBLIC_* gets baked into the build; override per environment.
         NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL:-http://localhost:4000/api/v1}
+        NEXT_PUBLIC_SENTRY_DSN: ${NEXT_PUBLIC_SENTRY_DSN:-}
+        NEXT_PUBLIC_SENTRY_ENVIRONMENT: ${NEXT_PUBLIC_SENTRY_ENVIRONMENT:-}
     depends_on:
       - api
     env_file:
       - ${APP_ENV_FILE:-.env}
+    environment:
+      # Web's server-side and edge runtime report to the cityrnng-web Sentry
+      # project; api container reports to cityrnng-api. They share env_file,
+      # so we override SENTRY_DSN per service from a separate var.
+      SENTRY_DSN: ${WEB_SENTRY_DSN:-}
     ports:
       - "127.0.0.1:3000:3000"
     restart: unless-stopped

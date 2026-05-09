@@ -35,6 +35,11 @@ COPY apps/web ./apps/web
 # `docker build` work without args; pass --build-arg for staging/prod.
 ARG NEXT_PUBLIC_API_URL=http://localhost:4000/api/v1
 ENV NEXT_PUBLIC_API_URL=$NEXT_PUBLIC_API_URL
+# Sentry browser DSN — also inlined at build. Empty value = no-op.
+ARG NEXT_PUBLIC_SENTRY_DSN=
+ENV NEXT_PUBLIC_SENTRY_DSN=$NEXT_PUBLIC_SENTRY_DSN
+ARG NEXT_PUBLIC_SENTRY_ENVIRONMENT=
+ENV NEXT_PUBLIC_SENTRY_ENVIRONMENT=$NEXT_PUBLIC_SENTRY_ENVIRONMENT
 ENV NEXT_TELEMETRY_DISABLED=1
 
 RUN pnpm --filter @cityrnng/web build
