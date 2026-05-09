@@ -41,13 +41,10 @@ export function PersonalDashboard({
               До&nbsp;среды 1&nbsp;день.
             </h2>
             <p className="type-lede max-w-[560px]">
-              В&nbsp;прошлую среду ты&nbsp;пробежала{" "}
-              <b className="font-semibold text-ink">{lastKm}&nbsp;км</b>{" "}
-              и&nbsp;получила{" "}
-              <b className="font-semibold text-ink">
-                +{lastPoints}&nbsp;баллов
-              </b>
-              . Завтра — {DISTANCE_RANGE} на&nbsp;выбор в&nbsp;19:30.
+              На&nbsp;прошлой среде —{" "}
+              <b className="font-semibold text-ink">{lastKm}&nbsp;км</b>,{" "}
+              <b className="font-semibold text-ink">+{lastPoints}&nbsp;Б</b>.
+              Завтра в&nbsp;19:30 ждём снова.
             </p>
           </div>
           <Link

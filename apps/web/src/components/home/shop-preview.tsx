@@ -46,9 +46,9 @@ export async function ShopPreview({ user }: { user: AuthedUser }) {
             <span className="type-mono-caps">магазин баллов</span>
             <h2 className="type-h2">
               <em className="not-italic text-brand-red">
-                {user.points} баллов
+                {user.points}&nbsp;Б
               </em>{" "}
-              — хватит на&nbsp;вот это.
+              — выбирай.
             </h2>
           </div>
           <Link

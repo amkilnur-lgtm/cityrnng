@@ -57,7 +57,7 @@ export default async function AuthPage({
             Бегаем по&nbsp;
             <em className="not-italic text-brand-red">средам</em>
             .<br />
-            Одна ссылка на&nbsp;email — и&nbsp;ты&nbsp;в&nbsp;клубе.
+            Письмо со&nbsp;ссылкой — и&nbsp;ты&nbsp;с&nbsp;нами.
           </h1>
           <ul className="flex flex-col gap-3 text-[15px] leading-[1.55] text-graphite">
             <li className="flex gap-3">

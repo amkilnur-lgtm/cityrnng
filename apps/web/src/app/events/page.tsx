@@ -44,9 +44,8 @@ export default async function EventsPage() {
                 <em className="not-italic text-brand-red">неделе</em>.
               </h1>
               <p className="type-lede max-w-[640px]">
-                Каждую {CLUB.runDayLong} в&nbsp;{CLUB.runTime} — старт
-                в&nbsp;одном из&nbsp;районов {CLUB.cityGenitive}. Две дистанции
-                на&nbsp;выбор: {DISTANCE_RANGE}. Спецсобытия отмечены отдельно.
+                Среда, {CLUB.runTime}. Три района, {DISTANCE_RANGE}. Спецзабеги
+                помечены отдельно.
               </p>
             </div>
           </Wrap>
@@ -133,8 +132,7 @@ function EmptyState() {
         <em className="not-italic text-brand-red">пока нет</em>.
       </h2>
       <p className="max-w-[520px] text-[15px] leading-[1.55] text-graphite">
-        Как только новое появится — покажем здесь. Обычно ближайший старт
-        анонсируем в&nbsp;понедельник.
+        Расписание на&nbsp;следующую неделю появится в&nbsp;понедельник.
       </p>
       <Link
         href="/"

@@ -30,11 +30,10 @@ function HeroMain() {
       </h1>
 
       <p className="type-lede mt-6 max-w-[540px]">
-        {CLUB.name} — открытое беговое сообщество. Каждую среду
-        в&nbsp;{CLUB.runTime} стартуем с&nbsp;трёх точек: Центр, Проспект,
-        Черниковка. После пробежки —{" "}
+        Бегаем по&nbsp;средам в&nbsp;{CLUB.runTime}. Три точки старта,
+        две дистанции, темп твой. После —{" "}
         <span className="bg-brand-tint px-1.5 py-0.5 font-semibold text-brand-red-ink">
-          кофе и&nbsp;разговоры
+          кофе с&nbsp;командой
         </span>
         .
       </p>
