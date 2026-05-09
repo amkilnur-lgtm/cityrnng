@@ -328,12 +328,20 @@ rm /tmp/cityrnng-$TS.sql.gz
 
 ## 13. Логирование и observability
 
-**Минимум для staging:**
-- Docker logs: `docker compose logs -f api web` (rotation в Я.Облако)
-- Caddy access log: `/var/log/caddy/access.log`
+**Включено сейчас:**
+- API логи в JSON (pino) — `docker compose logs -f api`. В dev-режиме — pretty-print.
+- Каждый запрос имеет `x-request-id` (header + поле `req.id` в логах).
+- Sentry интеграция — событие = unhandled error на API/web (server + edge + browser). DSN-пара задаётся в `.env.staging`:
+  - `SENTRY_DSN` — серверная часть (api + Next server runtime + edge middleware)
+  - `NEXT_PUBLIC_SENTRY_DSN` — браузер
+  - `SENTRY_ENVIRONMENT` (опц.) — тег `staging`/`production`
+  - `SENTRY_TRACES_SAMPLE_RATE` — доля трейс-сэмплинга (по умолчанию 0.1)
+  - При пустом DSN SDK работает в no-op — приложение не падает.
+- Email-channel health: `GET /api/v1/health/email` (200 = SMTP `verify()` прошёл, 503 = провайдер не отвечает)
 
 **Перед prod:**
-- Sentry для api + web (см. `SENTRY_DSN` в GITHUB-SECRETS.md)
+- Создать второй Sentry-проект для production environment (или использовать тот же с разделением через `SENTRY_ENVIRONMENT`)
+- Поднять `SENTRY_TRACES_SAMPLE_RATE` обратно к 0.1-0.2 после оценки квоты
 - Я.Метрика на frontend
 - PostHog (продуктовая аналитика) — отдельный эпик 8
 

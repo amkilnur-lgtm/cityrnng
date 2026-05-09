@@ -62,4 +62,16 @@ export class SmtpEmailProvider implements EmailProvider, OnModuleInit {
       html: msg.html,
     });
   }
+
+  async verify(): Promise<{ ok: true } | { ok: false; error: string }> {
+    if (!this.transporter) {
+      return { ok: false, error: "transporter not initialised (SMTP_* env vars missing?)" };
+    }
+    try {
+      await this.transporter.verify();
+      return { ok: true };
+    } catch (err) {
+      return { ok: false, error: (err as Error).message };
+    }
+  }
 }

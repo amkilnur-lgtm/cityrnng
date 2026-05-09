@@ -45,6 +45,18 @@ export const envSchema = z.object({
     .default(false),
   SMTP_USER: z.string().optional(),
   SMTP_PASS: z.string().optional(),
+
+  // === Observability ===
+  /** Sentry DSN for the API project. Empty = no-op (Sentry disabled). */
+  SENTRY_DSN: z.string().optional(),
+  /** Sentry environment tag (e.g. "staging", "production"). Defaults to NODE_ENV. */
+  SENTRY_ENVIRONMENT: z.string().optional(),
+  /** Tracing sample rate (0..1). Default 0.1 — 10% of requests. */
+  SENTRY_TRACES_SAMPLE_RATE: z.coerce.number().min(0).max(1).default(0.1),
+  /** Pino log level. */
+  LOG_LEVEL: z
+    .enum(["fatal", "error", "warn", "info", "debug", "trace", "silent"])
+    .default("info"),
 });
 
 export type Env = z.infer<typeof envSchema>;
