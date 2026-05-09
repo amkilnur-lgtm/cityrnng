@@ -19,6 +19,11 @@ env:
   IMAGE_API: ghcr.io/${{ github.repository_owner }}/cityrnng-api
   IMAGE_WEB: ghcr.io/${{ github.repository_owner }}/cityrnng-web
   STAGING_PUBLIC_API_URL: https://staging.cityrunning.online/api/v1
+  # Sentry browser DSN gets inlined into the web bundle at build time.
+  # Public by design (clients see it in the JS); fine to commit. Empty
+  # value here means the SDK is no-op in the browser.
+  STAGING_PUBLIC_SENTRY_DSN: https://a6e7eca3021aea82f2fe5cf56bd64790@o4511358166892544.ingest.de.sentry.io/4511358247567440
+  STAGING_PUBLIC_SENTRY_ENVIRONMENT: staging
 
 jobs:
   build:
@@ -67,6 +72,8 @@ jobs:
             ${{ steps.img.outputs.web }}:sha-${{ github.sha }}
           build-args: |
             NEXT_PUBLIC_API_URL=${{ env.STAGING_PUBLIC_API_URL }}
+            NEXT_PUBLIC_SENTRY_DSN=${{ env.STAGING_PUBLIC_SENTRY_DSN }}
+            NEXT_PUBLIC_SENTRY_ENVIRONMENT=${{ env.STAGING_PUBLIC_SENTRY_ENVIRONMENT }}
           cache-from: type=gha,scope=web
           cache-to: type=gha,mode=max,scope=web
 
