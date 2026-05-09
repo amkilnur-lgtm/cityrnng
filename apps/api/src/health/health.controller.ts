@@ -38,4 +38,11 @@ export class HealthController {
       HttpStatus.SERVICE_UNAVAILABLE,
     );
   }
+
+  // TEMP: smoke-tests the Sentry pipeline (instrument.ts → SentryGlobalFilter
+  // → DSN). Remove once verified end-to-end on staging.
+  @Get("debug-sentry")
+  debugSentry() {
+    throw new Error("My first Sentry error!");
+  }
 }
