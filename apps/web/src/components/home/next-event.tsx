@@ -1,13 +1,23 @@
 import Link from "next/link";
+import { EventRsvp } from "@/components/events/event-rsvp";
 import { Wrap } from "@/components/site/wrap";
 import { Badge } from "@/components/ui/badge";
 import { CLUB } from "@/lib/club";
-import type { DisplayEvent } from "@/lib/display-event";
+import type { DisplayEvent, NextEventRsvp } from "@/lib/display-event";
 import { LOCATIONS } from "@/lib/home-mock";
 
-export function NextEvent({ event }: { event: DisplayEvent }) {
+export function NextEvent({
+  event,
+  rsvp,
+  isAuthed = false,
+}: {
+  event: DisplayEvent;
+  rsvp?: NextEventRsvp | null;
+  isAuthed?: boolean;
+}) {
   const e = event;
   const locations = Object.values(LOCATIONS);
+  const showInlineRsvp = isAuthed && rsvp && rsvp.locations.length > 0;
 
   return (
     <section className="border-b border-ink">
@@ -93,6 +103,19 @@ export function NextEvent({ event }: { event: DisplayEvent }) {
             </Link>
           </div>
         </article>
+
+        {showInlineRsvp && rsvp ? (
+          <div className="mt-6 border border-ink bg-paper p-5 md:p-6">
+            <EventRsvp
+              eventKey={rsvp.eventKey}
+              locations={rsvp.locations}
+              myLocationId={rsvp.myLocationId}
+              countsByLocation={rsvp.countsByLocation}
+              isAuthed
+              variant="compact"
+            />
+          </div>
+        ) : null}
       </Wrap>
     </section>
   );

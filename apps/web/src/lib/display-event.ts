@@ -6,6 +6,10 @@ import {
   listPublicEvents,
   listUpcomingEvents,
 } from "@/lib/api-events";
+import {
+  getInterestCounts,
+  getMyInterest,
+} from "@/lib/api-event-interest";
 import { CLUB, type ClubDistance } from "@/lib/club";
 import {
   LOCATIONS,
@@ -13,6 +17,40 @@ import {
   UPCOMING_EVENTS,
   type CityLocation,
 } from "@/lib/home-mock";
+
+/**
+ * RSVP-side data for the next event — locations with IDs (for posting an
+ * RSVP), the current user's pick, and total counts per location. Returned
+ * separately from DisplayEvent so the marketing shape stays unchanged.
+ */
+export type NextEventRsvp = {
+  eventKey: string;
+  locations: Array<{ id: string; name: string; city: string }>;
+  myLocationId: string | null;
+  countsByLocation: Record<string, number>;
+};
+
+export async function getNextEventRsvp(): Promise<NextEventRsvp | null> {
+  const upcoming = await listUpcomingEvents(2);
+  const next = upcoming[0];
+  if (!next || next.locations.length === 0) return null;
+  const [mine, counts] = await Promise.all([
+    getMyInterest(next.id),
+    getInterestCounts(next.id),
+  ]);
+  const countsByLocation: Record<string, number> = {};
+  for (const c of counts) countsByLocation[c.locationId] = c.count;
+  return {
+    eventKey: next.id,
+    locations: next.locations.map((l) => ({
+      id: l.id,
+      name: l.name,
+      city: l.city,
+    })),
+    myLocationId: mine?.locationId ?? null,
+    countsByLocation,
+  };
+}
 
 /**
  * Display shape consumed by Hero/NextEvent/PersonalDashboard. Independent
