@@ -47,11 +47,11 @@ function HeroMain() {
 function HeroSide() {
   const districts = Object.values(LOCATIONS).map((l) => l.district);
   return (
-    <aside className="flex flex-col lg:pb-[30px]">
-      {/* Right column lifts by 30px so the brand strip aligns with the
-          email-input row on the left: 12px gap-3 + 20px microcopy minus
-          a 2px border-box delta — the form wrapper is 58px outer
-          (h-14 + 2 borders), so the strip is set to h-[58px] to match. */}
+    <aside className="flex flex-col lg:pb-8">
+      {/* lg:pb-8 (32px) = gap-3 (12) + microcopy (~20) below the input
+          on the left. With strip h-[58px] matching the form wrapper's
+          58px outer height, both top and bottom of strip line up with
+          input wrapper outer top/bottom. */}
       <div className="relative aspect-square border border-ink bg-paper-2 lg:aspect-auto lg:flex-1">
         <div className="absolute left-5 top-5 flex flex-col gap-0.5">
           <span className="type-mono-caps">Три маршрута</span>
