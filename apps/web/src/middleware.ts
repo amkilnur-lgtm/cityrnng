@@ -110,6 +110,6 @@ export const config = {
   // routes themselves (refresh would loop, logout intentionally clears
   // cookies and we don't want to refresh them back).
   matcher: [
-    "/((?!_next/static|_next/image|favicon.ico|brand/|api/auth/refresh|api/auth/logout).*)",
+    "/((?!_next/static|_next/image|favicon.ico|brand/|api/auth/refresh|api/auth/logout|monitoring).*)",
   ],
 };

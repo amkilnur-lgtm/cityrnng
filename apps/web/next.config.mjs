@@ -20,4 +20,10 @@ export default withSentryConfig(nextConfig, {
   hideSourceMaps: true,
   // Strip the Sentry SDK's logger calls from the final bundle.
   disableLogger: true,
+  // Upload a wider set of client source files so production stack traces
+  // resolve cleanly to original source.
+  widenClientFileUpload: true,
+  // Proxy Sentry events through a Next.js API route — defeats ad-blockers
+  // that drop requests to *.sentry.io. Path is excluded from middleware.
+  tunnelRoute: "/monitoring",
 });
