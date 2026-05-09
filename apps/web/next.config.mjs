@@ -6,6 +6,14 @@ const nextConfig = {
   // Emit a self-contained server bundle into .next/standalone — used by the
   // production Docker image so the runtime stage doesn't need node_modules.
   output: "standalone",
+  images: {
+    // Default is 60s — far too short. The Next image optimizer key is
+    // (source URL, width, quality), so the same generated derivative
+    // is stable across builds and safe to cache for a year. Without
+    // this, Cloudflare returns DYNAMIC and every user re-runs the
+    // optimizer in the container.
+    minimumCacheTTL: 31536000,
+  },
 };
 
 export default withSentryConfig(nextConfig, {
