@@ -16,4 +16,8 @@ export class ConsoleEmailProvider implements EmailProvider {
         `--- text ---\n${msg.text}\n--- end ---`,
     );
   }
+
+  async verify(): Promise<{ ok: true }> {
+    return { ok: true };
+  }
 }

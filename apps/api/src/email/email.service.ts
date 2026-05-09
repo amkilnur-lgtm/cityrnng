@@ -40,4 +40,8 @@ export class EmailService {
       throw err;
     }
   }
+
+  async healthCheck(): Promise<{ ok: true } | { ok: false; error: string }> {
+    return this.provider.verify();
+  }
 }
