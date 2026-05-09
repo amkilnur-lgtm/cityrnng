@@ -51,8 +51,8 @@ export function PersonalDashboard({
             </p>
           </div>
           <Link
-            href="/events/w-22"
-            className="inline-flex h-14 items-center border border-ink bg-paper px-6 font-sans text-[15px] font-semibold text-ink transition-colors hover:bg-ink hover:text-paper"
+            href={nextEvent ? `/events/${nextEvent.id}` : "/events"}
+            className="inline-flex h-14 items-center border border-brand-red bg-brand-red px-6 font-sans text-[15px] font-semibold text-paper transition-colors hover:bg-brand-red-ink"
           >
             Маршрут и&nbsp;точка старта →
           </Link>
@@ -83,19 +83,16 @@ export function PersonalDashboard({
             ))}
           </div>
 
-          <div className="grid grid-cols-2 divide-ink border-t border-ink md:grid-cols-4 md:divide-x">
+          <div className="grid grid-cols-2 divide-ink border-t border-ink md:divide-x">
             {[
-              { k: "Сред", v: `${done}`, s: "в этом месяце" },
+              { k: "Пробежек", v: `${done}`, s: "в этом месяце" },
               { k: "Километров", v: `${km}`, s: "за апрель" },
-              { k: "Часов в пути", v: "1:02", s: "всего" },
-              { k: "Средний темп", v: "6:38", s: "мин/км" },
             ].map((kpi, i) => (
               <div
                 key={kpi.k}
                 className={
                   "flex flex-col gap-1 px-5 py-4 md:px-6 md:py-5" +
-                  (i % 2 !== 0 ? " border-l border-ink md:border-l-0" : "") +
-                  (i >= 2 ? " border-t border-ink md:border-t-0" : "")
+                  (i % 2 !== 0 ? " border-l border-ink md:border-l-0" : "")
                 }
               >
                 <span className="type-mono-caps">{kpi.k}</span>

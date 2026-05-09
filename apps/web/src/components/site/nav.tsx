@@ -1,19 +1,31 @@
+"use client";
+
 import Image from "next/image";
 import Link from "next/link";
+import { usePathname } from "next/navigation";
+import { useState } from "react";
 import { LogoutButton } from "@/components/site/logout-button";
 import { CLUB } from "@/lib/club";
 import type { SiteState } from "@/lib/home-mock";
 import { cn } from "@/lib/utils";
 
 const NAV_LINKS = [
-  { href: "/", label: "Главная", current: true },
   { href: "/events", label: "События" },
+  { href: "/how-it-works", label: "Как это работает" },
   { href: "/shop", label: "Магазин" },
   { href: "/journal", label: "Журнал" },
-  { href: "/partners", label: "Партнёрам" },
 ];
 
+function isActive(pathname: string | null, href: string): boolean {
+  if (!pathname) return false;
+  if (href === "/") return pathname === "/";
+  return pathname === href || pathname.startsWith(`${href}/`);
+}
+
 export function SiteNav({ state }: { state: SiteState }) {
+  const pathname = usePathname();
+  const [menuOpen, setMenuOpen] = useState(false);
+
   // Authed users get a 2-row layout on mobile so the full pill (avatar +
   // name + points + logout) doesn't crowd the wordmark out. Desktop stays
   // single-row regardless.
@@ -55,22 +67,30 @@ export function SiteNav({ state }: { state: SiteState }) {
         </Link>
 
         <div className="hidden items-center gap-8 md:flex">
-          {NAV_LINKS.map((link) => (
-            <Link
-              key={link.href}
-              href={link.href}
-              aria-current={link.current ? "page" : undefined}
-              className={cn(
-                "font-sans text-[14px] font-medium text-ink transition-colors hover:text-brand-red",
-                link.current && "text-brand-red",
-              )}
-            >
-              {link.label}
-            </Link>
-          ))}
+          {NAV_LINKS.map((link) => {
+            const active = isActive(pathname, link.href);
+            return (
+              <Link
+                key={link.href}
+                href={link.href}
+                aria-current={active ? "page" : undefined}
+                className={cn(
+                  "font-sans text-[14px] font-medium text-ink transition-colors hover:text-brand-red",
+                  active && "text-brand-red",
+                )}
+              >
+                {link.label}
+              </Link>
+            );
+          })}
         </div>
 
-        {stacked && <MenuButton />}
+        {stacked && (
+          <MenuButton
+            open={menuOpen}
+            onToggle={() => setMenuOpen((v) => !v)}
+          />
+        )}
       </div>
 
       <div
@@ -79,7 +99,12 @@ export function SiteNav({ state }: { state: SiteState }) {
           stacked && "h-[70px] justify-end px-6 md:h-auto md:px-0",
         )}
       >
-        {!stacked && <MenuButton />}
+        {!stacked && (
+          <MenuButton
+            open={menuOpen}
+            onToggle={() => setMenuOpen((v) => !v)}
+          />
+        )}
 
         {state.isAuthed ? (
           <>
@@ -90,19 +115,85 @@ export function SiteNav({ state }: { state: SiteState }) {
           <GuestCta />
         )}
       </div>
+
+      {menuOpen && (
+        <MobileDrawer
+          pathname={pathname}
+          state={state}
+          onClose={() => setMenuOpen(false)}
+        />
+      )}
     </nav>
   );
 }
 
-function MenuButton() {
+function MenuButton({
+  open,
+  onToggle,
+}: {
+  open: boolean;
+  onToggle: () => void;
+}) {
   return (
     <button
       type="button"
-      aria-label="Меню"
+      aria-label={open ? "Закрыть меню" : "Открыть меню"}
+      aria-expanded={open}
+      onClick={onToggle}
       className="flex h-11 w-11 items-center justify-center border border-ink bg-paper hover:bg-ink hover:text-paper md:hidden"
     >
-      <span className="block h-px w-4 bg-current shadow-[0_-5px_0_currentColor,0_5px_0_currentColor]" />
+      {open ? (
+        <span className="block h-5 w-5 relative before:absolute before:inset-x-0 before:top-1/2 before:h-px before:bg-current before:-translate-y-1/2 before:rotate-45 after:absolute after:inset-x-0 after:top-1/2 after:h-px after:bg-current after:-translate-y-1/2 after:-rotate-45" />
+      ) : (
+        <span className="block h-px w-4 bg-current shadow-[0_-5px_0_currentColor,0_5px_0_currentColor]" />
+      )}
     </button>
+  );
+}
+
+function MobileDrawer({
+  pathname,
+  state,
+  onClose,
+}: {
+  pathname: string | null;
+  state: SiteState;
+  onClose: () => void;
+}) {
+  return (
+    <div className="absolute inset-x-0 top-full border-t border-ink bg-paper md:hidden">
+      <ul className="flex flex-col">
+        {NAV_LINKS.map((link) => {
+          const active = isActive(pathname, link.href);
+          return (
+            <li key={link.href} className="border-b border-ink/15">
+              <Link
+                href={link.href}
+                onClick={onClose}
+                aria-current={active ? "page" : undefined}
+                className={cn(
+                  "block px-6 py-4 font-sans text-[15px] font-semibold text-ink",
+                  active && "text-brand-red",
+                )}
+              >
+                {link.label}
+              </Link>
+            </li>
+          );
+        })}
+        {state.isAuthed && state.isAdmin && (
+          <li className="border-b border-ink/15">
+            <Link
+              href="/admin"
+              onClick={onClose}
+              className="block px-6 py-4 font-sans text-[15px] font-semibold text-ink"
+            >
+              Админ
+            </Link>
+          </li>
+        )}
+      </ul>
+    </div>
   );
 }
 

@@ -154,10 +154,10 @@ export default async function HowItWorksPage() {
               FAQ
             </Link>
             <a
-              href="mailto:hello@cityrnng.ru"
+              href="mailto:hello@cityrunning.online"
               className="inline-flex h-12 items-center border border-ink bg-paper px-5 font-sans text-[14px] font-semibold text-ink hover:bg-ink hover:text-paper"
             >
-              hello@cityrnng.ru
+              hello@cityrunning.online
             </a>
           </div>
         </Wrap>

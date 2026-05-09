@@ -20,8 +20,8 @@ export const CLUB = {
   pointsPerKm: 6,
   /** Email & social — used in footer / about / contact CTAs. */
   contacts: {
-    email: "hello@cityrnng.ru",
-    partnersEmail: "partners@cityrnng.ru",
+    email: "hello@cityrunning.online",
+    partnersEmail: "partners@cityrunning.online",
     telegram: "https://t.me/cityrnng",
     instagram: "https://instagram.com/cityrnng",
   },
