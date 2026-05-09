@@ -106,21 +106,17 @@ export async function listPublicEvents(query: ListEventsQuery = {}): Promise<
 }
 
 export async function getPublicEvent(id: string): Promise<ApiEvent | null> {
-  const url = `${API_BASE_URL}/events/${encodeURIComponent(id)}`;
+  // Next 14 returns route params with `%3A` (and other reserved chars) still
+  // percent-encoded in App Router dynamic segments. Naively re-encoding
+  // would double-encode (`%3A` -> `%253A`) and the API regex wouldn't match.
+  // Decode first, then re-encode, so we always emit single-encoded.
+  const safe = encodeURIComponent(decodeURIComponent(id));
+  const url = `${API_BASE_URL}/events/${safe}`;
   try {
     const res = await fetch(url, { cache: "no-store" });
-    if (!res.ok) {
-      console.error("[getPublicEvent] non-OK", { id, url, status: res.status });
-      return null;
-    }
+    if (!res.ok) return null;
     return (await res.json()) as ApiEvent;
-  } catch (err) {
-    console.error("[getPublicEvent] threw", {
-      id,
-      url,
-      message: (err as Error).message,
-      cause: (err as { cause?: unknown }).cause,
-    });
+  } catch {
     return null;
   }
 }
