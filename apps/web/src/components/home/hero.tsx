@@ -49,7 +49,7 @@ function HeroSide() {
   return (
     <aside className="flex flex-col lg:sticky lg:top-24 lg:self-start">
       <div className="relative aspect-[4/3] border border-ink bg-paper-2">
-        <div className="absolute left-5 top-5 z-10 flex flex-col gap-0.5">
+        <div className="absolute left-5 top-5 flex flex-col gap-0.5">
           <span className="type-mono-caps">Три маршрута</span>
           <span className="font-sans text-[13px] font-medium text-ink">
             {districts.join(" · ")}
