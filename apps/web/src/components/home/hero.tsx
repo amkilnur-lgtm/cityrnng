@@ -45,15 +45,14 @@ function HeroMain() {
 }
 
 function HeroSide() {
+  const districts = Object.values(LOCATIONS).map((l) => l.district);
   return (
     <aside className="flex flex-col lg:sticky lg:top-24 lg:self-start">
-      <div className="relative aspect-square border border-ink bg-paper-2">
+      <div className="relative aspect-[4/3] border border-ink bg-paper-2">
         <div className="absolute left-5 top-5 z-10 flex flex-col gap-0.5">
           <span className="type-mono-caps">Три маршрута</span>
           <span className="font-sans text-[13px] font-medium text-ink">
-            {Object.values(LOCATIONS)
-              .map((l) => l.district)
-              .join(" · ")}
+            {districts.join(" · ")}
           </span>
         </div>
         <Image
@@ -61,10 +60,40 @@ function HeroSide() {
           alt="Бегуны Ситираннинг"
           fill
           sizes="(max-width: 1024px) 100vw, 40vw"
-          style={{ objectFit: "contain", padding: "10%" }}
+          style={{ objectFit: "contain", padding: "8%" }}
           priority
         />
       </div>
+
+      <div className="grid grid-cols-3 border border-t-0 border-ink bg-paper">
+        <BrandFact label="День" value={CLUB.runDayLong} />
+        <BrandFact label="Время" value={CLUB.runTime} accent />
+        <BrandFact label="Дистанции" value={`${CLUB.distances.join(" / ")} км`} />
+      </div>
     </aside>
+  );
+}
+
+function BrandFact({
+  label,
+  value,
+  accent,
+}: {
+  label: string;
+  value: string;
+  accent?: boolean;
+}) {
+  return (
+    <div className="flex flex-col gap-1 px-4 py-4 [&+&]:border-l [&+&]:border-ink">
+      <span className="type-mono-caps">{label}</span>
+      <span
+        className={
+          "font-display text-[20px] font-bold leading-none tracking-[-0.02em] " +
+          (accent ? "text-brand-red" : "text-ink")
+        }
+      >
+        {value}
+      </span>
+    </div>
   );
 }
