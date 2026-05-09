@@ -47,11 +47,11 @@ function HeroMain() {
 function HeroSide() {
   const districts = Object.values(LOCATIONS).map((l) => l.district);
   return (
-    <aside className="flex flex-col lg:pb-8">
-      {/* lg:pb-8 (32px) lifts the strip by exactly the microcopy block on
-          the left (gap-3 + p#hero-email-help ≈ 12 + 20). The error
-          placeholder above microcopy is sr-only with position:absolute,
-          so it doesn't take part in flex flow — no extra gap to count. */}
+    <aside className="flex flex-col lg:pb-[30px]">
+      {/* Right column lifts by 30px so the brand strip aligns with the
+          email-input row on the left: 12px gap-3 + 20px microcopy minus
+          a 2px border-box delta — the form wrapper is 58px outer
+          (h-14 + 2 borders), so the strip is set to h-[58px] to match. */}
       <div className="relative aspect-square border border-ink bg-paper-2 lg:aspect-auto lg:flex-1">
         <div className="absolute left-5 top-5 flex flex-col gap-0.5">
           <span className="type-mono-caps">Три маршрута</span>
@@ -69,7 +69,7 @@ function HeroSide() {
         />
       </div>
 
-      <div className="grid h-14 grid-cols-3 border border-t-0 border-ink bg-paper">
+      <div className="grid h-[58px] grid-cols-3 border border-t-0 border-ink bg-paper">
         <BrandFact label="День" value={CLUB.runDayLong} />
         <BrandFact label="Время" value={CLUB.runTime} accent />
         <BrandFact label="Дистанции" value={`${CLUB.distances.join(" / ")} км`} />
