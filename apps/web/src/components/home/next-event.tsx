@@ -59,7 +59,7 @@ export function NextEvent({
               myLocationId={rsvp.myLocationId}
               countsByLocation={rsvp.countsByLocation}
               isAuthed
-              variant="compact"
+              variant="full"
             />
           </div>
         ) : (
