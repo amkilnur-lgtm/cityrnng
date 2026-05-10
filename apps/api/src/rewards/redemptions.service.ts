@@ -175,6 +175,39 @@ export class RedemptionsService {
     });
   }
 
+  /**
+   * Admin-side list of every redemption with optional filters. Includes
+   * minimal user info (email + display name) so admin can see who the
+   * code belongs to without a second lookup.
+   */
+  async listForAdmin(opts: {
+    status?: RedemptionStatus;
+    partnerId?: string;
+    code?: string;
+    take?: number;
+  } = {}) {
+    const take = Math.min(Math.max(opts.take ?? 50, 1), 200);
+    return this.prisma.redemption.findMany({
+      where: {
+        status: opts.status,
+        code: opts.code ? opts.code.toUpperCase() : undefined,
+        reward: opts.partnerId ? { partnerId: opts.partnerId } : undefined,
+      },
+      include: {
+        reward: { include: { partner: true } },
+        user: {
+          select: {
+            id: true,
+            email: true,
+            profile: { select: { displayName: true } },
+          },
+        },
+      },
+      orderBy: { createdAt: "desc" },
+      take,
+    });
+  }
+
   async getByCodeForUser(userId: string, code: string) {
     const redemption = await this.prisma.redemption.findUnique({
       where: { code },

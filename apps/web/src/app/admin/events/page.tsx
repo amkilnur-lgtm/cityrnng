@@ -64,8 +64,8 @@ export default async function AdminEventsPage() {
               </p>
             </div>
           ) : (
-            <div className="border border-ink">
-              <table className="w-full text-[14px]">
+            <div className="overflow-x-auto border border-ink">
+              <table className="w-full min-w-[720px] text-[14px]">
                 <thead className="border-b border-ink bg-paper-2/40 text-left">
                   <tr>
                     <Th>Когда</Th>
