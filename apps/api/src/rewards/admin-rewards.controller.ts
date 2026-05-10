@@ -79,7 +79,24 @@ export class AdminRewardsController {
     return this.rewards.update(id, dto);
   }
 
-  // Redemptions (verify / cancel)
+  // Redemptions (list / verify / cancel)
+
+  @Get("redemptions")
+  listRedemptions(
+    @Query("status") status?: string,
+    @Query("partnerId") partnerId?: string,
+    @Query("code") code?: string,
+  ) {
+    const allowedStatuses = ["active", "used", "expired", "cancelled"];
+    return this.redemptions.listForAdmin({
+      status:
+        status && allowedStatuses.includes(status)
+          ? (status as "active" | "used" | "expired" | "cancelled")
+          : undefined,
+      partnerId,
+      code,
+    });
+  }
 
   @Post("redemptions/verify/:code")
   @HttpCode(HttpStatus.OK)

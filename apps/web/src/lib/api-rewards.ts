@@ -118,3 +118,35 @@ export async function listMyRedemptions(): Promise<ApiRedemption[]> {
     return [];
   }
 }
+
+export type ApiAdminRedemption = ApiRedemption & {
+  user: {
+    id: string;
+    email: string;
+    profile: { displayName: string | null } | null;
+  };
+};
+
+/** Admin-only — list all redemptions with optional filters. */
+export async function listRedemptionsAdmin(opts: {
+  status?: RedemptionStatus;
+  partnerId?: string;
+  code?: string;
+}): Promise<ApiAdminRedemption[]> {
+  const headers = authHeaders();
+  if (!headers) return [];
+  const url = new URL(`${API_BASE_URL}/admin/redemptions`);
+  if (opts.status) url.searchParams.set("status", opts.status);
+  if (opts.partnerId) url.searchParams.set("partnerId", opts.partnerId);
+  if (opts.code) url.searchParams.set("code", opts.code);
+  try {
+    const res = await fetch(url.toString(), {
+      headers,
+      cache: "no-store",
+    });
+    if (!res.ok) return [];
+    return (await res.json()) as ApiAdminRedemption[];
+  } catch {
+    return [];
+  }
+}

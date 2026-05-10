@@ -38,20 +38,41 @@ export default function AdminDashboardPage() {
             title="Награды"
             body="Каталог обменов. Каждая награда привязана к партнёру, имеет цену в баллах, опциональные срок действия и капасити."
           />
-          <ComingSoonCard
+          <DashboardCard
+            href="/admin/events"
             kind="04"
             title="События"
-            body="Создание разовых special-событий, статусы, sync-rules для Strava."
+            body="Спецсобытия, статусы, sync-rules для Strava. Регулярные среды живут отдельно — в Расписании."
           />
-          <ComingSoonCard
+          <DashboardCard
+            href="/admin/recurrence"
             kind="05"
             title="Расписание"
-            body="Регулярные правила (среда 19:30 со всех точек) — генерируют события автоматически."
+            body="Регулярные правила (среда 19:30 со всех точек) — генерируют материализованные события на /events автоматически."
           />
-          <ComingSoonCard
+          <DashboardCard
+            href="/admin/attendances"
             kind="06"
             title="Attendances"
-            body="Подтверждение участия из Strava-синков и ручные начисления."
+            body="Подтверждение участия из Strava-синков и ручные approve/reject."
+          />
+          <DashboardCard
+            href="/admin/users"
+            kind="07"
+            title="Пользователи"
+            body="Список + grant/revoke ролей admin/partner. Балансы, статусы, профили."
+          />
+          <DashboardCard
+            href="/admin/points"
+            kind="08"
+            title="Баллы"
+            body="Ручной credit/debit с idempotency-key — для коррекций и компенсаций."
+          />
+          <DashboardCard
+            href="/admin/redemptions"
+            kind="09"
+            title="Обмены"
+            body="Redemption-коды: фильтры по статусу/партнёру/коду, погашение и отмена с возвратом баллов."
           />
         </Wrap>
       </section>
@@ -84,28 +105,5 @@ function DashboardCard({
         Открыть →
       </span>
     </Link>
-  );
-}
-
-function ComingSoonCard({
-  kind,
-  title,
-  body,
-}: {
-  kind: string;
-  title: string;
-  body: string;
-}) {
-  return (
-    <div className="flex flex-col gap-3 border-b border-ink bg-paper-2 p-6 md:border-b-0 md:[&:nth-child(2n)]:border-l md:[&:nth-child(2n)]:border-ink md:[&:nth-child(n+3)]:border-t md:[&:nth-child(n+3)]:border-ink lg:[&]:border-t-0 lg:[&:nth-child(2n)]:border-l-0 lg:[&:nth-child(3n+2)]:border-l lg:[&:nth-child(3n+2)]:border-ink lg:[&:nth-child(3n)]:border-l lg:[&:nth-child(3n)]:border-ink lg:[&:nth-child(n+4)]:border-t lg:[&:nth-child(n+4)]:border-ink md:p-8">
-      <span className="font-display text-[40px] font-bold leading-none tracking-[-0.03em] text-muted-2">
-        {kind}
-      </span>
-      <h3 className="type-h3 text-muted">{title}</h3>
-      <p className="text-[14px] leading-[1.55] text-muted">{body}</p>
-      <span className="mt-auto pt-2 font-mono text-[11px] uppercase tracking-[0.14em] text-muted">
-        скоро
-      </span>
-    </div>
   );
 }

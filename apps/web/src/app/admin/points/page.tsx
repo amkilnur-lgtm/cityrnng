@@ -90,8 +90,8 @@ export default async function AdminPointsPage({
                 </p>
               </div>
             ) : (
-              <div className="border border-ink">
-                <table className="w-full text-[13px]">
+              <div className="overflow-x-auto border border-ink">
+                <table className="w-full min-w-[820px] text-[13px]">
                   <thead className="border-b border-ink bg-paper-2/40 text-left">
                     <tr>
                       <Th>Когда</Th>
