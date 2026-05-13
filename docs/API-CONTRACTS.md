@@ -370,7 +370,8 @@ Response `201`:
 - `GET /api/v1/admin/rewards?partnerId=<uuid>` — все награды (включая archived)
 - `POST /api/v1/admin/rewards` — создать (`CreateRewardDto`: slug, partnerId, title, description?, costPoints, badge?, status?, validFrom?, validUntil?, capacity?)
 - `PATCH /api/v1/admin/rewards/:id` — обновить
-- `POST /api/v1/admin/redemptions/verify/:code` — пометить redemption использованным (партнёр сканирует QR, админ подтверждает). Возвращает обновлённый redemption. Ошибки: `REDEMPTION_NOT_FOUND`, `REDEMPTION_NOT_ACTIVE`, `REDEMPTION_EXPIRED`
+- `GET /api/v1/admin/redemptions?status=&partnerId=&code=` — список всех redemption-ов, ↓ по `createdAt`. Возвращает по 50 (`take` cap 200). Все три фильтра опциональны: `status` ∈ {`active`,`used`,`expired`,`cancelled`}; `code` — точное совпадение (case-insensitive, форсируется в upper). Включает minimal user info (`{id, email, profile.displayName}`) — чтобы админ видел владельца кода без второго запроса. Используется на `/admin/redemptions`.
+- `POST /api/v1/admin/redemptions/verify/:code` — пометить redemption использованным (партнёр предъявляет 6-символьный код, админ гасит). Возвращает обновлённый redemption. Ошибки: `REDEMPTION_NOT_FOUND`, `REDEMPTION_NOT_ACTIVE`, `REDEMPTION_EXPIRED`
 - `POST /api/v1/admin/redemptions/:id/cancel` — отменить + вернуть баллы. Тело `{ reason?: string }`. Создаёт credit-транзакцию `reasonType=reversal`, ставит `redemption.status=cancelled`, decrements `reward.sold_count`. Идемпотентно по `redemption.id`
 
 Доменные коды (для `error.code`):

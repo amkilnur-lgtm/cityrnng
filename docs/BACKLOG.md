@@ -16,11 +16,11 @@
 | 3. Check-in | 🔄 заменён | QR-поток отменён. Вместо него: Strava connect → ingestion → `AttendanceMatcherService` → `event_attendances` (auto_approve или ручной approve админом). **Frontend:** `/app/profile` со StravaCard (connect/disconnect через server actions), `/integrations/strava/callback` Next.js wrapper для OAuth-редиректа |
 | 4. Points Engine | 🔄 | Ledger + idempotency, `signup_bonus`, `event_attendance_*`, `manual_adjustment`, `/points/balance`, `/points/history`, admin adjust. **Frontend:** `/app/points` с балансом + Load-more пагинацией. Пока нет: first-run / streak / milestone / returning / campaign / partner bonus'ов, reversal flow, `point_rules` как таблица |
 | 5. Rewards & Partners | 🔄 backend ✅ / frontend ✅ моки | **Backend:** `partners`, `rewards`, `redemptions` таблицы + `reward_redemption` enum value + миграция. `RewardsService` (public + admin), `PartnersService` (admin), `RedemptionsService` (атомарный redeem с debit point_transactions, idempotency, retry на code-collision, cancel+refund). Endpoints: `GET /partners`, `GET /rewards`, `GET /rewards/:slug`, `POST /rewards/:slug/redeem` (authed), `GET /me/redemptions`, `GET /me/redemptions/:code`, admin CRUD + `verify/:code` + `cancel/:id`. **Frontend:** `/shop` + `/shop/[slug]` + `/app/rewards` собраны на моках; ждут switch на API + добавления seed-данных в prisma/seed.ts |
-| 6. Admin Panel | 🔄 | UI собран в `apps/web/src/app/admin/`: ✅ CRUD для locations, partners, rewards, events, recurrence-rules. Stub-страницы (нужно дописать функционал): attendances, points-adjust, users. Backend для всех CRUD-секций готов (см. эпики 2/4/5) |
+| 6. Admin Panel | ✅ | UI собран в `apps/web/src/app/admin/`: CRUD для locations / partners / rewards / events / recurrence-rules + функциональные attendances (approve/reject), points (manual debit/credit с idempotency), users (grant/revoke ролей), redemptions (фильтры + verify + cancel с возвратом баллов). Dashboard `/admin` показывает все 9 разделов. Таблицы скроллятся горизонтально на mobile. |
 | 7. Marketing Site | ✅ | Главная (guest+authed), `/auth`, `/events`, `/events/[id]`, `/how-it-works`, `/about`, `/faq`, `/partners`, `/districts` (с Я.Картами), `/journal` + `/journal/[id]`, `/shop`, `/terms`+`/privacy`+`/agreement` (stubs). Дев-toggle `[GUEST\|AUTHED]` для проверки authed-видов без API. C3 design system (Manrope/Space Grotesk/JetBrains Mono + tokens) |
 | 8. Notifications & Analytics | 🔄 | Email-канал для magic-link подключен ✅ (2026-05-06) — прод-логин разблокирован. Пока нет: транзакционные письма для других сценариев (reward redemption, event reminders), аналитика |
 
-## Q. Frontend-only stage map (актуально на 2026-05-10)
+## Q. Frontend-only stage map (актуально на 2026-05-13)
 
 UI и backend сошлись по всем стабам — ни одной фронтовой заглушки без логики не осталось. Раздел оставлен как trail для будущих расхождений.
 
@@ -62,6 +62,17 @@ UI и backend сошлись по всем стабам — ни одной фр
   - `PersonalDashboard`: standalone «Маршрут и точка старта» из шапки удалён, встроен в красную «ЗАВТРА»-ячейку — на месте строки с одним venue (три точки старта делают единственный адрес неактуальным).
   - `events/[id]`: «Подключить Strava» удалён; «Карта маршрутов» сжата до compact outline (h-10, content-width); guest на mobile получает «Войти в клуб» возле локаций (скрыт на desktop).
   - Угловой текст карточек локаций (full + compact + read-only display): красный, с user-aware формулировкой — `ты идёшь` / `ты и ещё N идут` / `N идут` / `будь первым`.
+
+## T. RSVP encoding fix + home pace groups + admin polish (2026-05-13)
+
+Постдоставочные правки и закрытие админ-эпика.
+
+- PR #80 — `fix(web): single-encode eventKey on /interest fetches`. На `/events/rule:UUID:DATE` все локации стояли в «будь первым» даже после успешного RSVP с `/app`. Причина: Next 14 App Router отдаёт `params.id` уже percent-encoded (`:` → `%3A`), `getMyInterest` / `getInterestCounts` ещё раз `encodeURIComponent`-или → `%253A` → API regex не матчит → 404. Тот же decode-then-encode паттерн, что у `getPublicEvent`, добавлен в interest-хелперы и interest-actions (защитно).
+- PR #81 — `fix(home): show pace groups in /'s authed RSVP panel`. После #78 на `/` для authed остался только RSVP-блок без большой article-карточки → темпы нигде не видны. Переключил `EventRsvp` на `variant="full"` на главной — теперь home и `/app` визуально совпадают по разметке точек старта.
+- PR #82 — `feat(admin): redemptions UI + dashboard fix + mobile-scrollable tables`. Три закрытия одним PR:
+  - `/admin` дашборд: 04 События / 05 Расписание / 06 Attendances висели как `ComingSoonCard` хотя страницы давно работают; не было карточек на Users / Points. Перевёл всё в `DashboardCard`, добавил 07 Пользователи / 08 Баллы / 09 Обмены.
+  - Новый `/admin/redemptions` — список с фильтрами status/partnerId/code + verify-форма (поле для 6-char кода) + `/admin/redemptions/[id]/cancel` страница с reason textarea. Backend дополнен `GET /admin/redemptions?…` (50 на страницу, cap 200), включающим minimal user info.
+  - Все 8 admin-таблиц обёрнуты в `overflow-x-auto` + `min-w-[640..820px]` — на узких экранах скролл по горизонтали вместо обрезки/растягивания viewport.
 
 ## Epic 0. Foundation
 
