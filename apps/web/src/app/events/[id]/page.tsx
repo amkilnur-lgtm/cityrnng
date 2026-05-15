@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { EventLocationsDisplay } from "@/components/events/event-locations-display";
+import { EventRsvp } from "@/components/events/event-rsvp";
 import { SiteFooter } from "@/components/site/footer";
 import { SiteNav } from "@/components/site/nav";
 import { Wrap } from "@/components/site/wrap";
@@ -158,7 +158,8 @@ export default async function EventDetailPage({
                 )}
 
                 {locations.length > 0 ? (
-                  <EventLocationsDisplay
+                  <EventRsvp
+                    eventKey={event.id}
                     locations={locations.map((l) => ({
                       id: l.id,
                       name: l.name,
@@ -167,15 +168,17 @@ export default async function EventDetailPage({
                     }))}
                     myLocationId={myInterest?.locationId ?? null}
                     countsByLocation={countsByLocation}
+                    isAuthed={state.isAuthed}
+                    variant="full"
                   />
                 ) : null}
 
-                {!state.isAuthed ? (
+                {!state.isAuthed && locations.length > 0 ? (
                   <Link
-                    href="/auth"
-                    className="inline-flex h-12 w-full items-center justify-center border border-brand-red bg-brand-red px-5 font-sans text-[14px] font-semibold text-paper hover:bg-brand-red-ink md:hidden"
+                    href={`/auth?next=/events/${encodeURIComponent(event.id)}`}
+                    className="inline-flex h-12 items-center self-start border border-brand-red bg-brand-red px-5 font-sans text-[14px] font-semibold text-paper hover:bg-brand-red-ink"
                   >
-                    Присоединиться →
+                    Войти, чтобы записаться →
                   </Link>
                 ) : null}
 
