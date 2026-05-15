@@ -14,7 +14,9 @@ export default async function AuthPage({
   searchParams?: { email?: string };
 }) {
   const session = await getSession();
-  if (session) redirect("/app");
+  if (session) {
+    redirect(session.roles?.includes("partner") ? "/partner" : "/app");
+  }
 
   // Email may arrive pre-filled from the homepage hero form (action="/auth").
   // We trust the value as-is for prefill — the API still validates on submit.

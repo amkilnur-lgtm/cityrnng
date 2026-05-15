@@ -12,7 +12,9 @@ export default async function AuthVerifyPage({
   searchParams: { token?: string };
 }) {
   const session = await getSession();
-  if (session) redirect("/app");
+  if (session) {
+    redirect(session.roles?.includes("partner") ? "/partner" : "/app");
+  }
 
   const token = searchParams.token;
   if (!token) {

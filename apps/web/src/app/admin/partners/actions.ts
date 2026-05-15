@@ -82,3 +82,56 @@ export async function updatePartnerAction(
   }
   redirect("/admin/partners");
 }
+
+// -- Partner team (members) --
+
+type MemberActionResult = { ok: true } | { ok: false; message: string };
+
+export async function addPartnerMemberAction(
+  partnerId: string,
+  _prev: MemberActionResult | undefined,
+  formData: FormData,
+): Promise<MemberActionResult> {
+  const headers = authHeaders();
+  if (!headers) return { ok: false, message: "Нет access-токена." };
+  const email = String(formData.get("email") ?? "").trim().toLowerCase();
+  if (!email) return { ok: false, message: "Email обязателен." };
+
+  try {
+    const res = await fetch(
+      `${API_BASE_URL}/admin/partners/${partnerId}/members`,
+      {
+        method: "POST",
+        headers,
+        body: JSON.stringify({ email }),
+      },
+    );
+    if (!res.ok) {
+      const p = (await res.json().catch(() => ({}))) as { message?: string; code?: string };
+      return { ok: false, message: p.message ?? p.code ?? `HTTP ${res.status}` };
+    }
+    revalidatePath(`/admin/partners/${partnerId}`);
+    return { ok: true };
+  } catch {
+    return { ok: false, message: "API недоступен." };
+  }
+}
+
+export async function removePartnerMemberAction(
+  partnerId: string,
+  memberId: string,
+): Promise<MemberActionResult> {
+  const headers = authHeaders();
+  if (!headers) return { ok: false, message: "Нет access-токена." };
+  try {
+    const res = await fetch(
+      `${API_BASE_URL}/admin/partners/${partnerId}/members/${memberId}`,
+      { method: "DELETE", headers },
+    );
+    if (!res.ok) return { ok: false, message: `HTTP ${res.status}` };
+    revalidatePath(`/admin/partners/${partnerId}`);
+    return { ok: true };
+  } catch {
+    return { ok: false, message: "API недоступен." };
+  }
+}

@@ -1,8 +1,9 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { PartnerForm } from "@/components/admin/partner-form";
+import { PartnerMembersForm } from "@/components/admin/partner-members-form";
 import { Wrap } from "@/components/site/wrap";
-import { listAdminPartners } from "@/lib/api-admin";
+import { listAdminPartnerMembers, listAdminPartners } from "@/lib/api-admin";
 import { updatePartnerAction } from "../actions";
 
 export const metadata = { title: "Партнёр · Admin · CITYRNNG" };
@@ -12,7 +13,10 @@ export default async function EditPartnerPage({
 }: {
   params: { id: string };
 }) {
-  const partners = await listAdminPartners();
+  const [partners, members] = await Promise.all([
+    listAdminPartners(),
+    listAdminPartnerMembers(params.id),
+  ]);
   const partner = partners.find((p) => p.id === params.id);
   if (!partner) notFound();
 
@@ -49,6 +53,17 @@ export default async function EditPartnerPage({
             }}
             submitLabel="Сохранить"
           />
+        </Wrap>
+      </section>
+      <section className="border-b border-ink">
+        <Wrap className="max-w-2xl py-10">
+          <h2 className="type-h3 mb-4">Команда</h2>
+          <p className="mb-4 max-w-prose text-[13px] text-graphite">
+            Эти пользователи смогут заходить в&nbsp;
+            <code className="font-mono">/partner</code> и&nbsp;погашать коды клиентов.
+            Внутри команды все равны — ролей «владелец/сотрудник» пока нет.
+          </p>
+          <PartnerMembersForm partnerId={params.id} members={members} />
         </Wrap>
       </section>
     </main>

@@ -143,6 +143,47 @@ export class UsersService {
     };
   }
 
+  /**
+   * Admin-side: find a user by email or create a pending shell. Creates the
+   * default `runner` role + a minimal profile so the user can later activate
+   * via the normal magic-link flow (`ensureFromVerifiedEmail` flips
+   * pending→active and awards the signup bonus on first verified login).
+   *
+   * Does NOT award signup bonus or send any email — caller is admin, the
+   * user hasn't verified anything yet.
+   */
+  async findOrCreatePending(email: string): Promise<UserWithRelations> {
+    return this.prisma.$transaction(async (tx) => {
+      const runnerRole = await tx.role.upsert({
+        where: { code: ROLE_RUNNER },
+        update: {},
+        create: { code: ROLE_RUNNER, name: "Runner" },
+      });
+
+      const existing = await tx.user.findUnique({ where: { email } });
+      const user: User = existing
+        ? existing
+        : await tx.user.create({ data: { email, status: "pending" } });
+
+      await tx.profile.upsert({
+        where: { userId: user.id },
+        update: {},
+        create: { userId: user.id, displayName: defaultDisplayName(email) },
+      });
+
+      await tx.userRole.upsert({
+        where: { userId_roleId: { userId: user.id, roleId: runnerRole.id } },
+        update: {},
+        create: { userId: user.id, roleId: runnerRole.id },
+      });
+
+      return tx.user.findUniqueOrThrow({
+        where: { id: user.id },
+        include: { profile: true, roles: { include: { role: true } } },
+      });
+    });
+  }
+
   /** Grant a role by code. Idempotent — granting an already-held role is a no-op. */
   async grantRole(userId: string, roleCode: string): Promise<UserWithRelations> {
     const user = await this.prisma.user.findUnique({ where: { id: userId } });
