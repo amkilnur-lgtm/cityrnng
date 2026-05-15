@@ -28,11 +28,11 @@ export default async function PartnersPage() {
         eyebrow="партнёрам"
         title={
           <>
-            Кофейни, пекарни, локальные{" "}
-            <em className="not-italic text-brand-red">бренды</em>.
+            Не&nbsp;только в&nbsp;
+            <em className="not-italic text-brand-red">Уфе</em>.
           </>
         }
-        lede={`Бег для нас — повод собрать людей, а ты — место, где они согреются и поговорят после. Если делаешь живое в ${CLUB.cityGenitive} — приходи в клуб партнёром.`}
+        lede="Сити Раннинг растёт — мы ищем партнёров по всему миру. Если у тебя кофейня, пекарня, спортивный магазин или другой проект, рядом с которым может стартовать или финишировать пробежка — расскажи о себе."
       />
 
       <section className="border-b border-ink">

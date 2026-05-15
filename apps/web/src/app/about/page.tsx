@@ -192,14 +192,14 @@ export default async function AboutPage() {
       <section className="border-b border-ink bg-paper-2/60">
         <Wrap className="flex flex-col gap-4 py-12 lg:flex-row lg:items-center lg:justify-between">
           <h2 className="type-h2 max-w-2xl">
-            Хочешь бежать?{" "}
-            <em className="not-italic text-brand-red">Заходи</em>.
+            Хочешь бегать с&nbsp;нами?{" "}
+            <em className="not-italic text-brand-red">Присоединяйся</em>.
           </h2>
           <Link
             href="/auth"
             className="inline-flex h-12 items-center self-start border border-brand-red bg-brand-red px-5 font-sans text-[14px] font-semibold text-paper hover:bg-brand-red-ink"
           >
-            Войти в&nbsp;клуб →
+            Присоединиться →
           </Link>
         </Wrap>
       </section>

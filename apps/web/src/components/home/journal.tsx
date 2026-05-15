@@ -11,14 +11,15 @@ export function Journal() {
             <span className="type-mono-caps">журнал</span>
             <h2 className="type-h2">
               Что{" "}
-              <em className="not-italic text-brand-red">пишем</em> между забегами.
+              <em className="not-italic text-brand-red">происходит</em>{" "}
+              в&nbsp;Сити Раннинг.
             </h2>
           </div>
           <Link
             href="/journal"
             className="inline-flex h-11 items-center border border-ink bg-paper px-4 font-sans text-[14px] font-semibold text-ink transition-colors hover:bg-ink hover:text-paper"
           >
-            Все заметки →
+            Все материалы →
           </Link>
         </div>
 

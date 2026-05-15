@@ -30,12 +30,16 @@ function HeroMain() {
       </h1>
 
       <p className="type-lede mt-6 max-w-[540px]">
-        Бегаем по&nbsp;средам в&nbsp;{CLUB.runTime}. Три точки старта,
-        две дистанции, темп твой. После —{" "}
+        Пробежки, статистика, друзья,{" "}
         <span className="bg-brand-tint px-1.5 py-0.5 font-semibold text-brand-red-ink">
-          кофе с&nbsp;командой
-        </span>
-        .
+          челленджи
+        </span>{" "}
+        и&nbsp;партнёрские бонусы в&nbsp;одной платформе Сити Раннинг.
+      </p>
+
+      <p className="mt-3 max-w-[540px] font-sans text-[14px] leading-[1.55] text-graphite">
+        Пробежки по&nbsp;городу, статистика, баллы за&nbsp;активность
+        и&nbsp;бонусы от&nbsp;партнёров — всё в&nbsp;одном месте.
       </p>
 
       <HeroAuthForm />

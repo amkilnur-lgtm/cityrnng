@@ -105,15 +105,14 @@ export default async function ShopPage() {
         eyebrow="магазин баллов"
         title={
           <>
-            Кофе и&nbsp;
-            <em className="not-italic text-brand-red">круассаны</em> за&nbsp;
-            пробежки.
+            Баллы за&nbsp;
+            <em className="not-italic text-brand-red">пробежки</em>.
           </>
         }
         lede={
           state.isAuthed
-            ? `У тебя ${userPoints} Б. Обменяй на кофе и выпечку — QR придёт мгновенно.`
-            : "За каждую пробежку — баллы. Меняешь на кофе и выпечку у партнёров клуба."
+            ? `У тебя ${userPoints} Б. Обменяй на бонусы у партнёров — код придёт мгновенно.`
+            : "Каждая пробежка приносит баллы, которые можно обменивать у партнёров Сити Раннинг."
         }
       />
 
