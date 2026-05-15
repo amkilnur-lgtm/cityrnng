@@ -86,17 +86,21 @@ export function NextEvent({
         ) : (
           <>
             {/* Mobile order: poster → date → details → cta. Desktop:
-                date | poster (square) | details | cta. The poster panel
-                stays the same width as the date column for a balanced
-                two-square header on desktop. */}
-            <article className="grid grid-cols-1 border border-ink lg:grid-cols-[280px_280px_1fr_auto]">
-              <div className="relative order-1 aspect-[16/7] overflow-hidden border-b border-ink bg-paper-2 lg:order-2 lg:aspect-square lg:border-b-0 lg:border-r">
+                date | poster (4:5 portrait) | details | cta. Real event
+                posters are vertical (~4:5 / Instagram-portrait); the
+                container matches that. Default illustrations (e.g.
+                runners.png) get centred in the portrait frame with
+                bg-paper-2 fill — looks clean. On mobile we cap height
+                at 60vh so the poster doesn't push date+details below
+                the fold on small phones. */}
+            <article className="grid grid-cols-1 border border-ink lg:grid-cols-[240px_340px_1fr_auto]">
+              <div className="relative order-1 aspect-[4/5] max-h-[60vh] overflow-hidden border-b border-ink bg-paper-2 lg:order-2 lg:max-h-none lg:border-b-0 lg:border-r">
                 <Image
                   src={e.posterUrl}
                   alt={posterAlt}
                   fill
-                  sizes="(max-width: 1024px) 100vw, 280px"
-                  style={{ objectFit: "contain", padding: "10%" }}
+                  sizes="(max-width: 1024px) 100vw, 340px"
+                  style={{ objectFit: "contain", padding: "4%" }}
                   priority={false}
                 />
               </div>
