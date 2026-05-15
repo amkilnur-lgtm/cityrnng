@@ -96,13 +96,18 @@ jobs:
         # Single-line script kept on the host to make the inline ssh idempotent
         # and easy to debug — the host script also runs prisma migrate via the
         # api container's ENTRYPOINT, so no separate migrate step needed here.
+        # `--quiet` on `compose pull` suppresses the per-layer progress
+        # output that, without a TTY (we're over ssh from CI), prints each
+        # progress tick on a new line and floods the GitHub Actions log
+        # (observed: thousands of "Downloading 27.26MB" lines that wedged
+        # the runner). With --quiet only final pull errors surface.
         run: |
           ssh "${{ secrets.STAGING_USER }}@${{ secrets.STAGING_HOST }}" "set -e; \
             cd /opt/cityrnng && \
             git fetch --all --prune && \
             git pull --ff-only origin main && \
             export APP_ENV_FILE=.env.staging && \
-            docker compose --env-file .env.staging --profile app pull && \
+            docker compose --env-file .env.staging --profile app pull --quiet && \
             docker compose --env-file .env.staging --profile app up -d"
 
       - name: Seed (idempotent)
