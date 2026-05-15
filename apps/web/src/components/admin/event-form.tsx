@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import { useFormState, useFormStatus } from "react-dom";
 
 type ActionResult =
@@ -39,6 +40,16 @@ type Defaults = {
   basePointsAward?: number;
 };
 
+/** Subset of AdminLocation we actually use for the picker — keep the
+ *  prop type narrow so callers don't have to import the full admin DTO. */
+export type LocationOption = {
+  id: string;
+  name: string;
+  city: string;
+  lat: number;
+  lng: number;
+};
+
 /**
  * <input type="datetime-local"> wants "YYYY-MM-DDTHH:MM" in *local* time.
  * Backend stores UTC; we render in the browser's local zone, which is
@@ -60,15 +71,39 @@ export function EventForm({
   action,
   defaults,
   submitLabel,
+  locations = [],
 }: {
   action: Action;
   defaults?: Defaults;
   submitLabel: string;
+  /** Pre-existing CityLocations admin can pick from to auto-fill the
+   *  free-text address fields. Empty list disables the picker. */
+  locations?: LocationOption[];
 }) {
   const [state, formAction] = useFormState<ActionResult | undefined, FormData>(
     action,
     undefined,
   );
+
+  // Controlled location fields — driven either by direct edit or by the
+  // "Готовая локация" picker. Defaults seed from the edit-mode payload.
+  const [locName, setLocName] = useState(defaults?.locationName ?? "");
+  const [locAddress, setLocAddress] = useState(defaults?.locationAddress ?? "");
+  const [locLat, setLocLat] = useState(
+    defaults?.locationLat != null ? String(defaults.locationLat) : "",
+  );
+  const [locLng, setLocLng] = useState(
+    defaults?.locationLng != null ? String(defaults.locationLng) : "",
+  );
+  const [pickerValue, setPickerValue] = useState("");
+
+  function fillFromLocation(loc: LocationOption | undefined) {
+    if (!loc) return;
+    setLocName(loc.name);
+    setLocAddress(loc.city);
+    setLocLat(String(loc.lat));
+    setLocLng(String(loc.lng));
+  }
 
   return (
     <form action={formAction} className="flex flex-col gap-5">
@@ -183,17 +218,42 @@ export function EventForm({
       <fieldset className="border border-ink p-5">
         <legend className="px-2 type-mono-caps">где</legend>
         <div className="grid grid-cols-1 gap-5">
+          {locations.length > 0 ? (
+            <Field
+              label="Готовая локация"
+              hint="заполнит поля ниже автоматически"
+            >
+              <select
+                value={pickerValue}
+                onChange={(ev) => {
+                  const id = ev.target.value;
+                  setPickerValue(id);
+                  fillFromLocation(locations.find((l) => l.id === id));
+                }}
+                className="h-11 border border-ink bg-paper px-3 font-sans text-[14px] outline-none c3-focus"
+              >
+                <option value="">— своё место —</option>
+                {locations.map((l) => (
+                  <option key={l.id} value={l.id}>
+                    {l.name} · {l.city}
+                  </option>
+                ))}
+              </select>
+            </Field>
+          ) : null}
           <Field label="Название места" hint="«Парк Якутова»">
             <input
               name="locationName"
-              defaultValue={defaults?.locationName ?? ""}
+              value={locName}
+              onChange={(ev) => setLocName(ev.target.value)}
               className="h-11 border border-ink bg-paper px-3 font-sans text-[15px] outline-none c3-focus focus:bg-brand-tint/30"
             />
           </Field>
           <Field label="Адрес">
             <input
               name="locationAddress"
-              defaultValue={defaults?.locationAddress ?? ""}
+              value={locAddress}
+              onChange={(ev) => setLocAddress(ev.target.value)}
               placeholder="Уфа, ул. Ленина 1"
               className="h-11 border border-ink bg-paper px-3 font-sans text-[15px] outline-none c3-focus focus:bg-brand-tint/30"
             />
@@ -204,7 +264,8 @@ export function EventForm({
                 name="locationLat"
                 type="number"
                 step="any"
-                defaultValue={defaults?.locationLat ?? undefined}
+                value={locLat}
+                onChange={(ev) => setLocLat(ev.target.value)}
                 placeholder="54.7388"
                 className="h-11 border border-ink bg-paper px-3 font-mono text-[14px] outline-none c3-focus focus:bg-brand-tint/30"
               />
@@ -214,7 +275,8 @@ export function EventForm({
                 name="locationLng"
                 type="number"
                 step="any"
-                defaultValue={defaults?.locationLng ?? undefined}
+                value={locLng}
+                onChange={(ev) => setLocLng(ev.target.value)}
                 placeholder="55.9721"
                 className="h-11 border border-ink bg-paper px-3 font-mono text-[14px] outline-none c3-focus focus:bg-brand-tint/30"
               />

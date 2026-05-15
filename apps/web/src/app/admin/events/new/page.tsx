@@ -1,11 +1,13 @@
 import Link from "next/link";
 import { EventForm } from "@/components/admin/event-form";
 import { Wrap } from "@/components/site/wrap";
+import { listAdminLocations } from "@/lib/api-admin";
 import { createEventAction } from "../actions";
 
 export const metadata = { title: "Новое событие · Admin · CITYRNNG" };
 
-export default function NewEventPage() {
+export default async function NewEventPage() {
+  const locations = await listAdminLocations();
   return (
     <main>
       <section className="border-b border-ink">
@@ -30,6 +32,7 @@ export default function NewEventPage() {
           <EventForm
             action={createEventAction}
             submitLabel="Создать событие"
+            locations={locations.filter((l) => l.status === "active")}
           />
         </Wrap>
       </section>
