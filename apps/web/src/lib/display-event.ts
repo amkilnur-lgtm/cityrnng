@@ -247,6 +247,43 @@ function defaultRegularTitle(): string {
   return "Сити Раннинг — пробежка";
 }
 
+/**
+ * Compact row for the "Мои ближайшие записи" list on /app — joins each
+ * upcoming event the user is RSVP'd to with its picked location's name.
+ */
+export type MyUpcomingRsvp = {
+  eventKey: string;
+  title: string;
+  type: ApiEventType;
+  startsAt: string;
+  locationName: string;
+};
+
+export async function getMyUpcomingRsvps(weeks = 8): Promise<MyUpcomingRsvp[]> {
+  const materialized = await listUpcomingEvents(weeks);
+  // Fan out one /interest/me call per upcoming event. N is small (typically
+  // 1–4 events visible inside the next 8 weeks), so a fancy backend join
+  // isn't worth it yet.
+  const rows = await Promise.all(
+    materialized.map(async (m) => {
+      const mine = await getMyInterest(m.id);
+      if (!mine) return null;
+      const loc = m.locations.find((l) => l.id === mine.locationId);
+      return {
+        eventKey: m.id,
+        title:
+          m.title ||
+          (m.type === "regular" ? defaultRegularTitle() : "Спецсобытие"),
+        type: m.type,
+        startsAt: m.startsAt,
+        locationName:
+          matchKnownLocation(loc?.name)?.district ?? loc?.name ?? "—",
+      } as MyUpcomingRsvp;
+    }),
+  );
+  return rows.filter((r): r is MyUpcomingRsvp => r !== null);
+}
+
 export async function getDisplayUpcomingList(weeks = 8): Promise<ListedEvent[]> {
   const materialized = await listUpcomingEvents(weeks);
   if (materialized.length > 0) {

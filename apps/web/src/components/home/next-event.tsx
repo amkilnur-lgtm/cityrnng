@@ -1,5 +1,4 @@
 import Link from "next/link";
-import { EventRsvp } from "@/components/events/event-rsvp";
 import { Wrap } from "@/components/site/wrap";
 import { Badge } from "@/components/ui/badge";
 import { CLUB } from "@/lib/club";
@@ -31,7 +30,13 @@ export function NextEvent({
     e.locations.length > 0
       ? e.locations
       : [{ name: e.district, venue: e.venue ?? "место уточняется" }];
-  const showInlineRsvp = isAuthed && rsvp && rsvp.locations.length > 0;
+  // RSVP is no longer edited from this card — it lives on /events/[id].
+  // Here we only surface a small "ты идёшь" indicator if the authed user
+  // has already RSVPed; the CTA below routes them to the detail page.
+  const myRsvpLocation =
+    isAuthed && rsvp && rsvp.myLocationId
+      ? rsvp.locations.find((l) => l.id === rsvp.myLocationId) ?? null
+      : null;
 
   return (
     <section className="border-b border-ink">
@@ -63,6 +68,12 @@ export function NextEvent({
                 </>
               )}
             </h2>
+            {myRsvpLocation ? (
+              <span className="inline-flex items-center gap-2 self-start border border-brand-red bg-brand-red px-3 py-1 font-mono text-[11px] font-semibold uppercase tracking-[0.14em] text-paper">
+                <span className="block h-1.5 w-1.5 bg-paper" />
+                ты идёшь · точка {myRsvpLocation.name}
+              </span>
+            ) : null}
           </div>
           <Link
             href="/events"
@@ -72,82 +83,69 @@ export function NextEvent({
           </Link>
         </div>
 
-        {showInlineRsvp && rsvp ? (
-          <div className="border border-ink bg-paper p-5 md:p-6">
-            <EventRsvp
-              eventKey={rsvp.eventKey}
-              locations={rsvp.locations}
-              myLocationId={rsvp.myLocationId}
-              countsByLocation={rsvp.countsByLocation}
-              isAuthed
-              variant="full"
-            />
+        <article className="grid grid-cols-1 border border-ink lg:grid-cols-[280px_1fr_auto]">
+          <div className="flex flex-col gap-1 border-b border-ink bg-paper-2 p-6 md:p-8 lg:border-b-0 lg:border-r">
+            <span className="type-mono-caps">{e.dayOfWeek}</span>
+            <span className="font-display text-[96px] font-bold leading-[0.85] tracking-[-0.04em] text-ink">
+              {e.dateBig}
+            </span>
+            <span className="mt-2 font-mono text-[13px] font-medium tracking-[0.04em] text-ink">
+              {e.time}
+            </span>
           </div>
-        ) : (
-          <>
-            <article className="grid grid-cols-1 border border-ink lg:grid-cols-[280px_1fr_auto]">
-              <div className="flex flex-col gap-1 border-b border-ink bg-paper-2 p-6 md:p-8 lg:border-b-0 lg:border-r">
-                <span className="type-mono-caps">{e.dayOfWeek}</span>
-                <span className="font-display text-[96px] font-bold leading-[0.85] tracking-[-0.04em] text-ink">
-                  {e.dateBig}
-                </span>
-                <span className="mt-2 font-mono text-[13px] font-medium tracking-[0.04em] text-ink">
-                  {e.time}
-                </span>
-              </div>
 
-              <div className="flex flex-col gap-4 border-b border-ink p-6 md:p-8 lg:border-b-0 lg:border-r">
-                <h3 className="font-display text-[32px] font-bold leading-none tracking-[-0.02em] text-ink md:text-[40px]">
-                  {locations.length === 1
-                    ? "Точка старта"
-                    : `${locations.length} ${pluralLocations(locations.length)} на выбор`}
-                </h3>
-                <ul className="flex flex-col">
-                  {locations.map((loc, idx) => (
-                    <li
-                      key={`${loc.name}-${idx}`}
-                      className="grid grid-cols-[120px_1fr] items-baseline gap-3 border-b border-ink/15 py-2.5 text-[14px] last:border-b-0 md:grid-cols-[160px_1fr]"
-                    >
-                      <span className="font-semibold text-ink">{loc.name}</span>
-                      <span className="text-graphite">
-                        {loc.venue ?? "место уточняется"}
-                      </span>
-                    </li>
-                  ))}
-                </ul>
-                <div className="mt-2 flex flex-wrap gap-2">
-                  {e.distances.map((d) => (
-                    <span
-                      key={d}
-                      className="inline-flex h-8 items-center border border-ink bg-paper px-3 font-mono text-[13px] font-medium tracking-[0.04em] text-ink"
-                    >
-                      {d}&nbsp;км
-                    </span>
-                  ))}
-                  <span className="inline-flex h-8 items-center border border-ink/30 px-3 font-mono text-[13px] font-medium tracking-[0.04em] text-muted">
-                    {e.time}
-                  </span>
-                </div>
-              </div>
-
-              <div className="flex flex-col bg-paper">
-                <Link
-                  href={`/events/${e.id}`}
-                  className="flex flex-1 items-center justify-center bg-ink px-8 py-5 font-sans text-[15px] font-semibold text-paper transition-colors hover:bg-graphite lg:min-w-[240px]"
+          <div className="flex flex-col gap-4 border-b border-ink p-6 md:p-8 lg:border-b-0 lg:border-r">
+            <h3 className="font-display text-[32px] font-bold leading-none tracking-[-0.02em] text-ink md:text-[40px]">
+              {locations.length === 1
+                ? "Точка старта"
+                : `${locations.length} ${pluralLocations(locations.length)} на выбор`}
+            </h3>
+            <ul className="flex flex-col">
+              {locations.map((loc, idx) => (
+                <li
+                  key={`${loc.name}-${idx}`}
+                  className="grid grid-cols-[120px_1fr] items-baseline gap-3 border-b border-ink/15 py-2.5 text-[14px] last:border-b-0 md:grid-cols-[160px_1fr]"
                 >
-                  Маршрут и&nbsp;точка старта →
-                </Link>
-              </div>
-            </article>
+                  <span className="font-semibold text-ink">{loc.name}</span>
+                  <span className="text-graphite">
+                    {loc.venue ?? "место уточняется"}
+                  </span>
+                </li>
+              ))}
+            </ul>
+            <div className="mt-2 flex flex-wrap gap-2">
+              {e.distances.map((d) => (
+                <span
+                  key={d}
+                  className="inline-flex h-8 items-center border border-ink bg-paper px-3 font-mono text-[13px] font-medium tracking-[0.04em] text-ink"
+                >
+                  {d}&nbsp;км
+                </span>
+              ))}
+              <span className="inline-flex h-8 items-center border border-ink/30 px-3 font-mono text-[13px] font-medium tracking-[0.04em] text-muted">
+                {e.time}
+              </span>
+            </div>
+          </div>
 
+          <div className="flex flex-col bg-paper">
             <Link
-              href="/auth"
-              className="mt-4 inline-flex h-12 w-full items-center justify-center border border-brand-red bg-brand-red px-5 font-sans text-[14px] font-semibold text-paper transition-colors hover:bg-brand-red-ink md:hidden"
+              href={`/events/${e.id}`}
+              className="flex flex-1 items-center justify-center bg-ink px-8 py-5 font-sans text-[15px] font-semibold text-paper transition-colors hover:bg-graphite lg:min-w-[240px]"
             >
-              Присоединиться →
+              Подробнее и&nbsp;записаться →
             </Link>
-          </>
-        )}
+          </div>
+        </article>
+
+        {!isAuthed ? (
+          <Link
+            href="/auth"
+            className="mt-4 inline-flex h-12 w-full items-center justify-center border border-brand-red bg-brand-red px-5 font-sans text-[14px] font-semibold text-paper transition-colors hover:bg-brand-red-ink md:hidden"
+          >
+            Присоединиться →
+          </Link>
+        ) : null}
       </Wrap>
     </section>
   );
