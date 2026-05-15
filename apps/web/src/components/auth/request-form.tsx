@@ -96,7 +96,7 @@ export function AuthRequestForm({ initialEmail = "" }: { initialEmail?: string }
         aria-busy={state.kind === "sending"}
         className="inline-flex h-14 items-center justify-center border border-brand-red bg-brand-red px-6 font-sans text-[15px] font-semibold text-paper transition-colors hover:bg-brand-red-ink disabled:cursor-not-allowed disabled:border-muted-2 disabled:bg-muted-2"
       >
-        {state.kind === "sending" ? "Отправляем…" : "Получить ссылку →"}
+        {state.kind === "sending" ? "Отправляем…" : "Присоединиться →"}
       </button>
 
       <p className="text-[13px] text-muted">

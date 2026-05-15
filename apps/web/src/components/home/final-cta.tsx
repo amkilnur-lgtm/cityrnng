@@ -24,7 +24,7 @@ export function FinalCta({ isAuthed }: { isAuthed: boolean }) {
             href={isAuthed ? "/events" : "/auth"}
             className="inline-flex h-14 items-center border border-brand-red bg-brand-red px-6 font-sans text-[15px] font-semibold text-paper transition-colors hover:bg-brand-red-ink"
           >
-            {isAuthed ? "Все маршруты →" : "Войти в клуб →"}
+            {isAuthed ? "Все маршруты →" : "Присоединиться →"}
           </Link>
           <Link
             href="/about"

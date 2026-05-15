@@ -121,7 +121,7 @@ export function NextEvent({
               href="/auth"
               className="mt-4 inline-flex h-12 w-full items-center justify-center border border-brand-red bg-brand-red px-5 font-sans text-[14px] font-semibold text-paper transition-colors hover:bg-brand-red-ink md:hidden"
             >
-              Войти в клуб →
+              Присоединиться →
             </Link>
           </>
         )}

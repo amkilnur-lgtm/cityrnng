@@ -99,7 +99,7 @@ export function HeroAuthForm() {
           aria-busy={state.kind === "sending"}
           className="h-14 shrink-0 border-t border-ink bg-brand-red px-6 font-sans text-[14px] font-semibold text-paper transition-colors hover:bg-brand-red-ink disabled:cursor-not-allowed disabled:bg-muted-2 disabled:text-paper disabled:hover:bg-muted-2 sm:border-l sm:border-t-0"
         >
-          {state.kind === "sending" ? "Отправляем…" : "Получить ссылку →"}
+          {state.kind === "sending" ? "Отправляем…" : "Присоединиться →"}
         </button>
       </div>
 

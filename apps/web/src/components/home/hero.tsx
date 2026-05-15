@@ -30,11 +30,12 @@ function HeroMain() {
       </h1>
 
       <p className="type-lede mt-6 max-w-[540px]">
-        Пробежки, статистика, друзья,{" "}
+        Пробежки, статистика, друзья, челленджи и&nbsp;партнёрские бонусы
+        в&nbsp;одной платформе{" "}
         <span className="bg-brand-tint px-1.5 py-0.5 font-semibold text-brand-red-ink">
-          челленджи
-        </span>{" "}
-        и&nbsp;партнёрские бонусы в&nbsp;одной платформе Сити Раннинг.
+          Сити&nbsp;Раннинг
+        </span>
+        .
       </p>
 
       <p className="mt-3 max-w-[540px] font-sans text-[14px] leading-[1.55] text-graphite">
