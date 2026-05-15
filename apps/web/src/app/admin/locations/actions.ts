@@ -22,10 +22,14 @@ function parseBodyFromForm(form: FormData) {
   const lat = form.get("lat");
   const lng = form.get("lng");
   const radius = form.get("radiusMeters");
+  const venue = String(form.get("venue") ?? "").trim();
+  const address = String(form.get("address") ?? "").trim();
   return {
     slug: String(form.get("slug") ?? "").trim(),
     name: String(form.get("name") ?? "").trim(),
     city: String(form.get("city") ?? "").trim(),
+    venue: venue || undefined,
+    address: address || undefined,
     lat: lat ? Number(lat) : undefined,
     lng: lng ? Number(lng) : undefined,
     radiusMeters: radius ? Number(radius) : undefined,

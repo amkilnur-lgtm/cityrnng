@@ -15,6 +15,8 @@ type Defaults = {
   slug?: string;
   name?: string;
   city?: string;
+  venue?: string | null;
+  address?: string | null;
   lat?: number | null;
   lng?: number | null;
   radiusMeters?: number | null;
@@ -60,6 +62,22 @@ export function LocationForm({
           name="city"
           required
           defaultValue={defaults?.city ?? "Уфа"}
+          className="h-11 border border-ink bg-paper px-3 font-sans text-[15px] outline-none c3-focus focus:bg-brand-tint/30"
+        />
+      </Field>
+      <Field label="Кофейня / место" hint="опц., например «Monkey Grinder»">
+        <input
+          name="venue"
+          defaultValue={defaults?.venue ?? ""}
+          placeholder="Monkey Grinder"
+          className="h-11 border border-ink bg-paper px-3 font-sans text-[15px] outline-none c3-focus focus:bg-brand-tint/30"
+        />
+      </Field>
+      <Field label="Адрес" hint="улица + дом, без города">
+        <input
+          name="address"
+          defaultValue={defaults?.address ?? ""}
+          placeholder="ул. Карла Маркса, 41"
           className="h-11 border border-ink bg-paper px-3 font-sans text-[15px] outline-none c3-focus focus:bg-brand-tint/30"
         />
       </Field>

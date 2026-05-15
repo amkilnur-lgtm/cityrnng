@@ -36,6 +36,10 @@ export type AdminLocation = {
   slug: string;
   name: string;
   city: string;
+  /** Cafe / venue at the starting point — e.g. "Monkey Grinder". */
+  venue: string | null;
+  /** Street + house — e.g. "ул. Карла Маркса, 41". */
+  address: string | null;
   lat: number;
   lng: number;
   radiusMeters: number | null;

@@ -21,6 +21,8 @@ const LOCATIONS: ReadonlyArray<{
   slug: string;
   name: string;
   city: string;
+  venue: string;
+  address: string;
   lat: number;
   lng: number;
   radiusMeters: number;
@@ -29,6 +31,8 @@ const LOCATIONS: ReadonlyArray<{
     slug: "centr",
     name: "Центр",
     city: "Уфа",
+    venue: "Monkey Grinder",
+    address: "ул. Карла Маркса, 41",
     lat: 54.7299,
     lng: 55.9474,
     radiusMeters: 500,
@@ -37,6 +41,8 @@ const LOCATIONS: ReadonlyArray<{
     slug: "prospekt",
     name: "Проспект",
     city: "Уфа",
+    venue: "Monkey Grinder",
+    address: "Проспект Октября, 63А",
     lat: 54.7531,
     lng: 56.0017,
     radiusMeters: 500,
@@ -45,6 +51,8 @@ const LOCATIONS: ReadonlyArray<{
     slug: "chernikovka",
     name: "Черниковка",
     city: "Уфа",
+    venue: "Surf Coffee",
+    address: "ул. Первомайская, 22",
     lat: 54.8217,
     lng: 56.0436,
     radiusMeters: 500,
@@ -170,6 +178,8 @@ async function ensureLocations(tx: Prisma.TransactionClient) {
       update: {
         name: loc.name,
         city: loc.city,
+        venue: loc.venue,
+        address: loc.address,
         lat: loc.lat,
         lng: loc.lng,
         radiusMeters: loc.radiusMeters,

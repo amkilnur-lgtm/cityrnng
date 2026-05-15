@@ -46,6 +46,8 @@ export type LocationOption = {
   id: string;
   name: string;
   city: string;
+  venue: string | null;
+  address: string | null;
   lat: number;
   lng: number;
 };
@@ -99,8 +101,15 @@ export function EventForm({
 
   function fillFromLocation(loc: LocationOption | undefined) {
     if (!loc) return;
-    setLocName(loc.name);
-    setLocAddress(loc.city);
+    // Prefer the partner-venue name (e.g. "Monkey Grinder") over the
+    // generic location name ("Центр"). Fallback to the location name
+    // when no venue is configured.
+    setLocName(loc.venue ?? loc.name);
+    // Address: street if we have one, else fall back to the city. The
+    // event-detail UI concatenates city separately if needed.
+    setLocAddress(
+      loc.address ? `${loc.city}, ${loc.address}` : loc.city,
+    );
     setLocLat(String(loc.lat));
     setLocLng(String(loc.lng));
   }
