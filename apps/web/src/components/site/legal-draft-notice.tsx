@@ -12,10 +12,10 @@ export function LegalDraftNotice({ slug }: { slug: string }) {
             прямо сейчас вопрос про данные, обработку или ответственность —
             напиши на{" "}
             <a
-              href="mailto:hello@cityrunning.online"
+              href="mailto:cityrnng@yandex.com"
               className="text-ink underline underline-offset-4 hover:text-brand-red"
             >
-              hello@cityrunning.online
+              cityrnng@yandex.com
             </a>
             , ответим лично.
           </p>

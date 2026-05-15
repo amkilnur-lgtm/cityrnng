@@ -90,17 +90,16 @@ export default async function HowItWorksPage() {
         eyebrow="как это работает"
         title={
           <>
-            Пять шагов от&nbsp;
-            <em className="not-italic text-brand-red">кроссовок</em>{" "}
-            до&nbsp;кофе.
+            Как это{" "}
+            <em className="not-italic text-brand-red">работает</em>.
           </>
         }
         lede={
           <>
-            {CLUB.name} — открытое беговое сообщество. Без записи, без
-            секундомера, без подписки. Регистрируешься один раз, дальше всё
-            работает само: пришёл в&nbsp;среду, пробежал, остался
-            на&nbsp;кофе с&nbsp;командой.
+            Сити Раннинг — открытое беговое сообщество с&nbsp;регулярными
+            пробежками по&nbsp;средам. Регистрируешься один раз, подключаешь
+            Strava, приходишь на&nbsp;пробежку, получаешь баллы
+            и&nbsp;используешь их&nbsp;у&nbsp;партнёров.
           </>
         }
       />
@@ -144,7 +143,7 @@ export default async function HowItWorksPage() {
       <section className="border-b border-ink bg-paper-2/60">
         <Wrap className="flex flex-col gap-4 py-12 lg:flex-row lg:items-center lg:justify-between">
           <h2 className="type-h2 max-w-2xl">
-            Не понятно? Напиши{" "}
+            Не разобрался? Напиши{" "}
             <em className="not-italic text-brand-red">в&nbsp;Telegram</em>.
           </h2>
           <div className="flex flex-wrap gap-3">
@@ -155,10 +154,10 @@ export default async function HowItWorksPage() {
               FAQ
             </Link>
             <a
-              href="mailto:hello@cityrunning.online"
+              href="mailto:cityrnng@yandex.com"
               className="inline-flex h-12 items-center border border-ink bg-paper px-5 font-sans text-[14px] font-semibold text-ink hover:bg-ink hover:text-paper"
             >
-              hello@cityrunning.online
+              Написать нам
             </a>
           </div>
         </Wrap>
