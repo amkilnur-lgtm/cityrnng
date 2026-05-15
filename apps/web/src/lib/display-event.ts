@@ -84,6 +84,10 @@ export async function getNextEventRsvp(): Promise<NextEventRsvp | null> {
 /**
  * Display shape consumed by Hero/NextEvent/PersonalDashboard. Independent
  * of the mock vs API source — both feed it via converter helpers below.
+ *
+ * `locations` is the real list of starting points for THIS event (used by
+ * NextEvent instead of the static club mock). `posterUrl` falls back to a
+ * type-based default in `posterFor()` when the event has no custom poster.
  */
 export type DisplayEvent = {
   id: string;
@@ -96,7 +100,22 @@ export type DisplayEvent = {
   distances: readonly ClubDistance[];
   typicalTurnout?: string;
   type: ApiEventType;
+  locations: Array<{ name: string; venue?: string }>;
+  posterUrl: string;
 };
+
+/** Default poster per event type — used when an event has no custom one. */
+export function posterFor(type: ApiEventType): string {
+  switch (type) {
+    case "special":
+      return "/brand/runner-red.png";
+    case "partner":
+      return "/brand/character.png";
+    case "regular":
+    default:
+      return "/brand/runners.png";
+  }
+}
 
 const RU_MONTHS_SHORT = [
   "ЯНВ", "ФЕВ", "МАР", "АПР", "МАЙ", "ИЮН",
@@ -144,6 +163,11 @@ export function materializedToDisplay(event: MaterializedApiEvent): DisplayEvent
     distances: CLUB.distances,
     typicalTurnout: undefined,
     type: event.type,
+    locations: event.locations.map((l) => ({
+      name: matchKnownLocation(l.name)?.district ?? l.name,
+      venue: matchKnownLocation(l.name)?.venue ?? l.name,
+    })),
+    posterUrl: posterFor(event.type),
   };
 }
 
@@ -172,6 +196,12 @@ export function apiEventToDisplay(event: ApiEvent): DisplayEvent {
     // No turnout signal on API yet — keep undefined; UI hides the line.
     typicalTurnout: undefined,
     type: event.type,
+    locations:
+      event.syncRule?.locations.map((l) => ({
+        name: matchKnownLocation(l.name)?.district ?? l.name,
+        venue: matchKnownLocation(l.name)?.venue ?? l.name,
+      })) ?? [],
+    posterUrl: posterFor(event.type),
   };
 }
 
@@ -188,6 +218,11 @@ export function mockToDisplay(): DisplayEvent {
     distances: e.distances,
     typicalTurnout: e.typicalTurnout,
     type: e.type,
+    locations: Object.values(LOCATIONS).map((l) => ({
+      name: l.district,
+      venue: l.venue,
+    })),
+    posterUrl: posterFor(e.type),
   };
 }
 

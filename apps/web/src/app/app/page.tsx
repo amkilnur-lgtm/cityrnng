@@ -1,19 +1,14 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
-import { EventRsvp } from "@/components/events/event-rsvp";
 import { FinalCta } from "@/components/home/final-cta";
 import { Journal } from "@/components/home/journal";
+import { NextEvent } from "@/components/home/next-event";
 import { PersonalDashboard } from "@/components/home/personal-dashboard";
 import { ShopPreview } from "@/components/home/shop-preview";
 import { SiteFooter } from "@/components/site/footer";
 import { SiteNav } from "@/components/site/nav";
 import { Wrap } from "@/components/site/wrap";
-import { Badge } from "@/components/ui/badge";
-import {
-  getDisplayNextEvent,
-  getNextEventRsvp,
-  type NextEventRsvp,
-} from "@/lib/display-event";
+import { getDisplayNextEvent, getNextEventRsvp } from "@/lib/display-event";
 import { getSiteState } from "@/lib/site-state";
 
 export const metadata = { title: "Личный кабинет · CITYRNNG" };
@@ -62,61 +57,12 @@ export default async function AppDashboardPage() {
         </section>
 
         <PersonalDashboard user={state.user} nextEvent={nextEvent} />
-        {rsvp ? <NextRsvpSection rsvp={rsvp} /> : null}
+        <NextEvent event={nextEvent} rsvp={rsvp} isAuthed />
         <ShopPreview user={state.user} />
         <Journal />
         <FinalCta isAuthed />
       </main>
       <SiteFooter />
     </>
-  );
-}
-
-const RU_MONTHS_SHORT = [
-  "ЯНВ", "ФЕВ", "МАР", "АПР", "МАЙ", "ИЮН",
-  "ИЮЛ", "АВГ", "СЕН", "ОКТ", "НОЯ", "ДЕК",
-];
-const RU_WEEKDAYS_SHORT = ["ВС", "ПН", "ВТ", "СР", "ЧТ", "ПТ", "СБ"];
-
-function NextRsvpSection({ rsvp }: { rsvp: NextEventRsvp }) {
-  const start = new Date(rsvp.startsAt);
-  const dateLabel =
-    `${RU_WEEKDAYS_SHORT[start.getDay()]} · ` +
-    `${String(start.getDate()).padStart(2, "0")} ` +
-    `${RU_MONTHS_SHORT[start.getMonth()]}`;
-  const timeLabel = `${String(start.getHours()).padStart(2, "0")}:${String(start.getMinutes()).padStart(2, "0")}`;
-
-  return (
-    <section className="border-b border-ink">
-      <Wrap className="flex flex-col gap-6 py-12 lg:py-16">
-        <div className="flex flex-wrap items-center gap-3">
-          <span className="block h-2 w-2 bg-brand-red" />
-          <span className="type-mono-caps text-brand-red">
-            ближайший старт
-          </span>
-          {rsvp.type === "special" ? (
-            <Badge variant="primary">Спец</Badge>
-          ) : rsvp.type === "partner" ? (
-            <Badge variant="soft">Партнёр</Badge>
-          ) : (
-            <Badge variant="default">Среда</Badge>
-          )}
-          <span className="type-mono-caps">
-            {dateLabel} · {timeLabel}
-          </span>
-        </div>
-        <h2 className="font-display text-[32px] font-bold leading-none tracking-[-0.02em] text-ink md:text-[40px]">
-          {rsvp.title}
-        </h2>
-        <EventRsvp
-          eventKey={rsvp.eventKey}
-          locations={rsvp.locations}
-          myLocationId={rsvp.myLocationId}
-          countsByLocation={rsvp.countsByLocation}
-          isAuthed
-          variant="full"
-        />
-      </Wrap>
-    </section>
   );
 }
