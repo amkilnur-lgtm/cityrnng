@@ -2,7 +2,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { EventForm } from "@/components/admin/event-form";
 import { Wrap } from "@/components/site/wrap";
-import { listAdminEvents } from "@/lib/api-admin";
+import { listAdminEvents, listAdminLocations } from "@/lib/api-admin";
 import { updateEventAction } from "../actions";
 
 export const metadata = { title: "Событие · Admin · CITYRNNG" };
@@ -12,7 +12,10 @@ export default async function EditEventPage({
 }: {
   params: { id: string };
 }) {
-  const events = await listAdminEvents();
+  const [events, locations] = await Promise.all([
+    listAdminEvents(),
+    listAdminLocations(),
+  ]);
   const event = events.find((e) => e.id === params.id);
   if (!event) notFound();
 
@@ -64,6 +67,7 @@ export default async function EditEventPage({
               isPointsEligible: event.isPointsEligible,
               basePointsAward: event.basePointsAward,
             }}
+            locations={locations.filter((l) => l.status === "active")}
             submitLabel="Сохранить"
           />
         </Wrap>

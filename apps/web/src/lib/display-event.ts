@@ -91,6 +91,9 @@ export async function getNextEventRsvp(): Promise<NextEventRsvp | null> {
  */
 export type DisplayEvent = {
   id: string;
+  /** Event title — empty for default regular runs (UI shows generic
+   *  "Сити Раннинг"); otherwise the human-readable name set by admin. */
+  title: string;
   dateBig: string;
   dayOfWeek: string;
   time: string;
@@ -154,6 +157,7 @@ export function materializedToDisplay(event: MaterializedApiEvent): DisplayEvent
 
   return {
     id: event.id,
+    title: event.title || "",
     dateBig: String(start.getDate()).padStart(2, "0"),
     dayOfWeek: `${RU_WEEKDAYS_SHORT[start.getDay()]} · ${RU_MONTHS_SHORT[start.getMonth()]}`,
     time: fmtTime(start),
@@ -185,6 +189,7 @@ export function apiEventToDisplay(event: ApiEvent): DisplayEvent {
 
   return {
     id: event.id,
+    title: event.title || "",
     dateBig: String(start.getDate()).padStart(2, "0"),
     dayOfWeek: `${RU_WEEKDAYS_SHORT[start.getDay()]} · ${RU_MONTHS_SHORT[start.getMonth()]}`,
     time: fmtTime(start),
@@ -209,6 +214,7 @@ export function mockToDisplay(): DisplayEvent {
   const e = NEXT_EVENT;
   return {
     id: e.id,
+    title: e.title ?? "",
     dateBig: e.dateBig,
     dayOfWeek: e.dayOfWeek,
     time: e.time,

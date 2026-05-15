@@ -52,10 +52,17 @@ export function NextEvent({
             </div>
             <h2 className="type-h2">
               {e.type === "special" ? (
-                <>
-                  Спецсобытие —{" "}
-                  <em className="not-italic text-brand-red">{e.district}</em>.
-                </>
+                e.title ? (
+                  <em className="not-italic text-brand-red">{e.title}</em>
+                ) : (
+                  <>Спецсобытие.</>
+                )
+              ) : e.type === "partner" ? (
+                e.title ? (
+                  <em className="not-italic text-brand-red">{e.title}</em>
+                ) : (
+                  <>Партнёрское событие.</>
+                )
               ) : (
                 <>
                   Ближайший{" "}
