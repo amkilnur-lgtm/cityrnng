@@ -48,6 +48,8 @@ export default async function EditLocationPage({
               slug: loc.slug,
               name: loc.name,
               city: loc.city,
+              venue: loc.venue,
+              address: loc.address,
               lat: loc.lat,
               lng: loc.lng,
               radiusMeters: loc.radiusMeters,

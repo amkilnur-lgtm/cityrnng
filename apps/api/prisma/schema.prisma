@@ -404,6 +404,12 @@ model CityLocation {
   name         String
   slug         String             @unique
   city         String
+  /// Cafe / venue at the starting point — e.g. "Monkey Grinder". Optional;
+  /// admin-only locations without a partner venue can omit it.
+  venue        String?
+  /// Street + house number — e.g. "Карла Маркса 41". Optional. Together
+  /// with `city` (display layer concatenates) gives the human address.
+  address      String?
   lat          Float
   lng          Float
   radiusMeters Int?               @map("radius_meters")

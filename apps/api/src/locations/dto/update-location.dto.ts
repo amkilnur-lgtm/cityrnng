@@ -35,6 +35,16 @@ export class UpdateLocationDto {
   city?: string;
 
   @IsOptional()
+  @IsString()
+  @MaxLength(200)
+  venue?: string;
+
+  @IsOptional()
+  @IsString()
+  @MaxLength(300)
+  address?: string;
+
+  @IsOptional()
   @Type(() => Number)
   @IsLatitude()
   lat?: number;
