@@ -86,8 +86,7 @@ export async function getNextEventRsvp(): Promise<NextEventRsvp | null> {
  * of the mock vs API source — both feed it via converter helpers below.
  *
  * `locations` is the real list of starting points for THIS event (used by
- * NextEvent instead of the static club mock). `posterUrl` falls back to a
- * type-based default in `posterFor()` when the event has no custom poster.
+ * NextEvent instead of the static club mock).
  */
 export type DisplayEvent = {
   id: string;
@@ -104,21 +103,7 @@ export type DisplayEvent = {
   typicalTurnout?: string;
   type: ApiEventType;
   locations: Array<{ name: string; venue?: string }>;
-  posterUrl: string;
 };
-
-/** Default poster per event type — used when an event has no custom one. */
-export function posterFor(type: ApiEventType): string {
-  switch (type) {
-    case "special":
-      return "/brand/runner-red.png";
-    case "partner":
-      return "/brand/character.png";
-    case "regular":
-    default:
-      return "/brand/runners.png";
-  }
-}
 
 const RU_MONTHS_SHORT = [
   "ЯНВ", "ФЕВ", "МАР", "АПР", "МАЙ", "ИЮН",
@@ -171,7 +156,6 @@ export function materializedToDisplay(event: MaterializedApiEvent): DisplayEvent
       name: matchKnownLocation(l.name)?.district ?? l.name,
       venue: matchKnownLocation(l.name)?.venue ?? l.name,
     })),
-    posterUrl: posterFor(event.type),
   };
 }
 
@@ -206,7 +190,6 @@ export function apiEventToDisplay(event: ApiEvent): DisplayEvent {
         name: matchKnownLocation(l.name)?.district ?? l.name,
         venue: matchKnownLocation(l.name)?.venue ?? l.name,
       })) ?? [],
-    posterUrl: posterFor(event.type),
   };
 }
 
@@ -228,7 +211,6 @@ export function mockToDisplay(): DisplayEvent {
       name: l.district,
       venue: l.venue,
     })),
-    posterUrl: posterFor(e.type),
   };
 }
 
