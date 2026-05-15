@@ -14,49 +14,42 @@ type Step = {
 const STEPS: Step[] = [
   {
     n: "01",
-    title: "Просто ",
-    titleEm: "приходишь",
+    title: "Присоединяешься к ",
+    titleEm: "пробежке",
     body: (
       <>
-        Каждую <b className="font-semibold text-ink">среду в&nbsp;19:30</b>.
-        Выбираешь точку — Центр, Проспект или Черниковка. Без формы, без
-        подготовки, просто приходи.
+        Выбираешь локацию, регистрируешься и&nbsp;бежишь
+        в&nbsp;удобном для&nbsp;себя темпе.
       </>
     ),
     metaLeft: "каждую среду",
-    metaRight: "приходи как есть",
+    metaRight: "участие бесплатно",
   },
   {
     n: "02",
-    title: "Бежишь свой ",
-    titleEm: "темп",
+    title: "Получаешь ",
+    titleEm: "баллы",
     body: (
       <>
-        Две дистанции,{" "}
-        <b className="font-semibold text-ink">5 или&nbsp;10&nbsp;км</b>.
-        Темп любой — можно идти пешком, остановиться, дождаться отстающих.
-        Никаких медалей, никаких рейтингов.
+        После пробежки баллы начисляются в&nbsp;личный кабинет
+        автоматически.
       </>
     ),
-    metaLeft: "5 / 10 км",
-    metaRight: "темп любой",
+    metaLeft: "темп любой",
+    metaRight: "+30 баллов за участие",
   },
   {
     n: "03",
-    title: "Остаёшься на ",
-    titleEm: "кофе",
+    title: "Обмениваешь баллы на ",
+    titleEm: "бонусы",
     body: (
       <>
-        На&nbsp;финише —{" "}
-        <b className="font-semibold text-ink">
-          Monkey&nbsp;Grinder и&nbsp;Surf&nbsp;Coffee
-        </b>
-        . Знакомства, разговоры, иногда — книжный клуб или летние coffee
-        ride'ы. Это тоже часть.
+        Используешь накопленные баллы у&nbsp;партнёров: кофе, парфюм, еда,
+        товары, услуги и&nbsp;другие предложения от&nbsp;партнёров.
       </>
     ),
-    metaLeft: "кофейни-партнёры",
-    metaRight: "разговоры",
+    metaLeft: "партнёры сообщества",
+    metaRight: "от 50 баллов",
   },
 ];
 
@@ -68,9 +61,8 @@ export function HowItWorks() {
           <div className="flex flex-col gap-3">
             <span className="type-mono-caps">как это работает</span>
             <h2 className="type-h2">
-              Три шага между{" "}
-              <em className="not-italic text-brand-red">кроссовками</em>{" "}
-              и&nbsp;капучино.
+              Три шага от&nbsp;пробежки до&nbsp;
+              <em className="not-italic text-brand-red">бонусов</em>.
             </h2>
           </div>
           <Link
