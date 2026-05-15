@@ -1,4 +1,3 @@
-import Image from "next/image";
 import Link from "next/link";
 import { EventRsvp } from "@/components/events/event-rsvp";
 import { Wrap } from "@/components/site/wrap";
@@ -33,12 +32,6 @@ export function NextEvent({
       ? e.locations
       : [{ name: e.district, venue: e.venue ?? "место уточняется" }];
   const showInlineRsvp = isAuthed && rsvp && rsvp.locations.length > 0;
-  const posterAlt =
-    e.type === "special"
-      ? "Постер спецсобытия"
-      : e.type === "partner"
-        ? "Постер партнёрского события"
-        : "Иллюстрация бегунов Сити Раннинг";
 
   return (
     <section className="border-b border-ink">
@@ -92,28 +85,8 @@ export function NextEvent({
           </div>
         ) : (
           <>
-            {/* Mobile order: poster → date → details → cta. Desktop:
-                date | poster | details | cta. Card height is fixed
-                (lg:h-[280px]) and the poster column derives its width
-                from that height at 4:5 aspect (~224px wide). Avoids
-                the previous 425px-tall card with empty date+CTA slabs.
-                On mobile the poster is a fixed-height letterbox strip
-                (h-[280px], w-full) — small white slabs around the image
-                via bg-paper-2 + objectFit:contain rather than
-                aspect-ratio collapsing the width. */}
-            <article className="grid grid-cols-1 border border-ink lg:h-[280px] lg:grid-cols-[240px_224px_1fr_auto]">
-              <div className="relative order-1 h-[280px] overflow-hidden border-b border-ink bg-paper-2 lg:order-2 lg:h-full lg:border-b-0 lg:border-r">
-                <Image
-                  src={e.posterUrl}
-                  alt={posterAlt}
-                  fill
-                  sizes="(max-width: 1024px) 100vw, 224px"
-                  style={{ objectFit: "contain", padding: "4%" }}
-                  priority={false}
-                />
-              </div>
-
-              <div className="order-2 flex flex-col gap-1 border-b border-ink bg-paper-2 p-6 md:p-8 lg:order-1 lg:border-b-0 lg:border-r">
+            <article className="grid grid-cols-1 border border-ink lg:grid-cols-[280px_1fr_auto]">
+              <div className="flex flex-col gap-1 border-b border-ink bg-paper-2 p-6 md:p-8 lg:border-b-0 lg:border-r">
                 <span className="type-mono-caps">{e.dayOfWeek}</span>
                 <span className="font-display text-[96px] font-bold leading-[0.85] tracking-[-0.04em] text-ink">
                   {e.dateBig}
@@ -123,7 +96,7 @@ export function NextEvent({
                 </span>
               </div>
 
-              <div className="order-3 flex flex-col gap-4 border-b border-ink p-6 md:p-8 lg:border-b-0 lg:border-r">
+              <div className="flex flex-col gap-4 border-b border-ink p-6 md:p-8 lg:border-b-0 lg:border-r">
                 <h3 className="font-display text-[32px] font-bold leading-none tracking-[-0.02em] text-ink md:text-[40px]">
                   {locations.length === 1
                     ? "Точка старта"
@@ -157,7 +130,7 @@ export function NextEvent({
                 </div>
               </div>
 
-              <div className="order-4 flex flex-col bg-paper">
+              <div className="flex flex-col bg-paper">
                 <Link
                   href={`/events/${e.id}`}
                   className="flex flex-1 items-center justify-center bg-ink px-8 py-5 font-sans text-[15px] font-semibold text-paper transition-colors hover:bg-graphite lg:min-w-[240px]"
