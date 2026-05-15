@@ -36,6 +36,7 @@ export function AuthVerifyClient({ token }: { token: string }) {
       });
       const payload = (await res.json().catch(() => ({}))) as {
         message?: string;
+        user?: { roles?: string[] } | null;
       };
       if (!res.ok) {
         setState({
@@ -47,7 +48,9 @@ export function AuthVerifyClient({ token }: { token: string }) {
         return;
       }
       setState({ kind: "success" });
-      router.replace("/app");
+      const roles = payload.user?.roles ?? [];
+      const target = roles.includes("partner") ? "/partner" : "/app";
+      router.replace(target);
     } catch {
       setState({
         kind: "error",

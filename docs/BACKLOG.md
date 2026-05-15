@@ -49,7 +49,7 @@ UI и backend сошлись по всем стабам — ни одной фр
 - PR #73 — RSVP «Я иду»: новая модель `EventInterest` (`userId`, `eventKey: string`, `locationId`, `status`). `eventKey` поддерживает и UUID-события, и `rule:UUID:YYYY-MM-DD`. Endpoints: `POST/DELETE /events/:eventKey/interest`, `GET /events/:eventKey/interest/me`, public `GET /events/:eventKey/interest/counts`. UI: красная кнопка с location-selector + counter «N идут». **Authed-only** — guest flow отложен.
 - PR #74 — Pace groups: `LocationPaceGroup` (`locationId`, `distanceKm`, `paceSecondsPerKm`, `pacerName?`). Pace хранится integer-секунды (5:30 → 330). Admin UI в `/admin/locations/[id]`. Public display на event detail — 3 карточки по точкам с темпами `M:SS`. **EventPaceGroup для override спец-событий** отложен.
 
-**Phase 3 — осталось:** partner-side flow (отдельный логин для роли partner + страница верификации redemption-кодов), Strava background job (BullMQ воркер), notifications (email/Telegram), avatar upload.
+**Phase 3 — осталось:** Strava background job (BullMQ воркер), notifications (email/Telegram), avatar upload. (partner-side flow ✅ закрыт — см. §U)
 
 ## S. RSVP-flow polish (2026-05-10)
 
@@ -62,6 +62,18 @@ UI и backend сошлись по всем стабам — ни одной фр
   - `PersonalDashboard`: standalone «Маршрут и точка старта» из шапки удалён, встроен в красную «ЗАВТРА»-ячейку — на месте строки с одним venue (три точки старта делают единственный адрес неактуальным).
   - `events/[id]`: «Подключить Strava» удалён; «Карта маршрутов» сжата до compact outline (h-10, content-width); guest на mobile получает «Войти в клуб» возле локаций (скрыт на desktop).
   - Угловой текст карточек локаций (full + compact + read-only display): красный, с user-aware формулировкой — `ты идёшь` / `ты и ещё N идут` / `N идут` / `будь первым`.
+
+## U. Partner-side flow — login + verify-only dashboard (2026-05-15)
+
+Реализован партнёрский кабинет — отдельная зона на `/partner` для пользователей с ролью `partner`.
+
+- Новая модель `PartnerMember` (many-to-many `Partner ↔ User`) — миграция `20260515120000_add_partner_members`. У одного партнёра может быть несколько членов команды; ролей внутри пока нет.
+- `PartnerMembersService` (admin-side: list/add-by-email/remove) + админ-эндпойнты `GET/POST /admin/partners/:id/members` и `DELETE .../:memberId`. `addByEmail` делает find-or-create юзера (`UsersService.findOrCreatePending`) → grants role `partner` → upsert PartnerMember. Идемпотентно.
+- `PartnerRedemptionsController` (`@Roles(ROLE_PARTNER)`): `GET /partner/memberships` для UI и `POST /partner/redemptions/verify/:code?partnerId=…` для погашения. Доступ скоупится через PartnerMember; чужой код возвращает 404 (намеренно — не палим существование). Использует существующий `RedemptionsService.markUsedByCode`.
+- Web: `/admin/partners/[id]` получил секцию «Команда» с list + add by email + remove (server actions). `/partner` layout требует роль `partner`, страница рендерит верификационную форму с тремя состояниями (no-membership / single / multi-partner switcher). После magic-link логина partner-роль редиректится на `/partner` вместо `/app` (`auth/verify-client.tsx` + сервер-страницы `/auth` и `/auth/verify`).
+- Seed: `SEED_PARTNER_EMAIL` (опц.) — создаёт партнёр-юзера в `pending` и привязывает к `PARTNERS[0]` (monkey-grinder) как `partner-member`. Для прода — через админку.
+
+**Что НЕ вошло** (явно): роли внутри команды, история погашений в UI, partner cancel, уведомления, статистика. Тесты для verify-flow тоже отложены — в репо нет тест-инфраструктуры (`pnpm test` = noop), вводить её — отдельный трек.
 
 ## T. RSVP encoding fix + home pace groups + admin polish (2026-05-13)
 

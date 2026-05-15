@@ -86,6 +86,32 @@ export async function listAdminPartners(): Promise<AdminPartner[]> {
   return (await fetchJson<AdminPartner[]>("/admin/partners")) ?? [];
 }
 
+// === Partner members (team) ===
+
+export type AdminPartnerMember = {
+  id: string;
+  partnerId: string;
+  userId: string;
+  createdAt: string;
+  createdById: string | null;
+  user: {
+    id: string;
+    email: string;
+    status: "pending" | "active" | "blocked";
+    profile: { displayName: string } | null;
+  };
+};
+
+export async function listAdminPartnerMembers(
+  partnerId: string,
+): Promise<AdminPartnerMember[]> {
+  return (
+    (await fetchJson<AdminPartnerMember[]>(
+      `/admin/partners/${partnerId}/members`,
+    )) ?? []
+  );
+}
+
 // === Reward admin types ===
 
 export type AdminReward = {

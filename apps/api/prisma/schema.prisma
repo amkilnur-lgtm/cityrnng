@@ -146,6 +146,8 @@ model User {
   pointAccount             PointAccount?
   pointTransactions        PointTransaction[]    @relation("PointTransactionUser")
   createdPointTransactions PointTransaction[]    @relation("PointTransactionCreatedBy")
+  partnerMemberships       PartnerMember[]       @relation("PartnerMemberUser")
+  createdPartnerMembers    PartnerMember[]       @relation("PartnerMemberCreatedBy")
 
   @@map("users")
 }
@@ -527,11 +529,33 @@ model Partner {
   createdAt    DateTime      @default(now()) @map("created_at")
   updatedAt    DateTime      @updatedAt @map("updated_at")
 
-  createdBy User     @relation("PartnerCreatedBy", fields: [createdById], references: [id])
+  createdBy User            @relation("PartnerCreatedBy", fields: [createdById], references: [id])
   rewards   Reward[]
+  members   PartnerMember[]
 
   @@index([status])
   @@map("partners")
+}
+
+/// Many-to-many between Partner and User: anyone in a partner's `members`
+/// can verify codes for that partner via /partner. No internal role yet —
+/// every member has the same capabilities. Granting "partner" role at the
+/// User level is orthogonal: membership controls scope, role controls UI
+/// access.
+model PartnerMember {
+  id          String   @id @default(uuid()) @db.Uuid
+  partnerId   String   @map("partner_id") @db.Uuid
+  userId      String   @map("user_id") @db.Uuid
+  createdAt   DateTime @default(now()) @map("created_at")
+  createdById String?  @map("created_by") @db.Uuid
+
+  partner   Partner @relation(fields: [partnerId], references: [id], onDelete: Cascade)
+  user      User    @relation("PartnerMemberUser", fields: [userId], references: [id], onDelete: Cascade)
+  createdBy User?   @relation("PartnerMemberCreatedBy", fields: [createdById], references: [id], onDelete: SetNull)
+
+  @@unique([partnerId, userId], map: "uq_partner_member")
+  @@index([userId])
+  @@map("partner_members")
 }
 
 model Reward {

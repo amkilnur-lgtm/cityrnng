@@ -224,6 +224,78 @@ async function ensurePartnersAndRewards(
   }
 }
 
+/**
+ * Optional: link a partner-role user to the first PARTNERS entry, creating
+ * the user as pending if needed. Triggered by SEED_PARTNER_EMAIL — purely
+ * a dev convenience so /partner can be exercised without manual admin
+ * setup.
+ */
+async function ensureSeedPartnerMember(
+  prisma: PrismaClient,
+  addedById: string,
+): Promise<void> {
+  const raw = process.env.SEED_PARTNER_EMAIL;
+  if (!raw || raw.trim().length === 0) return;
+
+  const email = raw.trim().toLowerCase();
+  const partnerSlug = PARTNERS[0]?.slug;
+  if (!partnerSlug) return;
+
+  await prisma.$transaction(async (tx) => {
+    const runnerRole = await tx.role.upsert({
+      where: { code: "runner" },
+      update: {},
+      create: { code: "runner", name: "Runner" },
+    });
+    const partnerRole = await tx.role.upsert({
+      where: { code: "partner" },
+      update: {},
+      create: { code: "partner", name: "Partner" },
+    });
+
+    const existing = await tx.user.findUnique({ where: { email } });
+    const user = existing
+      ? existing
+      : await tx.user.create({ data: { email, status: "pending" } });
+
+    await tx.profile.upsert({
+      where: { userId: user.id },
+      update: {},
+      create: { userId: user.id, displayName: email.split("@")[0] || "partner" },
+    });
+
+    await tx.userRole.upsert({
+      where: { userId_roleId: { userId: user.id, roleId: runnerRole.id } },
+      update: {},
+      create: { userId: user.id, roleId: runnerRole.id },
+    });
+    await tx.userRole.upsert({
+      where: { userId_roleId: { userId: user.id, roleId: partnerRole.id } },
+      update: {},
+      create: { userId: user.id, roleId: partnerRole.id },
+    });
+
+    const partner = await tx.partner.findUniqueOrThrow({
+      where: { slug: partnerSlug },
+    });
+    await tx.partnerMember.upsert({
+      where: {
+        partnerId_userId: { partnerId: partner.id, userId: user.id },
+      },
+      update: {},
+      create: {
+        partnerId: partner.id,
+        userId: user.id,
+        createdById: addedById,
+      },
+    });
+  });
+
+  console.log(
+    `[seed] linked ${email} as partner-member of ${partnerSlug} (status=pending until first magic-link login).`,
+  );
+}
+
 async function ensureDefaultRecurrence(
   tx: Prisma.TransactionClient,
   createdById: string,
@@ -309,6 +381,8 @@ async function seed(prisma: PrismaClient): Promise<void> {
   console.log(
     `[seed] default recurrence rule ensured (${DEFAULT_RECURRENCE.title}, day=${DEFAULT_RECURRENCE.dayOfWeek}, ${DEFAULT_RECURRENCE.timeOfDay})`,
   );
+
+  await ensureSeedPartnerMember(prisma, user.id);
 }
 
 async function main(): Promise<void> {
