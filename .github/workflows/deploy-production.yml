@@ -36,6 +36,8 @@ jobs:
           ssh-keyscan -H "${{ secrets.PROD_HOST }}" >> ~/.ssh/known_hosts
 
       - name: Pull + restart on production
+        # `--quiet` on `compose pull` — same fix as deploy-staging.yml.
+        # Without it, layer-progress lines flood the log over a non-TTY ssh.
         run: |
           ssh "${{ secrets.PROD_USER }}@${{ secrets.PROD_HOST }}" "set -e; \
             cd /opt/cityrnng && \
@@ -43,7 +45,7 @@ jobs:
             git pull --ff-only origin main && \
             export APP_ENV_FILE=.env.production && \
             export IMAGE_TAG='${{ inputs.image_tag }}' && \
-            docker compose --env-file .env.production --profile app pull && \
+            docker compose --env-file .env.production --profile app pull --quiet && \
             docker compose --env-file .env.production --profile app up -d"
 
       - name: Health check
