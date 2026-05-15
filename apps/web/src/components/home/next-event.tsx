@@ -93,20 +93,21 @@ export function NextEvent({
         ) : (
           <>
             {/* Mobile order: poster → date → details → cta. Desktop:
-                date | poster (4:5 portrait) | details | cta. Real event
-                posters are vertical (~4:5 / Instagram-portrait); the
-                container matches that. Default illustrations (e.g.
-                runners.png) get centred in the portrait frame with
-                bg-paper-2 fill — looks clean. On mobile we cap height
-                at 60vh so the poster doesn't push date+details below
-                the fold on small phones. */}
-            <article className="grid grid-cols-1 border border-ink lg:grid-cols-[240px_340px_1fr_auto]">
-              <div className="relative order-1 aspect-[4/5] max-h-[60vh] overflow-hidden border-b border-ink bg-paper-2 lg:order-2 lg:max-h-none lg:border-b-0 lg:border-r">
+                date | poster | details | cta. Card height is fixed
+                (lg:h-[280px]) and the poster column derives its width
+                from that height at 4:5 aspect (~224px wide). Avoids
+                the previous 425px-tall card with empty date+CTA slabs.
+                On mobile the poster is a fixed-height letterbox strip
+                (h-[280px], w-full) — small white slabs around the image
+                via bg-paper-2 + objectFit:contain rather than
+                aspect-ratio collapsing the width. */}
+            <article className="grid grid-cols-1 border border-ink lg:h-[280px] lg:grid-cols-[240px_224px_1fr_auto]">
+              <div className="relative order-1 h-[280px] overflow-hidden border-b border-ink bg-paper-2 lg:order-2 lg:h-full lg:border-b-0 lg:border-r">
                 <Image
                   src={e.posterUrl}
                   alt={posterAlt}
                   fill
-                  sizes="(max-width: 1024px) 100vw, 340px"
+                  sizes="(max-width: 1024px) 100vw, 224px"
                   style={{ objectFit: "contain", padding: "4%" }}
                   priority={false}
                 />

@@ -7,6 +7,11 @@ import "./globals.css";
 
 const sans = Manrope({
   subsets: ["latin", "cyrillic"],
+  // Without an explicit list, Next/font preloads every weight Google has
+  // for Manrope (200-800) for both subsets — most are never rendered on
+  // initial paint, which trips Chrome's "preloaded but not used" warning.
+  // Cap at the weights actually used in the design system.
+  weight: ["400", "500", "600", "700"],
   variable: "--font-sans",
   display: "swap",
 });
