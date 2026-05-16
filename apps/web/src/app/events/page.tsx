@@ -52,7 +52,7 @@ export default async function EventsPage() {
           <Wrap className="py-16 lg:py-24">
             <div className="flex flex-col gap-3">
               <span className="type-mono-caps">расписание</span>
-              <h1 className="type-hero" style={{ fontSize: 72 }}>
+              <h1 className="type-hero">
                 События на&nbsp;
                 <em className="not-italic text-brand-red">неделе</em>.
               </h1>
