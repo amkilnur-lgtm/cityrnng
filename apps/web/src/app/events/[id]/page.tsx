@@ -116,9 +116,7 @@ export default async function EventDetailPage({
                   {startDate.toUpperCase()} · {startTime}
                 </span>
               </div>
-              <h1 className="type-hero" style={{ fontSize: 72 }}>
-                {event.title}
-              </h1>
+              <h1 className="type-hero">{event.title}</h1>
               {event.locationName ? (
                 <p className="type-lede">
                   {event.locationName}
@@ -176,16 +174,19 @@ export default async function EventDetailPage({
                 {!state.isAuthed && locations.length > 0 ? (
                   <Link
                     href={`/auth?next=/events/${encodeURIComponent(event.id)}`}
-                    className="inline-flex h-12 items-center self-start border border-brand-red bg-brand-red px-5 font-sans text-[14px] font-semibold text-paper hover:bg-brand-red-ink"
+                    className="inline-flex h-11 items-center self-start border border-brand-red bg-brand-red px-5 font-sans text-[14px] font-semibold text-paper hover:bg-brand-red-ink"
                   >
                     Войти, чтобы записаться →
                   </Link>
                 ) : null}
 
-                <div className="mt-auto pt-4">
+                <div className="mt-2 flex items-center justify-between gap-3 border-t border-ink/15 pt-5">
+                  <span className="font-mono text-[11px] font-medium uppercase tracking-[0.14em] text-muted">
+                    маршруты
+                  </span>
                   <Link
                     href={`/districts#${locations[0]?.id ?? ""}`}
-                    className="inline-flex h-10 items-center border border-ink bg-paper px-4 font-sans text-[13px] font-semibold text-ink hover:bg-ink hover:text-paper"
+                    className="font-sans text-[13px] font-semibold text-ink underline-offset-4 hover:text-brand-red hover:underline"
                   >
                     Карта маршрутов →
                   </Link>

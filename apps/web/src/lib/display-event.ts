@@ -3,14 +3,10 @@ import {
   type ApiEventType,
   type MaterializedApiEvent,
   filterUpcoming,
-  getPublicEvent,
   listPublicEvents,
   listUpcomingEvents,
 } from "@/lib/api-events";
-import {
-  getInterestCounts,
-  getMyInterest,
-} from "@/lib/api-event-interest";
+import { getMyInterest } from "@/lib/api-event-interest";
 import { CLUB, type ClubDistance } from "@/lib/club";
 import {
   LOCATIONS,
@@ -18,68 +14,6 @@ import {
   UPCOMING_EVENTS,
   type CityLocation,
 } from "@/lib/home-mock";
-
-type ApiPaceGroup = NonNullable<
-  NonNullable<ApiEvent["syncRule"]>["locations"][number]["paceGroups"]
->[number];
-
-/**
- * RSVP-side data for the next event — locations with IDs and pace groups
- * (for posting an RSVP and rendering pace info), the current user's pick,
- * and total counts per location. Plus a few header-display fields so /app
- * can render a section title without a second fetch.
- */
-export type NextEventRsvp = {
-  eventKey: string;
-  title: string;
-  type: ApiEventType;
-  startsAt: string;
-  locations: Array<{
-    id: string;
-    name: string;
-    city: string;
-    paceGroups?: ApiPaceGroup[];
-  }>;
-  myLocationId: string | null;
-  countsByLocation: Record<string, number>;
-};
-
-export async function getNextEventRsvp(): Promise<NextEventRsvp | null> {
-  const upcoming = await listUpcomingEvents(2);
-  const next = upcoming[0];
-  if (!next || next.locations.length === 0) return null;
-  // Materialized response doesn't carry pace groups — pull them from the
-  // full /events/:id payload (works for both UUID and rule:UUID:DATE ids).
-  const [apiEvent, mine, counts] = await Promise.all([
-    getPublicEvent(next.id),
-    getMyInterest(next.id),
-    getInterestCounts(next.id),
-  ]);
-  const countsByLocation: Record<string, number> = {};
-  for (const c of counts) countsByLocation[c.locationId] = c.count;
-  const paceByLocId = new Map<string, ApiPaceGroup[] | undefined>();
-  if (apiEvent?.syncRule) {
-    for (const l of apiEvent.syncRule.locations) {
-      paceByLocId.set(l.id, l.paceGroups);
-    }
-  }
-  return {
-    eventKey: next.id,
-    title:
-      next.title ||
-      (next.type === "regular" ? "Сити Раннинг — пробежка" : "Спецсобытие"),
-    type: next.type,
-    startsAt: next.startsAt,
-    locations: next.locations.map((l) => ({
-      id: l.id,
-      name: l.name,
-      city: l.city,
-      paceGroups: paceByLocId.get(l.id),
-    })),
-    myLocationId: mine?.locationId ?? null,
-    countsByLocation,
-  };
-}
 
 /**
  * Display shape consumed by Hero/NextEvent/PersonalDashboard. Independent

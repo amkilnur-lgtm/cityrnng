@@ -2,7 +2,7 @@ import Link from "next/link";
 import { Wrap } from "@/components/site/wrap";
 import { Badge } from "@/components/ui/badge";
 import { CLUB } from "@/lib/club";
-import type { DisplayEvent, NextEventRsvp } from "@/lib/display-event";
+import type { DisplayEvent } from "@/lib/display-event";
 
 function pluralLocations(n: number): string {
   // Russian plural for "локация" — 1 локация / 2-4 локации / 5+ локаций
@@ -16,27 +16,16 @@ function pluralLocations(n: number): string {
 
 export function NextEvent({
   event,
-  rsvp,
   isAuthed = false,
 }: {
   event: DisplayEvent;
-  rsvp?: NextEventRsvp | null;
   isAuthed?: boolean;
 }) {
   const e = event;
-  // Use the event's actual starting points; fall back to a single
-  // "место уточняется" row if the API didn't return any.
   const locations =
     e.locations.length > 0
       ? e.locations
       : [{ name: e.district, venue: e.venue ?? "место уточняется" }];
-  // RSVP is no longer edited from this card — it lives on /events/[id].
-  // Here we only surface a small "ты идёшь" indicator if the authed user
-  // has already RSVPed; the CTA below routes them to the detail page.
-  const myRsvpLocation =
-    isAuthed && rsvp && rsvp.myLocationId
-      ? rsvp.locations.find((l) => l.id === rsvp.myLocationId) ?? null
-      : null;
 
   return (
     <section className="border-b border-ink">
@@ -62,18 +51,9 @@ export function NextEvent({
                   <>Партнёрское событие.</>
                 )
               ) : (
-                <>
-                  Ближайший{" "}
-                  <em className="not-italic text-brand-red">{CLUB.name}</em>.
-                </>
+                <em className="not-italic text-brand-red">{CLUB.name}</em>
               )}
             </h2>
-            {myRsvpLocation ? (
-              <span className="inline-flex items-center gap-2 self-start border border-brand-red bg-brand-red px-3 py-1 font-mono text-[11px] font-semibold uppercase tracking-[0.14em] text-paper">
-                <span className="block h-1.5 w-1.5 bg-paper" />
-                ты идёшь · точка {myRsvpLocation.name}
-              </span>
-            ) : null}
           </div>
           <Link
             href="/events"

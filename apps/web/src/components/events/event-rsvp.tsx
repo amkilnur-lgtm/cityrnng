@@ -218,7 +218,12 @@ export function EventRsvp({
             type="button"
             onClick={submit}
             disabled={pending || !chosen}
-            className="inline-flex h-12 items-center justify-center border border-brand-red bg-brand-red px-6 font-sans text-[14px] font-semibold text-paper transition-colors hover:bg-brand-red-ink disabled:cursor-not-allowed disabled:opacity-50"
+            className={
+              "inline-flex h-11 items-center justify-center border px-5 font-sans text-[14px] font-semibold transition-colors disabled:cursor-not-allowed " +
+              (chosen
+                ? "border-brand-red bg-brand-red text-paper hover:bg-brand-red-ink"
+                : "border-ink/30 bg-paper text-muted")
+            }
           >
             {pending
               ? "Записываемся…"

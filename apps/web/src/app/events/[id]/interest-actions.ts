@@ -15,12 +15,8 @@ function authHeaders(): HeadersInit | null {
   };
 }
 
-/**
- * eventKey may arrive as either the clean form `rule:UUID:DATE` (from /app's
- * getNextEventRsvp → MaterializedApiEvent.id) or already percent-encoded by
- * Next router params on a future caller. Decode-then-encode normalises both
- * into a single pass — same defensive pattern as getPublicEvent.
- */
+// eventKey may arrive clean (`rule:UUID:DATE`) or already percent-encoded
+// by Next router params — decode-then-encode normalises both.
 function safeEventKey(eventKey: string): string {
   return encodeURIComponent(decodeURIComponent(eventKey));
 }
