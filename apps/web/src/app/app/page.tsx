@@ -2,25 +2,21 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import { FinalCta } from "@/components/home/final-cta";
 import { Journal } from "@/components/home/journal";
-import { MyUpcomingRsvps } from "@/components/home/my-upcoming-rsvps";
 import { PersonalDashboard } from "@/components/home/personal-dashboard";
 import { ShopPreview } from "@/components/home/shop-preview";
+import { UpcomingEvents } from "@/components/home/upcoming-events";
 import { SiteFooter } from "@/components/site/footer";
 import { SiteNav } from "@/components/site/nav";
 import { Wrap } from "@/components/site/wrap";
-import {
-  getDisplayNextEvent,
-  getMyUpcomingRsvps,
-} from "@/lib/display-event";
+import { getDisplayNextEvent } from "@/lib/display-event";
 import { getSiteState } from "@/lib/site-state";
 
 export const metadata = { title: "Личный кабинет · CITYRNNG" };
 
 export default async function AppDashboardPage() {
-  const [state, nextEvent, myRsvps] = await Promise.all([
+  const [state, nextEvent] = await Promise.all([
     getSiteState(),
     getDisplayNextEvent(),
-    getMyUpcomingRsvps(),
   ]);
   // Either real session OR dev-mock authed unlocks /app — both flow through state.isAuthed.
   if (!state.isAuthed) redirect("/auth");
@@ -60,7 +56,7 @@ export default async function AppDashboardPage() {
         </section>
 
         <PersonalDashboard user={state.user} nextEvent={nextEvent} />
-        <MyUpcomingRsvps rsvps={myRsvps} />
+        <UpcomingEvents isAuthed />
         <ShopPreview user={state.user} />
         <Journal />
         <FinalCta isAuthed />

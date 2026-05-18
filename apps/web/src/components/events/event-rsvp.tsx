@@ -71,7 +71,11 @@ export function EventRsvp({
   countsByLocation,
   isAuthed,
 }: Props) {
-  const [chosen, setChosen] = useState<string | null>(myLocationId);
+  // Pre-select when there's only one location — saves a tap (no point in
+  // making the user explicitly "pick" the only option).
+  const [chosen, setChosen] = useState<string | null>(
+    myLocationId ?? (locations.length === 1 ? locations[0].id : null),
+  );
   const [error, setError] = useState<string | null>(null);
   const [pending, startTransition] = useTransition();
 
