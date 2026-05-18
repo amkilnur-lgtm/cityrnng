@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { Fragment, useState, useTransition } from "react";
 import {
   cancelGoingAction,
   markGoingAction,
@@ -41,6 +41,19 @@ function formatPace(secondsPerKm: number): string {
   const m = Math.floor(secondsPerKm / 60);
   const s = secondsPerKm % 60;
   return `${m}:${String(s).padStart(2, "0")}`;
+}
+
+/** Group pace groups by distance, returning entries sorted longest first. */
+function groupByDistance(
+  paceGroups: EventPaceGroup[],
+): Array<[number, EventPaceGroup[]]> {
+  const map = new Map<number, EventPaceGroup[]>();
+  for (const pg of paceGroups) {
+    const arr = map.get(pg.distanceKm) ?? [];
+    arr.push(pg);
+    map.set(pg.distanceKm, arr);
+  }
+  return [...map.entries()].sort((a, b) => b[0] - a[0]);
 }
 
 function goingLabel(count: number, isMine: boolean): string | null {
@@ -135,31 +148,28 @@ export function EventRsvp({
 
               {variant === "full" ? (
                 loc.paceGroups && loc.paceGroups.length > 0 ? (
-                  <div className="flex flex-wrap items-center gap-x-2 gap-y-1 text-[13px]">
-                    {loc.paceGroups.map((pg, i) => (
-                      <span
-                        key={pg.id}
-                        className="flex items-center gap-2"
+                  <div className="flex flex-col gap-1 font-mono text-[13px] tracking-[0.02em]">
+                    {groupByDistance(loc.paceGroups).map(([dist, paces]) => (
+                      <div
+                        key={dist}
+                        className="flex flex-wrap items-center gap-x-2 gap-y-1"
                       >
-                        {i > 0 ? (
-                          <span
-                            aria-hidden
-                            className="text-ink/25"
-                          >
-                            |
-                          </span>
-                        ) : null}
-                        <span className="font-mono tracking-[0.02em] text-ink">
-                          {pg.distanceKm}&nbsp;км ·{" "}
-                          {formatPace(pg.paceSecondsPerKm)}
-                          {pg.pacerName ? (
-                            <span className="text-muted">
-                              {" "}
-                              (с&nbsp;{pg.pacerName})
+                        <span className="text-ink">{dist}&nbsp;км</span>
+                        {paces.map((pg) => (
+                          <Fragment key={pg.id}>
+                            <span aria-hidden className="text-ink/25">|</span>
+                            <span className="text-ink">
+                              {formatPace(pg.paceSecondsPerKm)}
+                              {pg.pacerName ? (
+                                <span className="text-muted">
+                                  {" "}
+                                  (с&nbsp;{pg.pacerName})
+                                </span>
+                              ) : null}
                             </span>
-                          ) : null}
-                        </span>
-                      </span>
+                          </Fragment>
+                        ))}
+                      </div>
                     ))}
                   </div>
                 ) : (
