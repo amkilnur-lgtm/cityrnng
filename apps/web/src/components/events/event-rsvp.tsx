@@ -105,19 +105,6 @@ export function EventRsvp({
         ) : null}
       </div>
 
-      {isGoing ? (
-        <div className="flex items-center gap-2.5 border border-brand-red bg-brand-red px-4 py-2.5 text-paper">
-          <span className="block h-2 w-2 bg-paper" />
-          <span className="font-mono text-[11px] font-semibold uppercase tracking-[0.14em]">
-            ты идёшь
-          </span>
-          <span className="ml-auto font-sans text-[13px] font-medium">
-            точка{" "}
-            {locations.find((l) => l.id === myLocationId)?.name ?? "—"}
-          </span>
-        </div>
-      ) : null}
-
       <ul className="grid grid-cols-1 gap-3 md:grid-cols-3">
         {locations.map((loc) => {
           const count = countsByLocation[loc.id] ?? 0;
@@ -148,24 +135,33 @@ export function EventRsvp({
 
               {variant === "full" ? (
                 loc.paceGroups && loc.paceGroups.length > 0 ? (
-                  <ul className="flex flex-col gap-1">
-                    {loc.paceGroups.map((pg) => (
-                      <li
+                  <div className="flex flex-wrap items-center gap-x-2 gap-y-1 text-[13px]">
+                    {loc.paceGroups.map((pg, i) => (
+                      <span
                         key={pg.id}
-                        className="flex items-center justify-between gap-2 text-[13px]"
+                        className="flex items-center gap-2"
                       >
+                        {i > 0 ? (
+                          <span
+                            aria-hidden
+                            className="text-ink/25"
+                          >
+                            |
+                          </span>
+                        ) : null}
                         <span className="font-mono tracking-[0.02em] text-ink">
                           {pg.distanceKm}&nbsp;км ·{" "}
                           {formatPace(pg.paceSecondsPerKm)}
+                          {pg.pacerName ? (
+                            <span className="text-muted">
+                              {" "}
+                              (с&nbsp;{pg.pacerName})
+                            </span>
+                          ) : null}
                         </span>
-                        {pg.pacerName ? (
-                          <span className="truncate text-[12px] text-muted">
-                            с {pg.pacerName}
-                          </span>
-                        ) : null}
-                      </li>
+                      </span>
                     ))}
-                  </ul>
+                  </div>
                 ) : (
                   <span className="text-[12px] leading-tight text-muted">
                     Без пейсера — темп по&nbsp;самочувствию
@@ -202,48 +198,62 @@ export function EventRsvp({
       </ul>
 
       {!isAuthed ? null : isGoing && movingTo === null ? (
-        <div className="flex flex-wrap items-center gap-3">
+        <div className="flex flex-col gap-2">
+          <div
+            className="flex h-14 w-full items-center justify-center gap-3 border-2 border-ink bg-ink px-5 font-sans text-[16px] font-bold tracking-tight text-paper"
+            role="status"
+          >
+            <span>Ты идёшь на&nbsp;это событие</span>
+            <span aria-hidden className="font-mono text-[18px]">✓</span>
+          </div>
           <button
             type="button"
             onClick={cancel}
             disabled={pending}
-            className="font-sans text-[14px] font-medium text-ink underline-offset-4 hover:text-brand-red hover:underline disabled:opacity-60"
+            className="self-center font-sans text-[13px] font-medium text-muted underline-offset-4 hover:text-brand-red hover:underline disabled:opacity-60"
           >
-            {pending ? "Отменяем…" : "Отменить запись"}
+            {pending ? "отменяем…" : "отменить запись"}
           </button>
         </div>
       ) : (
-        <div className="flex flex-wrap items-center gap-3">
+        <div className="flex flex-col gap-2">
           <button
             type="button"
             onClick={submit}
             disabled={pending || !chosen}
             className={
-              "inline-flex h-11 items-center justify-center border px-5 font-sans text-[14px] font-semibold transition-colors disabled:cursor-not-allowed " +
+              "group inline-flex h-14 w-full items-center justify-center gap-3 border-2 px-5 font-sans text-[16px] font-bold tracking-tight transition-colors disabled:cursor-not-allowed " +
               (chosen
                 ? "border-brand-red bg-brand-red text-paper hover:bg-brand-red-ink"
-                : "border-ink/30 bg-paper text-muted")
+                : "border-ink/20 bg-paper text-muted")
             }
           >
-            {pending
-              ? "Записываемся…"
-              : movingTo
-                ? "Перенести точку →"
-                : "Я иду →"}
-          </button>
-          {!chosen ? (
-            <span className="text-[13px] text-muted">
-              Сначала выбери одну из&nbsp;точек.
+            <span>
+              {pending
+                ? "Записываемся…"
+                : movingTo
+                  ? "Перенести точку"
+                  : chosen
+                    ? "Я иду"
+                    : "Выбери точку"}
             </span>
-          ) : null}
+            {!pending && chosen ? (
+              <span
+                aria-hidden
+                className="font-mono text-[18px] transition-transform group-hover:translate-x-1"
+              >
+                →
+              </span>
+            ) : null}
+          </button>
           {movingTo ? (
             <button
               type="button"
               onClick={() => setChosen(myLocationId)}
               disabled={pending}
-              className="font-sans text-[14px] font-medium text-graphite underline-offset-4 hover:text-ink hover:underline"
+              className="self-center font-sans text-[13px] font-medium text-graphite underline-offset-4 hover:text-ink hover:underline"
             >
-              Оставить как было
+              оставить как было
             </button>
           ) : null}
         </div>

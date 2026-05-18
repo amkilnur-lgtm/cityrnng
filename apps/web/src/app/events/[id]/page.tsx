@@ -130,7 +130,7 @@ export default async function EventDetailPage({
         <section className="border-b border-ink">
           <Wrap className="py-12 lg:py-16">
             <div className="grid grid-cols-1 gap-0 border border-ink lg:grid-cols-[260px_1fr]">
-              <dl className="grid grid-cols-2 gap-px bg-ink/10 lg:grid-cols-1 lg:border-r lg:border-ink">
+              <dl className="grid grid-cols-2 gap-px border-b border-ink bg-ink/10 lg:grid-cols-1 lg:border-b-0 lg:border-r">
                 <Fact k="Когда" v={startDate} />
                 <Fact k="Время" v={startTime} />
                 <Fact k="Дистанции" v={DISTANCE_RANGE} />
