@@ -39,15 +39,10 @@ export function LocationForm({
 
   return (
     <form action={formAction} className="flex flex-col gap-5">
-      <Field label="Slug" hint="lowercase, hyphens">
-        <input
-          name="slug"
-          required
-          defaultValue={defaults?.slug}
-          placeholder="centr"
-          className="h-11 border border-ink bg-paper px-3 font-mono text-[14px] outline-none c3-focus focus:bg-brand-tint/30"
-        />
-      </Field>
+      {/* Slug is server-derived from name (cyrillic transliterated + hyphenated)
+          with collision suffixes. On edit we still ship the existing slug so
+          the API doesn't try to derive a fresh one and fail uniqueness. */}
+      <input type="hidden" name="slug" defaultValue={defaults?.slug ?? ""} />
       <Field label="Название">
         <input
           name="name"

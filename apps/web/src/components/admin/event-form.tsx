@@ -39,6 +39,9 @@ type Defaults = {
   registrationCloseAt?: string | null;
   isPointsEligible?: boolean;
   basePointsAward?: number;
+  /** Ids of CityLocations whose participants are at THIS event instead of
+   *  the regular Wednesday at their usual point. Seeds checkbox state. */
+  excludesRegularLocationIds?: string[];
 };
 
 /** Add `+2h` to a YYYY-MM-DDTHH:MM string. Returns the same format. */
@@ -119,6 +122,21 @@ export function EventForm({
   const [checkedLocIds, setCheckedLocIds] = useState<Set<string>>(
     () => new Set(defaultLocationIds),
   );
+  // Checked CityLocation ids whose runners are at this event instead of
+  // the regular Wednesday occurrence. Independent of the start-point picker
+  // above — same catalog, different semantic.
+  const [excludedRegularIds, setExcludedRegularIds] = useState<Set<string>>(
+    () => new Set(defaults?.excludesRegularLocationIds ?? []),
+  );
+
+  function toggleExcludedRegular(id: string, checked: boolean) {
+    setExcludedRegularIds((prev) => {
+      const next = new Set(prev);
+      if (checked) next.add(id);
+      else next.delete(id);
+      return next;
+    });
+  }
 
   function toggleLocation(id: string, checked: boolean) {
     setCheckedLocIds((prev) => {
@@ -391,6 +409,53 @@ export function EventForm({
           </div>
         </div>
       </fieldset>
+
+      {locations.length > 0 ? (
+        <fieldset className="border border-ink p-5">
+          <legend className="px-2 type-mono-caps">
+            забираем с регулярной среды
+          </legend>
+          <div className="flex flex-col gap-3">
+            <p className="text-[13px] text-graphite">
+              Отметь точки, чьи участники в&nbsp;этот день идут на&nbsp;это
+              событие вместо обычной пробежки. Из&nbsp;регулярного Ситираннинга
+              эти точки уйдут только на&nbsp;дату события.
+            </p>
+            <ul className="flex flex-col border border-ink bg-paper">
+              {locations.map((l, idx) => {
+                const checked = excludedRegularIds.has(l.id);
+                return (
+                  <li
+                    key={l.id}
+                    className={
+                      "flex items-center gap-3 px-3 py-2.5 " +
+                      (idx > 0 ? "border-t border-ink/15" : "")
+                    }
+                  >
+                    <input
+                      type="checkbox"
+                      name="excludesRegularLocationIds"
+                      value={l.id}
+                      checked={checked}
+                      onChange={(ev) =>
+                        toggleExcludedRegular(l.id, ev.target.checked)
+                      }
+                      className="h-4 w-4 border border-ink"
+                    />
+                    <span className="flex-1 font-sans text-[14px] text-ink">
+                      {l.name}
+                      {l.venue ? (
+                        <span className="text-muted"> · {l.venue}</span>
+                      ) : null}
+                      <span className="text-muted"> · {l.city}</span>
+                    </span>
+                  </li>
+                );
+              })}
+            </ul>
+          </div>
+        </fieldset>
+      ) : null}
 
       <fieldset className="border border-ink p-5">
         <legend className="px-2 type-mono-caps">баллы</legend>

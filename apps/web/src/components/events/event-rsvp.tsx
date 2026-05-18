@@ -104,18 +104,24 @@ export function EventRsvp({
     });
   }
 
+  // Single-location event = no point in showing a "точки старта" picker;
+  // chosen is already auto-set, just render the action button.
+  const isSingleLocation = locations.length === 1;
+
   return (
     <div className="flex flex-col gap-4">
-      <div className="flex items-baseline justify-between gap-3">
-        <span className="type-mono-caps">точки старта</span>
-        {isAuthed ? (
-          <span className="text-[12px] text-muted">
-            Темп и&nbsp;дистанцию выберешь у&nbsp;точки.
-          </span>
-        ) : null}
-      </div>
+      {!isSingleLocation ? (
+        <>
+          <div className="flex items-baseline justify-between gap-3">
+            <span className="type-mono-caps">точки старта</span>
+            {isAuthed ? (
+              <span className="text-[12px] text-muted">
+                Темп и&nbsp;дистанцию выберешь у&nbsp;точки.
+              </span>
+            ) : null}
+          </div>
 
-      <ul className="grid grid-cols-1 gap-3 md:grid-cols-3">
+          <ul className="grid grid-cols-1 gap-3 md:grid-cols-3">
         {locations.map((loc) => {
           const count = countsByLocation[loc.id] ?? 0;
           const isChosen = chosen === loc.id;
@@ -195,7 +201,9 @@ export function EventRsvp({
             </li>
           );
         })}
-      </ul>
+          </ul>
+        </>
+      ) : null}
 
       {!isAuthed ? null : isGoing && movingTo === null ? (
         <div className="flex flex-col gap-2">

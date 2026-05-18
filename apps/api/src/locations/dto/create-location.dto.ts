@@ -21,10 +21,12 @@ export class CreateLocationDto {
   @MaxLength(200)
   name!: string;
 
+  // Server auto-generates from name when missing; admin can still override.
+  @IsOptional()
   @IsString()
   @Matches(SLUG_REGEX, { message: "slug must be lowercase, hyphen-separated" })
   @MaxLength(200)
-  slug!: string;
+  slug?: string;
 
   @IsString()
   @MinLength(1)

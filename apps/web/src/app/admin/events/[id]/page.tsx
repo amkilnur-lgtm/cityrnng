@@ -81,6 +81,7 @@ export default async function EditEventPage({
               slug: event.slug,
               description: event.description,
               distanceLabel: event.distanceLabel,
+              excludesRegularLocationIds: event.excludesRegularLocationIds,
               type: event.type,
               status: event.status,
               startsAt: event.startsAt,

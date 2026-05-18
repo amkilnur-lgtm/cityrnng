@@ -134,6 +134,28 @@ export class EventOccurrenceService {
     });
     if (override) return mapEventPublic(override);
 
+    // Collect same-day exclusions from any published explicit event whose
+    // excludesRegularLocationIds names a CityLocation. Those locations are
+    // dropped from this rule occurrence's starting points (their runners
+    // are at the special event instead).
+    const sameDayStart = this.dayOnly(startsAt);
+    const sameDayEnd = new Date(sameDayStart.getTime() + DAY_MS);
+    const sameDayExplicits = await this.prisma.event.findMany({
+      where: {
+        status: EventStatus.published,
+        startsAt: { gte: sameDayStart, lt: sameDayEnd },
+        NOT: { excludesRegularLocationIds: { equals: [] } },
+      },
+      select: { excludesRegularLocationIds: true },
+    });
+    const excludedIds = new Set<string>();
+    for (const e of sameDayExplicits) {
+      for (const lid of e.excludesRegularLocationIds) excludedIds.add(lid);
+    }
+    const visibleLocations = rule.locations.filter(
+      (rl) => !excludedIds.has(rl.location.id),
+    );
+
     // No override — return the materialized rule occurrence in the same
     // shape the public /events endpoint serves.
     const endsAt = new Date(startsAt.getTime() + rule.durationMinutes * 60_000);
@@ -157,7 +179,7 @@ export class EventOccurrenceService {
       isPointsEligible: rule.isPointsEligible,
       basePointsAward: rule.basePointsAward,
       syncRule: {
-        locations: rule.locations.map((rl) => ({
+        locations: visibleLocations.map((rl) => ({
           id: rl.location.id,
           name: rl.location.name,
           city: rl.location.city,
@@ -220,6 +242,18 @@ export class EventOccurrenceService {
       }
     }
 
+    // Exclusion map: YYYY-MM-DD → set of CityLocation ids whose participants
+    // are at a special event that day instead of the regular Wednesday.
+    // Union across all explicit events on that date.
+    const exclusionsByDate = new Map<string, Set<string>>();
+    for (const e of explicits) {
+      if (e.excludesRegularLocationIds.length === 0) continue;
+      const key = this.dayOnly(e.startsAt).toISOString().slice(0, 10);
+      const set = exclusionsByDate.get(key) ?? new Set<string>();
+      for (const id of e.excludesRegularLocationIds) set.add(id);
+      exclusionsByDate.set(key, set);
+    }
+
     const out: MaterializedEvent[] = [];
 
     // Materialize each rule's occurrences within window, replacing with override when present
@@ -232,7 +266,12 @@ export class EventOccurrenceService {
         if (override) {
           out.push(this.toMaterialized(override, rule));
         } else {
-          out.push(this.fromRule(rule, cursor));
+          const dateKey = cursor.toISOString().slice(0, 10);
+          const excluded = exclusionsByDate.get(dateKey) ?? null;
+          const materialized = this.fromRule(rule, cursor, excluded);
+          // Drop the regular occurrence entirely if every location was
+          // pulled into a same-day special.
+          if (materialized.locations.length > 0) out.push(materialized);
         }
         cursor = new Date(cursor.getTime() + 7 * DAY_MS);
       }
@@ -243,7 +282,18 @@ export class EventOccurrenceService {
       out.push(this.toMaterialized(e, null));
     }
 
-    out.sort((a, b) => a.startsAt.getTime() - b.startsAt.getTime());
+    // Sort by time ascending; on the same start time, specials surface above
+    // partner above regular so the more interesting card lands first.
+    const typeOrder: Record<EventType, number> = {
+      [EventType.special]: 0,
+      [EventType.partner]: 1,
+      [EventType.regular]: 2,
+    };
+    out.sort((a, b) => {
+      const dt = a.startsAt.getTime() - b.startsAt.getTime();
+      if (dt !== 0) return dt;
+      return typeOrder[a.type] - typeOrder[b.type];
+    });
     return out;
   }
 
@@ -276,9 +326,16 @@ export class EventOccurrenceService {
     return `${ruleId}:${iso}`;
   }
 
-  private fromRule(rule: RuleWithLocations, startsAt: Date): MaterializedEvent {
+  private fromRule(
+    rule: RuleWithLocations,
+    startsAt: Date,
+    excludedLocationIds: Set<string> | null = null,
+  ): MaterializedEvent {
     const endsAt = new Date(startsAt.getTime() + rule.durationMinutes * 60_000);
     const dateKey = startsAt.toISOString().slice(0, 10);
+    const visibleLocations = rule.locations.filter(
+      (rl) => !excludedLocationIds || !excludedLocationIds.has(rl.location.id),
+    );
     return {
       id: `rule:${rule.id}:${dateKey}`,
       isMaterialized: true,
@@ -299,7 +356,7 @@ export class EventOccurrenceService {
       registrationCloseAt: null,
       recurrenceRuleId: rule.id,
       overridesOccurrenceAt: null,
-      locations: rule.locations.map((rl) => ({
+      locations: visibleLocations.map((rl) => ({
         id: rl.location.id,
         name: rl.location.name,
         city: rl.location.city,

@@ -1,5 +1,8 @@
 import { Type } from "class-transformer";
 import {
+  ArrayMaxSize,
+  ArrayUnique,
+  IsArray,
   IsBoolean,
   IsDateString,
   IsEnum,
@@ -8,6 +11,7 @@ import {
   IsLongitude,
   IsOptional,
   IsString,
+  IsUUID,
   Matches,
   MaxLength,
   Min,
@@ -39,6 +43,13 @@ export class CreateEventDto {
   @IsString()
   @MaxLength(100)
   distanceLabel?: string;
+
+  @IsOptional()
+  @IsArray()
+  @ArrayMaxSize(25)
+  @ArrayUnique()
+  @IsUUID("4", { each: true })
+  excludesRegularLocationIds?: string[];
 
   @IsOptional()
   @IsEnum(EventType)
