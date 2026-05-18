@@ -87,13 +87,17 @@ export function EventForm({
   defaults,
   submitLabel,
   locations = [],
+  defaultLocationIds = [],
 }: {
   action: Action;
   defaults?: Defaults;
   submitLabel: string;
-  /** Pre-existing CityLocations admin can pick from to auto-fill the
-   *  free-text address fields. Empty list disables the picker. */
+  /** All active CityLocations — rendered as checkboxes; checked ones get
+   *  attached to the event's sync-rule on save (enabling RSVP). */
   locations?: LocationOption[];
+  /** IDs of CityLocations already attached to this event's sync-rule.
+   *  Used to seed checkbox state in edit mode. */
+  defaultLocationIds?: string[];
 }) {
   const [state, formAction] = useFormState<ActionResult | undefined, FormData>(
     action,
@@ -101,7 +105,7 @@ export function EventForm({
   );
 
   // Controlled location fields — driven either by direct edit or by the
-  // "Готовая локация" picker. Defaults seed from the edit-mode payload.
+  // multi-select picker. Defaults seed from the edit-mode payload.
   const [locName, setLocName] = useState(defaults?.locationName ?? "");
   const [locAddress, setLocAddress] = useState(defaults?.locationAddress ?? "");
   const [locLat, setLocLat] = useState(
@@ -110,7 +114,26 @@ export function EventForm({
   const [locLng, setLocLng] = useState(
     defaults?.locationLng != null ? String(defaults.locationLng) : "",
   );
-  const [pickerValue, setPickerValue] = useState("");
+  // Checked CityLocation ids — drive both the sync-rule attach and the
+  // display-field auto-fill (taken from the first checked entry).
+  const [checkedLocIds, setCheckedLocIds] = useState<Set<string>>(
+    () => new Set(defaultLocationIds),
+  );
+
+  function toggleLocation(id: string, checked: boolean) {
+    setCheckedLocIds((prev) => {
+      const next = new Set(prev);
+      if (checked) next.add(id);
+      else next.delete(id);
+      // Auto-fill display fields from the first checked location (in the
+      // catalog's original order). Always overwrites — admin can edit
+      // afterwards. Matches the previous single-select behavior.
+      const firstId = locations.find((l) => next.has(l.id))?.id;
+      const first = firstId ? locations.find((l) => l.id === firstId) : null;
+      if (first) fillFromLocation(first);
+      return next;
+    });
+  }
 
   // Controlled time fields so we can autofill endsAt as startsAt + 2h whenever
   // endsAt is still in lock-step (or empty). Once admin types something into
@@ -265,30 +288,66 @@ export function EventForm({
 
       <fieldset className="border border-ink p-5">
         <legend className="px-2 type-mono-caps">где</legend>
-        <div className="grid grid-cols-1 gap-5">
+        <div className="flex flex-col gap-5">
           {locations.length > 0 ? (
-            <Field
-              label="Готовая локация"
-              hint="заполнит поля ниже автоматически"
-            >
-              <select
-                value={pickerValue}
-                onChange={(ev) => {
-                  const id = ev.target.value;
-                  setPickerValue(id);
-                  fillFromLocation(locations.find((l) => l.id === id));
-                }}
-                className="h-11 border border-ink bg-paper px-3 font-sans text-[14px] outline-none c3-focus"
-              >
-                <option value="">— своё место —</option>
-                {locations.map((l) => (
-                  <option key={l.id} value={l.id}>
-                    {l.name} · {l.city}
-                  </option>
-                ))}
-              </select>
-            </Field>
+            <div className="flex flex-col gap-2">
+              <span className="type-label flex items-center justify-between">
+                Точки старта
+                <span className="font-mono text-[11px] font-normal text-muted">
+                  нужны для кнопки «Я иду»
+                </span>
+              </span>
+              <ul className="flex flex-col border border-ink bg-paper">
+                {locations.map((l, idx) => {
+                  const checked = checkedLocIds.has(l.id);
+                  return (
+                    <li
+                      key={l.id}
+                      className={
+                        "flex items-center gap-3 px-3 py-2.5 " +
+                        (idx > 0 ? "border-t border-ink/15" : "")
+                      }
+                    >
+                      <input
+                        type="checkbox"
+                        name="locationIds"
+                        value={l.id}
+                        checked={checked}
+                        onChange={(ev) => toggleLocation(l.id, ev.target.checked)}
+                        className="h-4 w-4 border border-ink"
+                      />
+                      <span className="flex-1 font-sans text-[14px] text-ink">
+                        {l.name}
+                        {l.venue ? (
+                          <span className="text-muted"> · {l.venue}</span>
+                        ) : null}
+                        <span className="text-muted"> · {l.city}</span>
+                      </span>
+                    </li>
+                  );
+                })}
+              </ul>
+              <p className="font-mono text-[11px] text-muted">
+                Нет нужной точки? Создай в&nbsp;
+                <a
+                  href="/admin/locations"
+                  className="text-brand-red hover:underline"
+                >
+                  /admin/locations
+                </a>
+                .
+              </p>
+            </div>
           ) : null}
+
+          <hr className="border-ink/20" />
+
+          <p className="type-label">
+            Витрина{" "}
+            <span className="ml-2 font-mono text-[11px] font-normal text-muted">
+              текст под названием на странице события
+            </span>
+          </p>
           <Field label="Название места" hint="«Парк Якутова»">
             <input
               name="locationName"

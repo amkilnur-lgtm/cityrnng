@@ -82,6 +82,60 @@ function parseBodyFromForm(
   return body;
 }
 
+/** Read all checked locationIds from form (multi-select checkbox group). */
+function pickLocationIds(formData: FormData): string[] {
+  return formData
+    .getAll("locationIds")
+    .map((v) => String(v))
+    .filter((v) => v.length > 0);
+}
+
+/** Parse API error response into a human-readable message. */
+async function readError(res: Response): Promise<string> {
+  const payload = (await res.json().catch(() => ({}))) as {
+    message?: string | string[];
+    code?: string;
+  };
+  const msg = Array.isArray(payload.message)
+    ? payload.message.join("; ")
+    : payload.message;
+  return msg ?? payload.code ?? `HTTP ${res.status}`;
+}
+
+/**
+ * Sync the event's sync-rule with the picked CityLocation IDs. PUT replaces
+ * the full attached set (locationIds=[] clears it). windowStartsAt/EndsAt are
+ * placeholders required by the DTO — the matcher no longer reads them, it
+ * computes from event.startsAt/endsAt ±30m directly.
+ */
+async function upsertSyncRuleLocations(
+  eventId: string,
+  locationIds: string[],
+  startsAt: string,
+  endsAt: string,
+  headers: HeadersInit,
+): Promise<{ ok: true } | { ok: false; message: string }> {
+  try {
+    const res = await fetch(
+      `${API_BASE_URL}/admin/events/${eventId}/sync-rules`,
+      {
+        method: "PUT",
+        headers,
+        body: JSON.stringify({
+          windowStartsAt: startsAt,
+          windowEndsAt: endsAt,
+          locationIds,
+          autoApprove: true,
+        }),
+      },
+    );
+    if (!res.ok) return { ok: false, message: await readError(res) };
+    return { ok: true };
+  } catch {
+    return { ok: false, message: "Не удалось привязать локации (API недоступен)." };
+  }
+}
+
 export async function createEventAction(
   _prev: ActionResult | undefined,
   formData: FormData,
@@ -99,28 +153,37 @@ export async function createEventAction(
   // Slug is server-derived from title when missing; don't ship empty string.
   if (!body.slug) delete body.slug;
 
+  const locationIds = pickLocationIds(formData);
+
+  let createdId: string;
   try {
     const res = await fetch(`${API_BASE_URL}/admin/events`, {
       method: "POST",
       headers,
       body: JSON.stringify(body),
     });
-    if (!res.ok) {
-      const payload = (await res.json().catch(() => ({}))) as {
-        message?: string | string[];
-        code?: string;
-      };
-      const msg = Array.isArray(payload.message)
-        ? payload.message.join("; ")
-        : payload.message;
-      return {
-        ok: false,
-        message: msg ?? payload.code ?? `HTTP ${res.status}`,
-      };
-    }
+    if (!res.ok) return { ok: false, message: await readError(res) };
+    const created = (await res.json()) as { id: string };
+    createdId = created.id;
     revalidatePath("/admin/events");
   } catch {
     return { ok: false, message: "API недоступен." };
+  }
+
+  // Sync-rule is optional — admin can save event without any locations and
+  // attach them later. Empty list still calls PUT to keep state consistent.
+  const syncRes = await upsertSyncRuleLocations(
+    createdId,
+    locationIds,
+    body.startsAt as string,
+    body.endsAt as string,
+    headers,
+  );
+  if (!syncRes.ok) {
+    return {
+      ok: false,
+      message: `Событие создано, но локации не привязались: ${syncRes.message}`,
+    };
   }
   redirect("/admin/events");
 }
@@ -134,6 +197,7 @@ export async function updateEventAction(
   if (!headers) return { ok: false, message: "Нет access-токена." };
 
   const body = parseBodyFromForm(formData, "update");
+  const locationIds = pickLocationIds(formData);
 
   try {
     const res = await fetch(`${API_BASE_URL}/admin/events/${id}`, {
@@ -141,23 +205,39 @@ export async function updateEventAction(
       headers,
       body: JSON.stringify(body),
     });
-    if (!res.ok) {
-      const payload = (await res.json().catch(() => ({}))) as {
-        message?: string | string[];
-        code?: string;
-      };
-      const msg = Array.isArray(payload.message)
-        ? payload.message.join("; ")
-        : payload.message;
-      return {
-        ok: false,
-        message: msg ?? payload.code ?? `HTTP ${res.status}`,
-      };
-    }
+    if (!res.ok) return { ok: false, message: await readError(res) };
     revalidatePath("/admin/events");
     revalidatePath(`/admin/events/${id}`);
   } catch {
     return { ok: false, message: "API недоступен." };
+  }
+
+  // Always sync the location attachments — gives admin a single Save action
+  // that handles both event fields and start-point assignment.
+  const startsAt =
+    (body.startsAt as string | undefined) ??
+    (formData.get("startsAt")
+      ? new Date(String(formData.get("startsAt"))).toISOString()
+      : "");
+  const endsAt =
+    (body.endsAt as string | undefined) ??
+    (formData.get("endsAt")
+      ? new Date(String(formData.get("endsAt"))).toISOString()
+      : "");
+  if (startsAt && endsAt) {
+    const syncRes = await upsertSyncRuleLocations(
+      id,
+      locationIds,
+      startsAt,
+      endsAt,
+      headers,
+    );
+    if (!syncRes.ok) {
+      return {
+        ok: false,
+        message: `Поля события обновились, но локации не привязались: ${syncRes.message}`,
+      };
+    }
   }
   redirect("/admin/events");
 }

@@ -26,7 +26,9 @@ export default async function EditEventPage({
   // public page hides the RSVP block silently. Warn the admin so they don't
   // ship a published event with no way to register.
   const hasInheritedLocations = event.recurrenceRuleId != null;
-  const hasOwnLocations = (publicView?.syncRule?.locations.length ?? 0) > 0;
+  const attachedLocationIds =
+    publicView?.syncRule?.locations.map((l) => l.id) ?? [];
+  const hasOwnLocations = attachedLocationIds.length > 0;
   const showNoLocationsWarning = !hasInheritedLocations && !hasOwnLocations;
 
   return (
@@ -94,6 +96,7 @@ export default async function EditEventPage({
               basePointsAward: event.basePointsAward,
             }}
             locations={locations.filter((l) => l.status === "active")}
+            defaultLocationIds={attachedLocationIds}
             submitLabel="Сохранить"
           />
         </Wrap>
