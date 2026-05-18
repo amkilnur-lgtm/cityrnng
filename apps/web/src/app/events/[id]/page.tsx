@@ -149,9 +149,8 @@ export default async function EventDetailPage({
                   </p>
                 ) : (
                   <p className="text-[15px] leading-[1.55] text-graphite">
-                    Старт в&nbsp;{startTime}. Темп любой, {DISTANCE_RANGE}
-                    &nbsp;на&nbsp;выбор. Записываться не&nbsp;нужно — просто
-                    приходи, Strava зафиксирует.
+                    Старт в&nbsp;{startTime}. Дистанция на&nbsp;выбор{" "}
+                    {DISTANCE_RANGE}. Выбери локацию и&nbsp;запишись.
                   </p>
                 )}
 
@@ -199,8 +198,7 @@ export default async function EventDetailPage({
         <section className="border-b border-ink bg-paper-2/60">
           <Wrap className="flex flex-col gap-3 py-10 text-[13px] text-graphite lg:flex-row lg:items-center lg:justify-between">
             <p>
-              Записываться не&nbsp;нужно — {CLUB.name} по&nbsp;средам всегда
-              в&nbsp;{CLUB.runTime}.
+              {CLUB.name}. Каждую среду в&nbsp;{CLUB.runTime}.
             </p>
             <Link
               href="/how-it-works"
