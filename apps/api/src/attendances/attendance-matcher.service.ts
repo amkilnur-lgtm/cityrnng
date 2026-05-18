@@ -6,6 +6,7 @@ import {
   CityLocationStatus,
   Event,
   EventSyncRule,
+  EventType,
   ExternalActivity,
   Prisma,
   SyncProvider,
@@ -14,6 +15,9 @@ import { PointsAwardsService } from "../points/points-awards.service";
 import { PrismaService } from "../prisma/prisma.service";
 
 const DEFAULT_LOCATION_RADIUS_METERS = 500;
+// Buffer applied around event.startsAt/endsAt when matching Strava activities.
+// Hardcoded for now — admin can't override per-event yet.
+const MATCH_WINDOW_BUFFER_MS = 30 * 60 * 1000;
 
 type SyncRuleWithContext = EventSyncRule & {
   event: Event;
@@ -70,13 +74,18 @@ export class AttendanceMatcherService {
     const minStart = activities[0]!.startedAt;
     const maxStart = activities[activities.length - 1]!.startedAt;
 
+    // Pre-filter rules by event time (with buffer) instead of the legacy
+    // windowStartsAt/EndsAt fields — those are no longer the source of truth
+    // for the match window.
     const rules = (await this.prisma.eventSyncRule.findMany({
       where: {
         provider: SyncProvider.strava,
-        windowEndsAt: { gte: minStart },
-        windowStartsAt: { lte: maxStart },
+        event: {
+          endsAt: { gte: new Date(minStart.getTime() - MATCH_WINDOW_BUFFER_MS) },
+          startsAt: { lte: new Date(maxStart.getTime() + MATCH_WINDOW_BUFFER_MS) },
+        },
       },
-      orderBy: [{ windowStartsAt: "asc" }, { eventId: "asc" }],
+      orderBy: [{ eventId: "asc" }],
       include: {
         event: true,
         locations: {
@@ -157,8 +166,11 @@ export class AttendanceMatcherService {
 
   ruleMatchesActivity(rule: SyncRuleWithContext, activity: ExternalActivity): boolean {
     const activityEnd = new Date(activity.startedAt.getTime() + activity.elapsedSeconds * 1000);
-    if (activity.startedAt < rule.windowStartsAt) return false;
-    if (activityEnd > rule.windowEndsAt) return false;
+    // Match window = event.startsAt − 30m to event.endsAt + 30m.
+    const windowStart = new Date(rule.event.startsAt.getTime() - MATCH_WINDOW_BUFFER_MS);
+    const windowEnd = new Date(rule.event.endsAt.getTime() + MATCH_WINDOW_BUFFER_MS);
+    if (activity.startedAt < windowStart) return false;
+    if (activityEnd > windowEnd) return false;
 
     if (rule.activityType) {
       const expected = rule.activityType.toLowerCase();
@@ -166,11 +178,17 @@ export class AttendanceMatcherService {
       if (expected !== actual) return false;
     }
 
-    if (rule.minDistanceMeters != null && activity.distanceMeters < rule.minDistanceMeters) return false;
-    if (rule.maxDistanceMeters != null && activity.distanceMeters > rule.maxDistanceMeters) return false;
-
-    if (rule.minDurationSeconds != null && activity.elapsedSeconds < rule.minDurationSeconds) return false;
-    if (rule.maxDurationSeconds != null && activity.elapsedSeconds > rule.maxDurationSeconds) return false;
+    // Special events: skip distance + duration checks — being in the right
+    // place at the right time is enough. Regular/partner events still enforce
+    // the rule's distance/duration constraints (e.g. minimum 5 km for a Wed
+    // run, to filter out warm-ups and random walks).
+    const skipDistanceAndDuration = rule.event.type === EventType.special;
+    if (!skipDistanceAndDuration) {
+      if (rule.minDistanceMeters != null && activity.distanceMeters < rule.minDistanceMeters) return false;
+      if (rule.maxDistanceMeters != null && activity.distanceMeters > rule.maxDistanceMeters) return false;
+      if (rule.minDurationSeconds != null && activity.elapsedSeconds < rule.minDurationSeconds) return false;
+      if (rule.maxDurationSeconds != null && activity.elapsedSeconds > rule.maxDurationSeconds) return false;
+    }
 
     const activeLocations = rule.locations.map((l) => l.location);
     if (activeLocations.length > 0) {

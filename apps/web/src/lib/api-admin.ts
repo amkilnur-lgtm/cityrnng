@@ -179,6 +179,7 @@ export type AdminEvent = {
   title: string;
   slug: string;
   description: string | null;
+  distanceLabel: string | null;
   type: "regular" | "special" | "partner";
   status: "draft" | "published" | "started" | "finished" | "cancelled";
   startsAt: string;

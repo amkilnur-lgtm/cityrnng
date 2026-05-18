@@ -55,12 +55,14 @@ export class EventsService {
 
   async create(dto: CreateEventDto, createdById: string) {
     assertDateRange(dto.startsAt, dto.endsAt);
+    const slug = await this.resolveSlug(dto.slug, dto.title);
     try {
       return await this.prisma.event.create({
         data: {
           title: dto.title,
-          slug: dto.slug,
+          slug,
           description: dto.description,
+          distanceLabel: dto.distanceLabel,
           type: dto.type,
           status: dto.status,
           startsAt: new Date(dto.startsAt),
@@ -89,6 +91,32 @@ export class EventsService {
     }
   }
 
+  /**
+   * If admin supplied a slug, use as-is. Otherwise derive from title and
+   * append "-2", "-3"… until we find one that isn't taken. Caps at -99 to
+   * avoid infinite loops on pathological collisions.
+   */
+  private async resolveSlug(
+    provided: string | undefined,
+    title: string,
+  ): Promise<string> {
+    if (provided && provided.length > 0) return provided;
+    const base = slugifyTitle(title);
+    if (!base) {
+      throw new BadRequestException({ code: "EVENT_SLUG_DERIVATION_FAILED" });
+    }
+    let candidate = base;
+    for (let i = 2; i < 100; i += 1) {
+      const taken = await this.prisma.event.findUnique({
+        where: { slug: candidate },
+        select: { id: true },
+      });
+      if (!taken) return candidate;
+      candidate = `${base}-${i}`;
+    }
+    throw new ConflictException({ code: "EVENT_SLUG_TAKEN" });
+  }
+
   async update(id: string, dto: UpdateEventDto) {
     const existing = await this.getAdminByIdOrThrow(id);
     const startsAt = dto.startsAt ? new Date(dto.startsAt) : existing.startsAt;
@@ -103,6 +131,7 @@ export class EventsService {
           title: dto.title,
           slug: dto.slug,
           description: dto.description,
+          distanceLabel: dto.distanceLabel,
           type: dto.type,
           status: dto.status,
           startsAt: dto.startsAt ? startsAt : undefined,
@@ -135,6 +164,29 @@ function assertDateRange(startsAt: string, endsAt: string) {
   if (new Date(startsAt).getTime() >= new Date(endsAt).getTime()) {
     throw new BadRequestException({ code: "EVENT_INVALID_DATE_RANGE" });
   }
+}
+
+/**
+ * Slugify a Russian/English title into the format the slug regex requires
+ * (lowercase, hyphen-separated, ASCII a-z/0-9 only). Cyrillic is
+ * transliterated; everything else collapses to hyphens.
+ */
+const CYRILLIC_TRANSLIT: Record<string, string> = {
+  а: "a", б: "b", в: "v", г: "g", д: "d", е: "e", ё: "yo", ж: "zh", з: "z",
+  и: "i", й: "i", к: "k", л: "l", м: "m", н: "n", о: "o", п: "p", р: "r",
+  с: "s", т: "t", у: "u", ф: "f", х: "h", ц: "ts", ч: "ch", ш: "sh",
+  щ: "sch", ъ: "", ы: "y", ь: "", э: "e", ю: "yu", я: "ya",
+};
+function slugifyTitle(title: string): string {
+  const lower = title.toLowerCase();
+  let out = "";
+  for (const ch of lower) {
+    const tr = CYRILLIC_TRANSLIT[ch];
+    if (tr !== undefined) out += tr;
+    else if (/[a-z0-9]/.test(ch)) out += ch;
+    else out += "-";
+  }
+  return out.replace(/-+/g, "-").replace(/^-+|-+$/g, "").slice(0, 200);
 }
 
 function isUniqueViolation(err: unknown, field: string): boolean {

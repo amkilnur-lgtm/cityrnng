@@ -9,6 +9,9 @@ export type ApiEvent = {
   title: string;
   slug: string;
   description: string | null;
+  /** Free-text label for distances (e.g. "10 км", "3+7", "уточняется"). When null,
+   *  UI computes from pace groups or hides the row. */
+  distanceLabel: string | null;
   type: ApiEventType;
   status: string;
   startsAt: string;

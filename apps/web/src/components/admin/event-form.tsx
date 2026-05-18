@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { useFormState, useFormStatus } from "react-dom";
 
 type ActionResult =
@@ -24,6 +24,7 @@ type Defaults = {
   title?: string;
   slug?: string;
   description?: string | null;
+  distanceLabel?: string | null;
   type?: EventType;
   status?: EventStatus;
   /** ISO strings — will be converted to <input datetime-local> format. */
@@ -39,6 +40,18 @@ type Defaults = {
   isPointsEligible?: boolean;
   basePointsAward?: number;
 };
+
+/** Add `+2h` to a YYYY-MM-DDTHH:MM string. Returns the same format. */
+function plusTwoHoursLocal(s: string): string {
+  const d = new Date(s);
+  if (Number.isNaN(d.getTime())) return s;
+  d.setHours(d.getHours() + 2);
+  const pad = (n: number) => String(n).padStart(2, "0");
+  return (
+    `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}` +
+    `T${pad(d.getHours())}:${pad(d.getMinutes())}`
+  );
+}
 
 /** Subset of AdminLocation we actually use for the picker — keep the
  *  prop type narrow so callers don't have to import the full admin DTO. */
@@ -99,6 +112,13 @@ export function EventForm({
   );
   const [pickerValue, setPickerValue] = useState("");
 
+  // Controlled time fields so we can autofill endsAt as startsAt + 2h whenever
+  // endsAt is still in lock-step (or empty). Once admin types something into
+  // endsAt manually, we stop tracking.
+  const [startsAt, setStartsAt] = useState(toDatetimeLocal(defaults?.startsAt));
+  const [endsAt, setEndsAt] = useState(toDatetimeLocal(defaults?.endsAt));
+  const lastAutoEndsRef = useRef<string>(toDatetimeLocal(defaults?.endsAt));
+
   function fillFromLocation(loc: LocationOption | undefined) {
     if (!loc) return;
     // Prefer the partner-venue name (e.g. "Monkey Grinder") over the
@@ -116,26 +136,19 @@ export function EventForm({
 
   return (
     <form action={formAction} className="flex flex-col gap-5">
-      <div className="grid grid-cols-1 gap-5 md:grid-cols-[1fr_240px]">
-        <Field label="Название">
-          <input
-            name="title"
-            required
-            defaultValue={defaults?.title}
-            placeholder="Утренний забег с пейсером"
-            className="h-11 border border-ink bg-paper px-3 font-sans text-[15px] outline-none c3-focus focus:bg-brand-tint/30"
-          />
-        </Field>
-        <Field label="Slug" hint="lowercase, hyphens">
-          <input
-            name="slug"
-            required
-            defaultValue={defaults?.slug}
-            placeholder="utrennij-zabeg-25-04"
-            className="h-11 border border-ink bg-paper px-3 font-mono text-[14px] outline-none c3-focus focus:bg-brand-tint/30"
-          />
-        </Field>
-      </div>
+      <Field label="Название">
+        <input
+          name="title"
+          required
+          defaultValue={defaults?.title}
+          placeholder="Утренний забег с пейсером"
+          className="h-11 border border-ink bg-paper px-3 font-sans text-[15px] outline-none c3-focus focus:bg-brand-tint/30"
+        />
+      </Field>
+      {/* Slug is auto-generated server-side from the title (with collision
+          suffixes). When editing, we still ship the existing slug so the API
+          doesn't try to derive a new one and fail uniqueness. */}
+      <input type="hidden" name="slug" defaultValue={defaults?.slug ?? ""} />
 
       <Field label="Описание" hint="опционально">
         <textarea
@@ -144,6 +157,18 @@ export function EventForm({
           defaultValue={defaults?.description ?? ""}
           placeholder="5 км в комфортном темпе с пейсером 6:00/км. Сбор у Monkey Grinder."
           className="border border-ink bg-paper px-3 py-2 font-sans text-[14px] leading-[1.55] outline-none c3-focus focus:bg-brand-tint/30"
+        />
+      </Field>
+
+      <Field
+        label="Дистанции (текстом)"
+        hint="«10 км», «3+7», «без дистанции — 60 мин», пусто = посчитать из локаций"
+      >
+        <input
+          name="distanceLabel"
+          defaultValue={defaults?.distanceLabel ?? ""}
+          placeholder="10 км"
+          className="h-11 border border-ink bg-paper px-3 font-sans text-[14px] outline-none c3-focus focus:bg-brand-tint/30"
         />
       </Field>
 
@@ -192,16 +217,30 @@ export function EventForm({
               name="startsAt"
               type="datetime-local"
               required
-              defaultValue={toDatetimeLocal(defaults?.startsAt)}
+              value={startsAt}
+              onChange={(ev) => {
+                const v = ev.target.value;
+                setStartsAt(v);
+                // Roll endsAt forward to startsAt + 2h as long as admin
+                // hasn't manually overridden it. We detect override by
+                // comparing the current endsAt to the last auto-filled
+                // value: if they match, endsAt is still in lock-step.
+                if (v && (!endsAt || endsAt === lastAutoEndsRef.current)) {
+                  const next = plusTwoHoursLocal(v);
+                  setEndsAt(next);
+                  lastAutoEndsRef.current = next;
+                }
+              }}
               className="h-11 border border-ink bg-paper px-3 font-mono text-[14px] outline-none c3-focus focus:bg-brand-tint/30"
             />
           </Field>
-          <Field label="Окончание">
+          <Field label="Окончание" hint="по умолчанию старт + 2ч">
             <input
               name="endsAt"
               type="datetime-local"
               required
-              defaultValue={toDatetimeLocal(defaults?.endsAt)}
+              value={endsAt}
+              onChange={(ev) => setEndsAt(ev.target.value)}
               className="h-11 border border-ink bg-paper px-3 font-mono text-[14px] outline-none c3-focus focus:bg-brand-tint/30"
             />
           </Field>

@@ -142,6 +142,7 @@ export class EventOccurrenceService {
       title: rule.title,
       slug: `rule-${rule.id}-${dateStr}`,
       description: null,
+      distanceLabel: null,
       type: rule.type,
       status: EventStatus.published,
       startsAt,

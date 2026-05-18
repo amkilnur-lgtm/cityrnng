@@ -23,15 +23,22 @@ export class CreateEventDto {
   @MaxLength(200)
   title!: string;
 
+  // Server auto-generates from title when missing; admin can still override.
+  @IsOptional()
   @IsString()
   @Matches(SLUG_REGEX, { message: "slug must be lowercase, hyphen-separated" })
   @MaxLength(200)
-  slug!: string;
+  slug?: string;
 
   @IsOptional()
   @IsString()
   @MaxLength(5000)
   description?: string;
+
+  @IsOptional()
+  @IsString()
+  @MaxLength(100)
+  distanceLabel?: string;
 
   @IsOptional()
   @IsEnum(EventType)
