@@ -36,6 +36,11 @@ export class UpdateEventDto {
   description?: string;
 
   @IsOptional()
+  @IsString()
+  @MaxLength(100)
+  distanceLabel?: string;
+
+  @IsOptional()
   @IsEnum(EventType)
   type?: EventType;
 

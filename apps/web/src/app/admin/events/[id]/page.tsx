@@ -3,6 +3,7 @@ import { notFound } from "next/navigation";
 import { EventForm } from "@/components/admin/event-form";
 import { Wrap } from "@/components/site/wrap";
 import { listAdminEvents, listAdminLocations } from "@/lib/api-admin";
+import { getPublicEvent } from "@/lib/api-events";
 import { updateEventAction } from "../actions";
 
 export const metadata = { title: "Событие · Admin · CITYRNNG" };
@@ -12,14 +13,21 @@ export default async function EditEventPage({
 }: {
   params: { id: string };
 }) {
-  const [events, locations] = await Promise.all([
+  const [events, locations, publicView] = await Promise.all([
     listAdminEvents(),
     listAdminLocations(),
+    getPublicEvent(params.id),
   ]);
   const event = events.find((e) => e.id === params.id);
   if (!event) notFound();
 
   const boundUpdate = updateEventAction.bind(null, params.id);
+  // Standalone event (no recurrence parent) with no sync-rule locations =
+  // public page hides the RSVP block silently. Warn the admin so they don't
+  // ship a published event with no way to register.
+  const hasInheritedLocations = event.recurrenceRuleId != null;
+  const hasOwnLocations = (publicView?.syncRule?.locations.length ?? 0) > 0;
+  const showNoLocationsWarning = !hasInheritedLocations && !hasOwnLocations;
 
   return (
     <main>
@@ -45,6 +53,23 @@ export default async function EditEventPage({
           </p>
         </Wrap>
       </section>
+      {showNoLocationsWarning ? (
+        <section className="border-b border-ink bg-brand-tint/40">
+          <Wrap className="py-5">
+            <p className="font-mono text-[12px] font-semibold uppercase tracking-[0.14em] text-brand-red-ink">
+              ⚠ Локации не назначены
+            </p>
+            <p className="mt-2 text-[14px] text-ink">
+              К&nbsp;событию не&nbsp;привязана ни&nbsp;одна точка старта —
+              на&nbsp;публичной странице кнопка «Я&nbsp;иду» не&nbsp;покажется.
+              Привязать локации сейчас можно через API:{" "}
+              <code className="bg-paper px-1.5 py-0.5 font-mono text-[12px] text-ink">
+                PUT /admin/events/{params.id}/sync-rules
+              </code>
+            </p>
+          </Wrap>
+        </section>
+      ) : null}
       <section className="border-b border-ink">
         <Wrap className="max-w-3xl py-10">
           <EventForm
@@ -53,6 +78,7 @@ export default async function EditEventPage({
               title: event.title,
               slug: event.slug,
               description: event.description,
+              distanceLabel: event.distanceLabel,
               type: event.type,
               status: event.status,
               startsAt: event.startsAt,

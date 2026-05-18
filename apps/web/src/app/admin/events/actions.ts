@@ -54,6 +54,7 @@ function parseBodyFromForm(
     title: str("title"),
     slug: str("slug"),
     description: str("description"),
+    distanceLabel: str("distanceLabel"),
     type: str("type"),
     status: str("status"),
     startsAt: datetime("startsAt"),
@@ -89,12 +90,14 @@ export async function createEventAction(
   if (!headers) return { ok: false, message: "Нет access-токена. Войди как админ." };
 
   const body = parseBodyFromForm(formData, "create");
-  if (!body.title || !body.slug || !body.startsAt || !body.endsAt) {
+  if (!body.title || !body.startsAt || !body.endsAt) {
     return {
       ok: false,
-      message: "Название, slug, время старта и окончания обязательны.",
+      message: "Название, время старта и окончания обязательны.",
     };
   }
+  // Slug is server-derived from title when missing; don't ship empty string.
+  if (!body.slug) delete body.slug;
 
   try {
     const res = await fetch(`${API_BASE_URL}/admin/events`, {

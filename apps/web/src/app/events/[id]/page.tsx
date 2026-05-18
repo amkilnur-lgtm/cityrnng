@@ -10,7 +10,7 @@ import {
   getMyInterest,
 } from "@/lib/api-event-interest";
 import { getPublicEvent, type ApiEvent } from "@/lib/api-events";
-import { CLUB, DISTANCE_RANGE } from "@/lib/club";
+import { CLUB } from "@/lib/club";
 import { UPCOMING_EVENTS } from "@/lib/home-mock";
 import { getSiteState } from "@/lib/site-state";
 
@@ -25,6 +25,7 @@ function mockToApiEvent(id: string): ApiEvent | null {
     title: m.title ?? `${CLUB.name} — ${m.location.district}`,
     slug: m.id,
     description: null,
+    distanceLabel: null,
     type: m.type,
     status: "published",
     startsAt: m.startsAt,
@@ -90,6 +91,17 @@ export default async function EventDetailPage({
   const countsByLocation = Object.fromEntries(
     counts.map((c) => [c.locationId, c.count]),
   );
+  // Distance source of truth: admin's free-text label wins; otherwise compute
+  // distinct distances from the locations' pace groups; otherwise hide the row.
+  const distanceFromPaceGroups = (() => {
+    const distinct = new Set<number>();
+    for (const loc of locations) {
+      for (const pg of loc.paceGroups ?? []) distinct.add(pg.distanceKm);
+    }
+    if (distinct.size === 0) return null;
+    return `${[...distinct].sort((a, b) => a - b).join(" или ")} км`;
+  })();
+  const distanceDisplay = event.distanceLabel?.trim() || distanceFromPaceGroups;
 
   return (
     <>
@@ -133,7 +145,9 @@ export default async function EventDetailPage({
               <dl className="grid grid-cols-2 gap-px border-b border-ink bg-ink/10 lg:grid-cols-1 lg:border-b-0 lg:border-r">
                 <Fact k="Когда" v={startDate} />
                 <Fact k="Время" v={startTime} />
-                <Fact k="Дистанции" v={DISTANCE_RANGE} />
+                {distanceDisplay ? (
+                  <Fact k="Дистанции" v={distanceDisplay} />
+                ) : null}
                 {event.isPointsEligible && event.basePointsAward > 0 ? (
                   <Fact
                     k="Баллы"
@@ -149,8 +163,11 @@ export default async function EventDetailPage({
                   </p>
                 ) : (
                   <p className="text-[15px] leading-[1.55] text-graphite">
-                    Старт в&nbsp;{startTime}. Дистанция на&nbsp;выбор{" "}
-                    {DISTANCE_RANGE}. Выбери локацию и&nbsp;запишись.
+                    Старт в&nbsp;{startTime}.{" "}
+                    {distanceDisplay
+                      ? `Дистанция на выбор ${distanceDisplay}. `
+                      : ""}
+                    Выбери локацию и&nbsp;запишись.
                   </p>
                 )}
 
@@ -166,7 +183,6 @@ export default async function EventDetailPage({
                     myLocationId={myInterest?.locationId ?? null}
                     countsByLocation={countsByLocation}
                     isAuthed={state.isAuthed}
-                    variant="full"
                   />
                 ) : null}
 

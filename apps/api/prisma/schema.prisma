@@ -232,6 +232,11 @@ model Event {
   status                EventStatus @default(draft)
   startsAt              DateTime    @map("starts_at")
   endsAt                DateTime    @map("ends_at")
+  /// Free-text distance label shown on the event card (e.g. "10 км", "3+7",
+  /// "уточняется"). When null, the UI falls back to distances computed from
+  /// the attached locations' pace groups; if those are empty too, the
+  /// distance line is hidden entirely.
+  distanceLabel         String?     @map("distance_label")
   locationName          String?     @map("location_name")
   locationAddress       String?     @map("location_address")
   locationLat           Float?      @map("location_lat")

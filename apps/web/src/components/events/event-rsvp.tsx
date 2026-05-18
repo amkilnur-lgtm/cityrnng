@@ -29,12 +29,6 @@ type Props = {
   countsByLocation: Record<string, number>;
   /** When false, render read-only cards (guest view). */
   isAuthed: boolean;
-  /**
-   * "full" (default) — locations show pace groups inside each card; used
-   * on the event detail page. "compact" — name + count only; used on the
-   * home next-event card where vertical space is scarce.
-   */
-  variant?: "full" | "compact";
 };
 
 function formatPace(secondsPerKm: number): string {
@@ -76,7 +70,6 @@ export function EventRsvp({
   myLocationId,
   countsByLocation,
   isAuthed,
-  variant = "full",
 }: Props) {
   const [chosen, setChosen] = useState<string | null>(myLocationId);
   const [error, setError] = useState<string | null>(null);
@@ -146,43 +139,38 @@ export function EventRsvp({
                 ) : null}
               </div>
 
-              {variant === "full" ? (
-                loc.paceGroups && loc.paceGroups.length > 0 ? (
-                  <div className="flex flex-col gap-1 font-mono text-[13px] tracking-[0.02em]">
-                    {groupByDistance(loc.paceGroups).map(([dist, paces]) => (
-                      <div
-                        key={dist}
-                        className="flex flex-wrap items-center gap-x-2 gap-y-1"
-                      >
-                        <span className="text-ink">{dist}&nbsp;км</span>
-                        {paces.map((pg) => (
-                          <Fragment key={pg.id}>
-                            <span aria-hidden className="text-ink/25">|</span>
-                            <span className="text-ink">
-                              {formatPace(pg.paceSecondsPerKm)}
-                              {pg.pacerName ? (
-                                <span className="text-muted">
-                                  {" "}
-                                  (с&nbsp;{pg.pacerName})
-                                </span>
-                              ) : null}
-                            </span>
-                          </Fragment>
-                        ))}
-                      </div>
-                    ))}
-                  </div>
-                ) : (
-                  <span className="text-[12px] leading-tight text-muted">
-                    Без пейсера — темп по&nbsp;самочувствию
-                  </span>
-                )
-              ) : null}
+              {loc.paceGroups && loc.paceGroups.length > 0 ? (
+                <div className="flex flex-col gap-1 font-mono text-[13px] tracking-[0.02em]">
+                  {groupByDistance(loc.paceGroups).map(([dist, paces]) => (
+                    <div
+                      key={dist}
+                      className="flex flex-wrap items-center gap-x-2 gap-y-1"
+                    >
+                      <span className="text-ink">{dist}&nbsp;км</span>
+                      {paces.map((pg) => (
+                        <Fragment key={pg.id}>
+                          <span aria-hidden className="text-ink/25">|</span>
+                          <span className="text-ink">
+                            {formatPace(pg.paceSecondsPerKm)}
+                            {pg.pacerName ? (
+                              <span className="text-muted">
+                                {" "}
+                                (с&nbsp;{pg.pacerName})
+                              </span>
+                            ) : null}
+                          </span>
+                        </Fragment>
+                      ))}
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <span className="text-[12px] leading-tight text-muted">
+                  Без пейсера — темп по&nbsp;самочувствию
+                </span>
+              )}
             </>
           );
-
-          const cardPad =
-            variant === "compact" ? "gap-2 p-3" : "gap-3 p-4";
 
           return (
             <li key={loc.id}>
@@ -191,14 +179,12 @@ export function EventRsvp({
                   type="button"
                   onClick={() => setChosen(loc.id)}
                   aria-pressed={isChosen}
-                  className={`flex h-full w-full flex-col border text-left transition-colors ${cardPad} ${accent} ${interactive}`}
+                  className={`flex h-full w-full flex-col gap-3 border p-4 text-left transition-colors ${accent} ${interactive}`}
                 >
                   {inner}
                 </button>
               ) : (
-                <div
-                  className={`flex h-full w-full flex-col border ${cardPad} ${accent}`}
-                >
+                <div className={`flex h-full w-full flex-col gap-3 border p-4 ${accent}`}>
                   {inner}
                 </div>
               )}
