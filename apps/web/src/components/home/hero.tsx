@@ -5,9 +5,8 @@ import { CLUB } from "@/lib/club";
 import type { DisplayEvent } from "@/lib/display-event";
 import { LOCATIONS } from "@/lib/home-mock";
 
-// `event` is intentionally unused for now — the upcoming-run card moved
-// to the dedicated <NextEvent> section below the fold. Keeping the prop
-// in the signature so the page composition stays unchanged.
+// `event` prop kept for backward compatibility with caller; upcoming-run
+// info now lives in the dedicated <UpcomingEvents> block below the fold.
 export function Hero({ event: _event }: { event: DisplayEvent }) {
   return (
     <section className="border-b border-ink">
