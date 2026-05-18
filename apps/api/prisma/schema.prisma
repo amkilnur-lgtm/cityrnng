@@ -237,6 +237,11 @@ model Event {
   /// the attached locations' pace groups; if those are empty too, the
   /// distance line is hidden entirely.
   distanceLabel         String?     @map("distance_label")
+  /// CityLocation ids whose participants are at THIS event instead of the
+  /// regular Wednesday at their usual point. The occurrence materializer
+  /// removes these locations from the rule's `locations` for the same date.
+  /// Empty array = no exclusions (the default).
+  excludesRegularLocationIds String[] @default([]) @map("excludes_regular_location_ids") @db.Uuid
   locationName          String?     @map("location_name")
   locationAddress       String?     @map("location_address")
   locationLat           Float?      @map("location_lat")

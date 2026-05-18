@@ -45,15 +45,18 @@ export async function createLocationAction(
   if (!headers) return { ok: false, message: "Нет access-токена. Войди как админ." };
 
   const body = parseBodyFromForm(formData);
-  if (!body.slug || !body.name || !body.city) {
-    return { ok: false, message: "Slug, имя и город обязательны." };
+  if (!body.name || !body.city) {
+    return { ok: false, message: "Имя и город обязательны." };
   }
+  // Slug is server-derived from name when missing; don't ship empty string.
+  const payload: Record<string, unknown> = { ...body };
+  if (!body.slug) delete payload.slug;
 
   try {
     const res = await fetch(`${API_BASE_URL}/admin/locations`, {
       method: "POST",
       headers,
-      body: JSON.stringify(body),
+      body: JSON.stringify(payload),
     });
     if (!res.ok) {
       const payload = (await res.json().catch(() => ({}))) as {

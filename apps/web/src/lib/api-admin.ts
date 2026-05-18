@@ -180,6 +180,7 @@ export type AdminEvent = {
   slug: string;
   description: string | null;
   distanceLabel: string | null;
+  excludesRegularLocationIds: string[];
   type: "regular" | "special" | "partner";
   status: "draft" | "published" | "started" | "finished" | "cancelled";
   startsAt: string;

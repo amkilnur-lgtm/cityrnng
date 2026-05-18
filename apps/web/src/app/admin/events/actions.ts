@@ -55,6 +55,10 @@ function parseBodyFromForm(
     slug: str("slug"),
     description: str("description"),
     distanceLabel: str("distanceLabel"),
+    excludesRegularLocationIds: form
+      .getAll("excludesRegularLocationIds")
+      .map((v) => String(v))
+      .filter((v) => v.length > 0),
     type: str("type"),
     status: str("status"),
     startsAt: datetime("startsAt"),
