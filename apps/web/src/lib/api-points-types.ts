@@ -19,7 +19,7 @@ export type PointsTxn = {
 };
 
 export type PointsHistory = {
-  rows: PointsTxn[];
+  items: PointsTxn[];
   nextCursor: string | null;
 };
 

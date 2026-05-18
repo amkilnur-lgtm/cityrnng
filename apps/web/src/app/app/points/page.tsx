@@ -53,14 +53,14 @@ export default async function PointsPage() {
               <div className="flex flex-col gap-2">
                 <span className="type-mono-caps">история</span>
                 <h2 className="type-h2">
-                  {history.rows.length > 0
+                  {history.items.length > 0
                     ? "Операции по баллам"
                     : "Операций пока нет"}
                 </h2>
               </div>
             </div>
 
-            {history.rows.length === 0 ? (
+            {history.items.length === 0 ? (
               <EmptyHistory />
             ) : (
               <PointsHistoryList initial={history} pageSize={PAGE_SIZE} />
