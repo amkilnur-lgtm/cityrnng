@@ -39,7 +39,7 @@ export async function getPointsHistory(opts?: {
   cursor?: string;
 }): Promise<PointsHistory> {
   const headers = authHeaders();
-  if (!headers) return { rows: [], nextCursor: null };
+  if (!headers) return { items: [], nextCursor: null };
 
   const url = new URL(`${API_BASE_URL}/points/history`);
   if (opts?.limit) url.searchParams.set("limit", String(opts.limit));
@@ -50,9 +50,9 @@ export async function getPointsHistory(opts?: {
       headers,
       cache: "no-store",
     });
-    if (!res.ok) return { rows: [], nextCursor: null };
+    if (!res.ok) return { items: [], nextCursor: null };
     return (await res.json()) as PointsHistory;
   } catch {
-    return { rows: [], nextCursor: null };
+    return { items: [], nextCursor: null };
   }
 }

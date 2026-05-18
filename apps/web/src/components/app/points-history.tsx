@@ -13,7 +13,7 @@ type Props = {
 };
 
 export function PointsHistoryList({ initial, pageSize }: Props) {
-  const [rows, setRows] = useState<PointsTxn[]>(initial.rows);
+  const [items, setItems] = useState<PointsTxn[]>(initial.items);
   const [cursor, setCursor] = useState<string | null>(initial.nextCursor);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -33,7 +33,7 @@ export function PointsHistoryList({ initial, pageSize }: Props) {
         setError(body.message ?? "Не получилось загрузить ещё.");
         return;
       }
-      setRows((prev) => [...prev, ...(body.rows ?? [])]);
+      setItems((prev) => [...prev, ...(body.items ?? [])]);
       setCursor(body.nextCursor ?? null);
     } catch {
       setError("Нет связи с сервером.");
@@ -42,14 +42,14 @@ export function PointsHistoryList({ initial, pageSize }: Props) {
     }
   }
 
-  if (rows.length === 0) {
+  if (items.length === 0) {
     return null;
   }
 
   return (
     <div className="flex flex-col gap-6">
       <ul className="flex flex-col border border-ink">
-        {rows.map((t, idx) => (
+        {items.map((t, idx) => (
           <li
             key={t.id}
             className={idx > 0 ? "border-t border-ink/15" : undefined}
@@ -76,7 +76,7 @@ export function PointsHistoryList({ initial, pageSize }: Props) {
         </button>
       ) : (
         <p className="self-center font-mono text-[11px] uppercase tracking-[0.14em] text-muted">
-          конец истории · показано {rows.length}
+          конец истории · показано {items.length}
         </p>
       )}
     </div>
