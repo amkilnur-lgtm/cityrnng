@@ -1,6 +1,5 @@
-import Link from "next/link";
 import { Wrap } from "@/components/site/wrap";
-import { CLUB, DISTANCE_RANGE, pointsForDistance } from "@/lib/club";
+import { CLUB, pointsForDistance } from "@/lib/club";
 import type { DisplayEvent } from "@/lib/display-event";
 import {
   WEEK_CELLS,
@@ -117,17 +116,8 @@ function WeekCellView({
             ЗАВТРА
           </span>
         </div>
-        <span className="font-display text-[24px] font-bold leading-tight">
+        <span className="font-display text-[24px] font-bold leading-none">
           {time}
-        </span>
-        <Link
-          href={nextEvent ? `/events/${nextEvent.id}` : "/events"}
-          className="font-sans text-[14px] font-semibold leading-tight text-paper underline-offset-4 hover:underline"
-        >
-          Маршрут и&nbsp;точка старта →
-        </Link>
-        <span className="font-mono text-[12px] font-medium uppercase tracking-[0.08em] opacity-90">
-          {DISTANCE_RANGE} · выбираешь на&nbsp;старте
         </span>
       </div>
     );
@@ -135,15 +125,26 @@ function WeekCellView({
 
   if (cell.kind === "done") {
     return (
-      <div className="hatch-done flex flex-col gap-2 px-5 py-5 text-ink md:px-6">
-        <span className="font-mono text-[11px] font-medium uppercase tracking-[0.14em] text-muted">
-          {cell.weekday}&nbsp;·&nbsp;{cell.date}
-        </span>
+      <div className="relative flex flex-col gap-2 bg-paper px-5 py-5 text-ink md:px-6">
+        <div className="flex items-center justify-between gap-2">
+          <span className="font-mono text-[11px] font-medium uppercase tracking-[0.14em] text-muted">
+            {cell.weekday}&nbsp;·&nbsp;{cell.date}
+          </span>
+          <span
+            aria-hidden
+            className="inline-flex h-6 w-6 items-center justify-center bg-emerald-600 font-mono text-[14px] font-bold leading-none text-paper"
+          >
+            ✓
+          </span>
+        </div>
         <span className="font-display text-[24px] font-bold leading-none text-ink">
           {cell.km}&nbsp;км
         </span>
         <span className="font-mono text-[12px] font-medium tracking-[0.04em] text-brand-red">
           + {cell.points}&nbsp;Б
+        </span>
+        <span className="mt-1 font-mono text-[10px] font-semibold uppercase tracking-[0.14em] text-emerald-700">
+          выполнено
         </span>
       </div>
     );
