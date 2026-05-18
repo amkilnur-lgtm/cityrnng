@@ -104,10 +104,16 @@ function WeekCellView({
   cell: WeekCellT;
   nextEvent?: DisplayEvent;
 }) {
+  // All three card kinds share the same 3-row layout (eyebrow → big →
+  // footnote) and a min-height so the week-grid stays visually even on
+  // mobile (where each cell is its own grid row).
+  const SHELL =
+    "flex h-full min-h-[7.25rem] flex-col gap-2 px-5 py-5 md:px-6";
+
   if (cell.kind === "tomorrow") {
     const time = nextEvent?.time ?? cell.time;
     return (
-      <div className="flex flex-col gap-2 bg-brand-red px-5 py-5 text-paper md:px-6">
+      <div className={`${SHELL} bg-brand-red text-paper`}>
         <div className="flex items-center gap-2">
           <span className="font-mono text-[11px] font-medium uppercase tracking-[0.14em]">
             {cell.weekday}&nbsp;·&nbsp;{cell.date}
@@ -119,20 +125,25 @@ function WeekCellView({
         <span className="font-display text-[24px] font-bold leading-none">
           {time}
         </span>
+        <span className="font-mono text-[12px] font-medium uppercase tracking-[0.08em] opacity-85">
+          старт
+        </span>
       </div>
     );
   }
 
   if (cell.kind === "done") {
     return (
-      <div className="relative flex flex-col gap-2 bg-paper px-5 py-5 text-ink md:px-6">
-        <div className="flex items-center justify-between gap-2">
+      <div className={`${SHELL} bg-paper text-ink`}>
+        <div className="flex items-center gap-2">
           <span className="font-mono text-[11px] font-medium uppercase tracking-[0.14em] text-muted">
             {cell.weekday}&nbsp;·&nbsp;{cell.date}
           </span>
+          {/* Stamp: black square + white check. Stays inside C3 ink/paper
+              palette — no third "system color". */}
           <span
-            aria-hidden
-            className="inline-flex h-6 w-6 items-center justify-center bg-emerald-600 font-mono text-[14px] font-bold leading-none text-paper"
+            aria-label="выполнено"
+            className="ml-auto inline-flex h-5 w-5 items-center justify-center bg-ink font-mono text-[12px] font-bold leading-none text-paper"
           >
             ✓
           </span>
@@ -143,15 +154,12 @@ function WeekCellView({
         <span className="font-mono text-[12px] font-medium tracking-[0.04em] text-brand-red">
           + {cell.points}&nbsp;Б
         </span>
-        <span className="mt-1 font-mono text-[10px] font-semibold uppercase tracking-[0.14em] text-emerald-700">
-          выполнено
-        </span>
       </div>
     );
   }
 
   return (
-    <div className="flex flex-col gap-2 bg-paper-2 px-5 py-5 md:px-6">
+    <div className={`${SHELL} bg-paper-2`}>
       <span className="font-mono text-[11px] font-medium uppercase tracking-[0.14em] text-muted">
         {cell.weekday}&nbsp;·&nbsp;{cell.date}
       </span>
