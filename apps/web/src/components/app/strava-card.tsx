@@ -7,6 +7,12 @@ import {
 } from "@/app/app/profile/actions";
 import type { StravaStatus } from "@/lib/api-strava";
 
+// Official Strava brand assets, copied from
+// developers.strava.com/downloads/1.1-Connect-with-Strava-Buttons.zip and
+// /downloads/1.2-Strava-API-Logos.zip per brand guidelines.
+const STRAVA_CONNECT_BTN = "/brand/strava/btn_strava_connect_with_orange.svg";
+const STRAVA_POWERED_BY_LOGO = "/brand/strava/api_logo_pwrdBy_strava_horiz_black.svg";
+
 export function StravaCard({ status }: { status: StravaStatus }) {
   const [pending, startTransition] = useTransition();
   const [error, setError] = useState<string | null>(null);
@@ -24,7 +30,14 @@ export function StravaCard({ status }: { status: StravaStatus }) {
   }
 
   function onDisconnect() {
-    if (!confirm("Отключить Strava? История пробежек останется.")) return;
+    // Per Strava API Agreement §2.14.vi: on disconnect we must delete the
+    // user's Strava-derived data. Be honest about it in the prompt.
+    if (
+      !confirm(
+        "Отключить Strava? История пробежек и связанные баллы будут удалены — этого требуют правила Strava.",
+      )
+    )
+      return;
     setError(null);
     startTransition(async () => {
       const result = await disconnectStravaAction();
@@ -67,6 +80,7 @@ export function StravaCard({ status }: { status: StravaStatus }) {
         >
           {pending ? "Отключаем…" : "Отключить Strava"}
         </button>
+        <PoweredByStrava />
       </div>
     );
   }
@@ -82,19 +96,51 @@ export function StravaCard({ status }: { status: StravaStatus }) {
         Без подключения мы&nbsp;не&nbsp;увидим твой забег и&nbsp;не&nbsp;сможем
         начислить баллы. Один раз подключаешь — дальше всё само.
       </p>
+      <p className="text-[12px] leading-[1.5] text-muted">
+        Мы получим только данные о&nbsp;твоих пробежках (дистанция, время,
+        координаты старта). Не&nbsp;храним их дольше 7&nbsp;дней. Отключить
+        можно в&nbsp;любой момент — данные удалим.
+      </p>
       {error ? (
         <p className="border border-brand-red bg-brand-tint/50 px-3 py-2 text-[13px] text-brand-red-ink">
           {error}
         </p>
       ) : null}
+      {/* Official "Connect with Strava" button per Strava brand guidelines.
+          Rendered as <img> wrapped in <button> so the click stays accessible
+          and the asset isn't recoloured. */}
       <button
         type="button"
         onClick={onConnect}
         disabled={pending}
-        className="inline-flex h-12 items-center self-start border border-brand-red bg-brand-red px-5 font-sans text-[14px] font-semibold text-paper transition-colors hover:bg-brand-red-ink disabled:cursor-not-allowed disabled:border-muted-2 disabled:bg-muted-2"
+        aria-label="Connect with Strava"
+        className="self-start disabled:cursor-not-allowed disabled:opacity-60"
       >
-        {pending ? "Открываем Strava…" : "Подключить Strava →"}
+        <img
+          src={STRAVA_CONNECT_BTN}
+          alt="Connect with Strava"
+          height={48}
+          width={193}
+          className="h-12 w-auto"
+        />
       </button>
+      <PoweredByStrava />
+    </div>
+  );
+}
+
+function PoweredByStrava() {
+  return (
+    <div
+      aria-label="Powered by Strava"
+      className="mt-2 flex items-center self-start"
+    >
+      <img
+        src={STRAVA_POWERED_BY_LOGO}
+        alt="Powered by Strava"
+        height={20}
+        className="h-5 w-auto opacity-80"
+      />
     </div>
   );
 }
