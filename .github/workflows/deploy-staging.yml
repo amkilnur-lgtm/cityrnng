@@ -101,6 +101,11 @@ jobs:
         # progress tick on a new line and floods the GitHub Actions log
         # (observed: thousands of "Downloading 27.26MB" lines that wedged
         # the runner). With --quiet only final pull errors surface.
+        # `--force-recreate` on the `up` step ensures env_file changes are
+        # picked up — docker compose otherwise treats env_file content as
+        # external state and doesn't trigger a recreate when only its bytes
+        # change. The --profile app filter scopes recreate to api+web only,
+        # leaving postgres untouched.
         run: |
           ssh "${{ secrets.STAGING_USER }}@${{ secrets.STAGING_HOST }}" "set -e; \
             cd /opt/cityrnng && \
@@ -108,7 +113,7 @@ jobs:
             git pull --ff-only origin main && \
             export APP_ENV_FILE=.env.staging && \
             docker compose --env-file .env.staging --profile app pull --quiet && \
-            docker compose --env-file .env.staging --profile app up -d"
+            docker compose --env-file .env.staging --profile app up -d --force-recreate"
 
       - name: Seed (idempotent)
         # Reads SEED_ADMIN_EMAIL from .env.staging via the api service's
