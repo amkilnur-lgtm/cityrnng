@@ -13,13 +13,39 @@ import { API_BASE_URL } from "@/lib/api-config";
  *
  * The API route persists Strava tokens; we don't touch them here.
  */
+
+/**
+ * Behind a reverse proxy (docker compose + caddy/nginx), `req.url`'s host
+ * is the internal bind address (e.g. `0.0.0.0:3000`), which leaks into
+ * redirect URLs. Prefer X-Forwarded-Host/Proto headers set by the proxy.
+ * Falls back to deriving the origin from NEXT_PUBLIC_API_URL (which strips
+ * the `/api/v1` suffix) so prod/staging deploys work even if proxy headers
+ * are missing.
+ */
+function publicOrigin(req: Request, fallback: string): string {
+  const fwdHost = req.headers.get("x-forwarded-host");
+  const fwdProto = req.headers.get("x-forwarded-proto");
+  if (fwdHost) return `${fwdProto ?? "https"}://${fwdHost}`;
+  const host = req.headers.get("host");
+  if (host && !host.startsWith("0.0.0.0")) {
+    return `${fwdProto ?? "https"}://${host}`;
+  }
+  // Derive from API_BASE_URL: https://staging.cityrunning.online/api/v1 → origin
+  try {
+    return new URL(API_BASE_URL).origin;
+  } catch {
+    return fallback;
+  }
+}
+
 export async function GET(req: Request) {
   const url = new URL(req.url);
   const code = url.searchParams.get("code");
   const state = url.searchParams.get("state");
   const stravaError = url.searchParams.get("error");
 
-  const profileUrl = new URL("/app/profile", url.origin);
+  const origin = publicOrigin(req, url.origin);
+  const profileUrl = new URL("/app/profile", origin);
 
   if (stravaError) {
     profileUrl.searchParams.set("strava", "error");
