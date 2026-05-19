@@ -2,6 +2,7 @@ import { resolve } from "node:path";
 import { Module } from "@nestjs/common";
 import { APP_FILTER, APP_GUARD } from "@nestjs/core";
 import { ConfigModule, ConfigService } from "@nestjs/config";
+import { ScheduleModule } from "@nestjs/schedule";
 import { ThrottlerGuard, ThrottlerModule } from "@nestjs/throttler";
 import { SentryGlobalFilter, SentryModule } from "@sentry/nestjs/setup";
 import { LoggerModule } from "nestjs-pino";
@@ -35,6 +36,7 @@ const monorepoRootEnv = resolve(__dirname, "..", "..", "..", ".env");
       envFilePath: [monorepoRootEnv],
       validate: validateEnv,
     }),
+    ScheduleModule.forRoot(),
     ThrottlerModule.forRoot([
       { name: "default", ttl: 60_000, limit: 100 },
     ]),

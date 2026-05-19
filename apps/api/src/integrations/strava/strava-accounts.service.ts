@@ -45,6 +45,21 @@ export class StravaAccountsService {
     });
   }
 
+  /**
+   * Disconnect user's Strava account AND purge derived Strava data.
+   *
+   * Per Strava API Agreement §2.14.vi we must delete user's Strava-derived
+   * data on disconnect. Concretely:
+   *   - revoke access token (Strava deauthorize)
+   *   - clear stored tokens on UserProviderAccount, mark disconnected
+   *   - delete ExternalActivity rows we cached from Strava
+   *   - delete EventAttendance rows whose source is the sync provider
+   *     (they were derived from Strava activity matching)
+   *
+   * Note: PointTransactions credited from those attendances are not reversed
+   * here — they're our derived audit ledger, not Strava data. Reversing
+   * those is a separate concern (admin can manually adjust if needed).
+   */
   async disconnect(userId: string): Promise<void> {
     const account = await this.findActive(userId);
     if (!account) return;
@@ -52,16 +67,28 @@ export class StravaAccountsService {
     if (accessToken) {
       await this.api.deauthorize(accessToken);
     }
-    await this.prisma.userProviderAccount.update({
-      where: { id: account.id },
-      data: {
-        disconnectedAt: new Date(),
-        accessTokenEncrypted: null,
-        refreshTokenEncrypted: null,
-        tokenExpiresAt: null,
-        scope: null,
-      },
-    });
+    await this.prisma.$transaction([
+      this.prisma.eventAttendance.deleteMany({
+        where: {
+          userId,
+          source: "sync",
+          externalActivity: { provider: SyncProvider.strava },
+        },
+      }),
+      this.prisma.externalActivity.deleteMany({
+        where: { userId, provider: SyncProvider.strava },
+      }),
+      this.prisma.userProviderAccount.update({
+        where: { id: account.id },
+        data: {
+          disconnectedAt: new Date(),
+          accessTokenEncrypted: null,
+          refreshTokenEncrypted: null,
+          tokenExpiresAt: null,
+          scope: null,
+        },
+      }),
+    ]);
   }
 
   async getFreshAccessToken(userId: string): Promise<string> {
