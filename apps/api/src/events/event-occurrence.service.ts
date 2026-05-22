@@ -212,20 +212,28 @@ export class EventOccurrenceService {
   async listUpcoming(weeksAhead = 8): Promise<MaterializedEvent[]> {
     const now = new Date();
     const horizon = new Date(now.getTime() + weeksAhead * 7 * DAY_MS);
+    return this.listInRange(now, horizon);
+  }
 
+  /**
+   * Generalized version of listUpcoming — materializes events in any
+   * [from, to] window, including past dates. Used by /me/timeline to show
+   * the runner's current month grid (which spans both past and future weeks).
+   */
+  async listInRange(from: Date, to: Date): Promise<MaterializedEvent[]> {
     const [rules, explicits] = await Promise.all([
       this.prisma.eventRecurrenceRule.findMany({
         where: {
           status: RecurrenceRuleStatus.active,
-          startsFromDate: { lte: horizon },
-          OR: [{ endsAtDate: null }, { endsAtDate: { gte: now } }],
+          startsFromDate: { lte: to },
+          OR: [{ endsAtDate: null }, { endsAtDate: { gte: from } }],
         },
         ...ruleInclude,
       }),
       this.prisma.event.findMany({
         where: {
           status: EventStatus.published,
-          startsAt: { gte: now, lte: horizon },
+          startsAt: { gte: from, lte: to },
         },
         ...explicitInclude,
       }),
@@ -258,8 +266,8 @@ export class EventOccurrenceService {
 
     // Materialize each rule's occurrences within window, replacing with override when present
     for (const rule of rules) {
-      let cursor = this.firstOccurrenceOnOrAfter(rule, now);
-      const ruleEnd = rule.endsAtDate && rule.endsAtDate < horizon ? rule.endsAtDate : horizon;
+      let cursor = this.firstOccurrenceOnOrAfter(rule, from);
+      const ruleEnd = rule.endsAtDate && rule.endsAtDate < to ? rule.endsAtDate : to;
       while (cursor <= ruleEnd) {
         const key = this.overrideKey(rule.id, this.dayOnly(cursor));
         const override = overrides.get(key);

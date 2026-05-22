@@ -8,15 +8,17 @@ import { UpcomingEvents } from "@/components/home/upcoming-events";
 import { SiteFooter } from "@/components/site/footer";
 import { SiteNav } from "@/components/site/nav";
 import { Wrap } from "@/components/site/wrap";
+import { getMyTimeline } from "@/lib/api-me-timeline";
 import { getDisplayNextEvent } from "@/lib/display-event";
 import { getSiteState } from "@/lib/site-state";
 
 export const metadata = { title: "Личный кабинет · CITYRNNG" };
 
 export default async function AppDashboardPage() {
-  const [state, nextEvent] = await Promise.all([
+  const [state, nextEvent, timeline] = await Promise.all([
     getSiteState(),
     getDisplayNextEvent(),
+    getMyTimeline(0),
   ]);
   // Either real session OR dev-mock authed unlocks /app — both flow through state.isAuthed.
   if (!state.isAuthed) redirect("/auth");
@@ -55,7 +57,7 @@ export default async function AppDashboardPage() {
           </Wrap>
         </section>
 
-        <PersonalDashboard user={state.user} nextEvent={nextEvent} />
+        <PersonalDashboard user={state.user} nextEvent={nextEvent} timeline={timeline} />
         <UpcomingEvents isAuthed />
         <ShopPreview user={state.user} />
         <Journal />

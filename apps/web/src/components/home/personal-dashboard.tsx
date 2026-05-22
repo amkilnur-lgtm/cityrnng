@@ -1,27 +1,65 @@
+import Link from "next/link";
 import { Wrap } from "@/components/site/wrap";
+import { Badge } from "@/components/ui/badge";
 import { CLUB, pointsForDistance } from "@/lib/club";
 import type { DisplayEvent } from "@/lib/display-event";
-import {
-  WEEK_CELLS,
-  type AuthedUser,
-  type WeekCell as WeekCellT,
-} from "@/lib/home-mock";
+import type { Timeline, TimelineCell } from "@/lib/api-me-timeline";
+import { WEEK_CELLS, type AuthedUser, type WeekCell as WeekCellMockT } from "@/lib/home-mock";
 
+/**
+ * Build a Timeline-compatible payload out of the legacy WEEK_CELLS mock so
+ * dev/guest users see something sensible when there's no real session.
+ * Pure presentation — never returned by the API.
+ */
+function mockTimeline(): Timeline {
+  const cells: TimelineCell[] = WEEK_CELLS.map((w) => ({
+    date: w.date,
+    weekdayShort: w.weekday,
+    eventId: `mock-${w.date}`,
+    eventType: "regular",
+    title: CLUB.name,
+    dateLabel: `${w.weekday} · ${w.date}`,
+    time: w.time ?? CLUB.runTime,
+    kind:
+      w.kind === "done"
+        ? "done"
+        : w.kind === "tomorrow"
+          ? "tomorrow"
+          : "skipped",
+    km: w.km,
+    points: w.km ? pointsForDistance(w.km) : undefined,
+  }));
+  const done = cells.filter((c) => c.kind === "done").length;
+  return {
+    monthLabel: "апрель",
+    cells,
+    totals: {
+      done,
+      total: cells.length,
+      progressPct: cells.length === 0 ? 0 : Math.round((done / cells.length) * 100),
+    },
+  };
+}
+
+/**
+ * Personal-cabinet weekly grid. When `timeline` is passed (real session),
+ * cells come from the API. Otherwise we fall back to the static mock so
+ * the dev-mock authed mode keeps rendering something.
+ */
 export function PersonalDashboard({
   user,
   nextEvent,
+  timeline,
 }: {
   user: AuthedUser;
   nextEvent?: DisplayEvent;
+  timeline?: Timeline | null;
 }) {
-  const doneCells = WEEK_CELLS.filter((w) => w.kind === "done");
-  const done = doneCells.length;
-  const totalScheduled = WEEK_CELLS.length;
-  const km = doneCells.reduce((s, w) => s + (w.km ?? 0), 0);
-  const progressPct = Math.round((done / totalScheduled) * 100);
-  const lastDone = [...doneCells].pop();
-  const lastKm = lastDone?.km ?? 0;
-  const lastPoints = lastKm ? pointsForDistance(lastKm) : 0;
+  const data = timeline ?? mockTimeline();
+  const { cells, totals, monthLabel } = data;
+  const km = cells.reduce((s, c) => s + (c.km ?? 0), 0);
+  // Last done cell (chronologically last) — drives the "last run" lede line.
+  const lastDone = [...cells].reverse().find((c) => c.kind === "done");
 
   return (
     <section className="border-b border-ink bg-paper-2/60">
@@ -30,30 +68,41 @@ export function PersonalDashboard({
           <div className="flex items-center gap-2.5">
             <span className="h-px w-9 bg-ink" />
             <span className="type-mono-caps">
-              Вторник · 21&nbsp;апреля · {CLUB.city}
+              {CLUB.city} · {monthLabel}
             </span>
           </div>
           <h2 className="type-h2">
             Привет, <em className="not-italic text-brand-red">{user.name}</em>.
-            <br />
-            До&nbsp;среды 1&nbsp;день.
           </h2>
           <p className="type-lede max-w-[560px]">
-            На&nbsp;прошлой среде —{" "}
-            <b className="font-semibold text-ink">{lastKm}&nbsp;км</b>,{" "}
-            <b className="font-semibold text-ink">+{lastPoints}&nbsp;Б</b>.
-            Завтра в&nbsp;19:30 ждём снова.
+            {lastDone ? (
+              <>
+                Последняя пробежка —{" "}
+                <b className="font-semibold text-ink">{lastDone.km ?? "—"}&nbsp;км</b>
+                {lastDone.points ? (
+                  <>
+                    ,{" "}
+                    <b className="font-semibold text-ink">
+                      +{lastDone.points}&nbsp;Б
+                    </b>
+                  </>
+                ) : null}
+                . Следующая среда в&nbsp;{CLUB.runTime}.
+              </>
+            ) : (
+              <>Пока пробежек в этом месяце нет — следующая среда в&nbsp;{CLUB.runTime}.</>
+            )}
           </p>
         </div>
 
         <div className="border border-ink bg-paper">
           <div className="flex items-center justify-between border-b border-ink px-5 py-4 md:px-6">
-            <span className="type-mono-caps">апрель · твои пробежки</span>
+            <span className="type-mono-caps">{monthLabel} · твои пробежки</span>
             <span className="font-mono text-[13px] font-medium tracking-[0.04em] text-ink">
-              <b className="text-brand-red">{done}</b>
+              <b className="text-brand-red">{totals.done}</b>
               <span className="text-muted">
                 {" "}
-                из {totalScheduled} пробежек · {progressPct}%
+                из {totals.total} пробежек · {totals.progressPct}%
               </span>
             </span>
           </div>
@@ -61,20 +110,26 @@ export function PersonalDashboard({
           <div className="h-1 w-full bg-paper-2">
             <div
               className="h-full bg-brand-red"
-              style={{ width: `${progressPct}%` }}
+              style={{ width: `${totals.progressPct}%` }}
             />
           </div>
 
-          <div className="grid grid-cols-1 divide-y divide-ink md:grid-cols-4 md:divide-x md:divide-y-0">
-            {WEEK_CELLS.map((w) => (
-              <WeekCellView key={w.date} cell={w} nextEvent={nextEvent} />
-            ))}
-          </div>
+          {cells.length === 0 ? (
+            <p className="px-5 py-6 text-[14px] text-graphite md:px-6">
+              На этот месяц пока нет событий — ждём расписание.
+            </p>
+          ) : (
+            <div className="grid grid-cols-1 divide-y divide-ink md:grid-cols-2 md:divide-x lg:grid-cols-4 lg:divide-y-0">
+              {cells.map((cell) => (
+                <TimelineCellView key={cell.date} cell={cell} nextEvent={nextEvent} />
+              ))}
+            </div>
+          )}
 
           <div className="grid grid-cols-2 divide-ink border-t border-ink md:divide-x">
             {[
-              { k: "Пробежек", v: `${done}`, s: "в этом месяце" },
-              { k: "Километров", v: `${km}`, s: "за апрель" },
+              { k: "Пробежек", v: `${totals.done}`, s: `за ${monthLabel}` },
+              { k: "Километров", v: `${km}`, s: `за ${monthLabel}` },
             ].map((kpi, i) => (
               <div
                 key={kpi.k}
@@ -97,26 +152,33 @@ export function PersonalDashboard({
   );
 }
 
-function WeekCellView({
+function TimelineCellView({
   cell,
   nextEvent,
 }: {
-  cell: WeekCellT;
+  cell: TimelineCell;
   nextEvent?: DisplayEvent;
 }) {
-  // All three card kinds share the same 3-row layout (eyebrow → big →
-  // footnote) and a min-height so the week-grid stays visually even on
-  // mobile (where each cell is its own grid row).
+  // All four card kinds share a 3-row layout + min-height so the grid stays
+  // visually even regardless of state.
   const SHELL =
     "flex h-full min-h-[7.25rem] flex-col gap-2 px-5 py-5 md:px-6";
 
+  const isSpecial = cell.eventType === "special";
+  const SpecialBadge = isSpecial ? (
+    <Badge variant="primary" className="ml-1">
+      спец
+    </Badge>
+  ) : null;
+
   if (cell.kind === "tomorrow") {
+    // Card links to the actual event so a tap goes straight to RSVP/details.
     const time = nextEvent?.time ?? cell.time;
     return (
-      <div className={`${SHELL} bg-brand-red text-paper`}>
+      <Link href={`/events/${encodeURIComponent(cell.eventId)}`} className={`${SHELL} bg-brand-red text-paper transition-colors hover:bg-brand-red-ink`}>
         <div className="flex items-center gap-2">
           <span className="font-mono text-[11px] font-medium uppercase tracking-[0.14em]">
-            {cell.weekday}&nbsp;·&nbsp;{cell.date}
+            {cell.dateLabel}
           </span>
           <span className="ml-auto font-mono text-[11px] font-medium uppercase tracking-[0.14em]">
             ЗАВТРА
@@ -126,21 +188,20 @@ function WeekCellView({
           {time}
         </span>
         <span className="font-mono text-[12px] font-medium uppercase tracking-[0.08em] opacity-85">
-          старт
+          {isSpecial ? cell.title : "старт"}
         </span>
-      </div>
+      </Link>
     );
   }
 
   if (cell.kind === "done") {
     return (
-      <div className={`${SHELL} bg-paper text-ink`}>
+      <Link href={`/events/${encodeURIComponent(cell.eventId)}`} className={`${SHELL} bg-paper text-ink transition-colors hover:bg-paper-2`}>
         <div className="flex items-center gap-2">
           <span className="font-mono text-[11px] font-medium uppercase tracking-[0.14em] text-muted">
-            {cell.weekday}&nbsp;·&nbsp;{cell.date}
+            {cell.dateLabel}
           </span>
-          {/* Stamp: black square + white check. Stays inside C3 ink/paper
-              palette — no third "system color". */}
+          {SpecialBadge}
           <span
             aria-label="выполнено"
             className="ml-auto inline-flex h-5 w-5 items-center justify-center bg-ink font-mono text-[12px] font-bold leading-none text-paper"
@@ -149,24 +210,56 @@ function WeekCellView({
           </span>
         </div>
         <span className="font-display text-[24px] font-bold leading-none text-ink">
-          {cell.km}&nbsp;км
+          {cell.km != null ? `${cell.km} км` : cell.title}
         </span>
         <span className="font-mono text-[12px] font-medium tracking-[0.04em] text-brand-red">
-          + {cell.points}&nbsp;Б
+          {cell.points ? `+ ${cell.points} Б` : "выполнено"}
         </span>
-      </div>
+      </Link>
     );
   }
 
+  if (cell.kind === "upcoming") {
+    return (
+      <Link
+        href={`/events/${encodeURIComponent(cell.eventId)}`}
+        className={`${SHELL} bg-paper text-muted transition-colors hover:bg-paper-2`}
+      >
+        <div className="flex items-center gap-2">
+          <span className="font-mono text-[11px] font-medium uppercase tracking-[0.14em] text-muted">
+            {cell.dateLabel}
+          </span>
+          {SpecialBadge}
+        </div>
+        <span className="font-display text-[24px] font-bold leading-none text-muted-2">
+          {isSpecial ? cell.title : "ожидается"}
+        </span>
+        <span className="font-mono text-[12px] font-medium uppercase tracking-[0.08em] text-muted">
+          {isSpecial ? "ожидается" : `старт ${cell.time}`}
+        </span>
+      </Link>
+    );
+  }
+
+  // kind === "skipped"
   return (
-    <div className={`${SHELL} bg-paper-2`}>
-      <span className="font-mono text-[11px] font-medium uppercase tracking-[0.14em] text-muted">
-        {cell.weekday}&nbsp;·&nbsp;{cell.date}
-      </span>
+    <Link
+      href={`/events/${encodeURIComponent(cell.eventId)}`}
+      className={`${SHELL} bg-paper-2 transition-colors hover:bg-paper`}
+    >
+      <div className="flex items-center gap-2">
+        <span className="font-mono text-[11px] font-medium uppercase tracking-[0.14em] text-muted">
+          {cell.dateLabel}
+        </span>
+        {SpecialBadge}
+      </div>
       <span className="font-display text-[24px] font-bold leading-none text-muted-2 line-through decoration-muted-2">
         пропуск
       </span>
       <span className="text-[12px] text-muted">без&nbsp;баллов</span>
-    </div>
+    </Link>
   );
 }
+// Re-export mock-cell type to keep callers (if any) compiling — we still use
+// the static mock fallback through mockTimeline() above.
+export type { WeekCellMockT };
