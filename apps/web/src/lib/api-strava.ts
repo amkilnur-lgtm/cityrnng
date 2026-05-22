@@ -66,3 +66,31 @@ export async function disconnectStrava(): Promise<boolean> {
     return false;
   }
 }
+
+export type StravaSyncResult = {
+  ingestion: { fetched: number; upserted: number; pages: number };
+  matching: {
+    activitiesEvaluated: number;
+    rulesConsidered: number;
+    candidatesAttempted: number;
+    attendancesCreated: number;
+    awardsPosted: number;
+  };
+};
+
+/** User-triggered manual sync. Backend bounds the window to max(connectedAt, now-30d). */
+export async function syncStrava(): Promise<StravaSyncResult | null> {
+  const headers = authHeaders();
+  if (!headers) return null;
+  try {
+    const res = await fetch(`${API_BASE_URL}/integrations/strava/sync`, {
+      method: "POST",
+      headers,
+      cache: "no-store",
+    });
+    if (!res.ok) return null;
+    return (await res.json()) as StravaSyncResult;
+  } catch {
+    return null;
+  }
+}

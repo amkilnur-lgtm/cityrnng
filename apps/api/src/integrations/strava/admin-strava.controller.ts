@@ -1,10 +1,20 @@
-import { Body, Controller, HttpCode, HttpStatus, Post, UseGuards } from "@nestjs/common";
+import {
+  Body,
+  Controller,
+  Delete,
+  Get,
+  HttpCode,
+  HttpStatus,
+  Post,
+  UseGuards,
+} from "@nestjs/common";
 import { Roles } from "../../auth/decorators/roles.decorator";
 import { RolesGuard } from "../../auth/guards/roles.guard";
 import { ROLE_ADMIN } from "../../auth/types";
 import { AttendanceMatcherService } from "../../attendances/attendance-matcher.service";
 import { AdminSyncDto } from "./dto/admin-sync.dto";
 import { StravaIngestionService } from "./strava-ingestion.service";
+import { StravaSubscriptionService } from "./strava-subscription.service";
 
 @Controller("admin/integrations/strava")
 @UseGuards(RolesGuard)
@@ -13,6 +23,7 @@ export class AdminStravaController {
   constructor(
     private readonly ingestion: StravaIngestionService,
     private readonly matcher: AttendanceMatcherService,
+    private readonly subscription: StravaSubscriptionService,
   ) {}
 
   @Post("sync")
@@ -35,5 +46,27 @@ export class AdminStravaController {
       before: dto.before ? new Date(dto.before) : undefined,
     });
     return { matching };
+  }
+
+  @Get("subscription")
+  async getSubscription() {
+    const current = await this.subscription.getCurrent();
+    return {
+      callbackUrl: this.subscription.callbackUrl(),
+      subscription: current,
+    };
+  }
+
+  @Post("subscription")
+  @HttpCode(HttpStatus.OK)
+  async ensureSubscription() {
+    const sub = await this.subscription.ensureSubscribed();
+    return { subscription: sub };
+  }
+
+  @Delete("subscription")
+  @HttpCode(HttpStatus.NO_CONTENT)
+  async deleteSubscription() {
+    await this.subscription.unsubscribe();
   }
 }
