@@ -92,16 +92,23 @@ export class MeTimelineService {
     // Fetch the user's attendances + linked activity + point transactions
     // for the date window in a single query — saves an N+1 lookup per cell.
     const dateKeys = [...cellsByDate.keys()];
-    const eventIds = events.map((e) => e.id);
-    const attendances = await this.prisma.eventAttendance.findMany({
-      where: {
-        userId,
-        eventId: { in: eventIds },
-      },
-      include: {
-        externalActivity: { select: { distanceMeters: true } },
-      },
-    });
+    // EventAttendance.eventId is a real UUID; materialized rule occurrences
+    // use synthetic ids like `rule:UUID:DATE` which Prisma can't cast to
+    // uuid. Filter those out — they never have attendances anyway because
+    // the matcher only fires for events with a real DB row + EventSyncRule.
+    const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+    const realEventIds = events.map((e) => e.id).filter((id) => UUID_RE.test(id));
+    const attendances = realEventIds.length > 0
+      ? await this.prisma.eventAttendance.findMany({
+          where: {
+            userId,
+            eventId: { in: realEventIds },
+          },
+          include: {
+            externalActivity: { select: { distanceMeters: true } },
+          },
+        })
+      : [];
     // Most recent PointTransaction per attendance.id (reasonRef = attendance id).
     const pointTxns = await this.prisma.pointTransaction.findMany({
       where: {
