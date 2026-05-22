@@ -3,7 +3,7 @@
 import { cookies } from "next/headers";
 import { revalidatePath } from "next/cache";
 import { API_BASE_URL, AT_COOKIE } from "@/lib/api-config";
-import { disconnectStrava, getStravaAuthorizeUrl } from "@/lib/api-strava";
+import { disconnectStrava, getStravaAuthorizeUrl, syncStrava } from "@/lib/api-strava";
 
 type ProfileResult =
   | { ok: true }
@@ -23,6 +23,24 @@ export async function disconnectStravaAction(): Promise<{ ok: boolean }> {
   const ok = await disconnectStrava();
   if (ok) revalidatePath("/app/profile");
   return { ok };
+}
+
+export async function syncStravaAction(): Promise<
+  | { ok: true; ingested: number; matched: number; awarded: number }
+  | { ok: false; message: string }
+> {
+  const result = await syncStrava();
+  if (!result) {
+    return { ok: false, message: "Не получилось синхронизировать со Strava." };
+  }
+  revalidatePath("/app/profile");
+  revalidatePath("/app/points");
+  return {
+    ok: true,
+    ingested: result.ingestion.upserted,
+    matched: result.matching.attendancesCreated,
+    awarded: result.matching.awardsPosted,
+  };
 }
 
 /**

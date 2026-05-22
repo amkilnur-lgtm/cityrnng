@@ -9,10 +9,13 @@ import { StravaCachePurgeService } from "./strava-cache-purge.service";
 import { StravaController } from "./strava.controller";
 import { StravaIngestionService } from "./strava-ingestion.service";
 import { StravaOAuthService } from "./strava-oauth.service";
+import { StravaSubscriptionService } from "./strava-subscription.service";
+import { StravaWebhookController } from "./strava-webhook.controller";
+import { StravaWebhookService } from "./strava-webhook.service";
 
 @Module({
   imports: [JwtModule.register({}), AttendancesModule],
-  controllers: [StravaController, AdminStravaController],
+  controllers: [StravaController, StravaWebhookController, AdminStravaController],
   providers: [
     StravaApiClient,
     StravaOAuthService,
@@ -20,6 +23,8 @@ import { StravaOAuthService } from "./strava-oauth.service";
     StravaActivitiesService,
     StravaIngestionService,
     StravaCachePurgeService,
+    StravaSubscriptionService,
+    StravaWebhookService,
   ],
   exports: [StravaAccountsService, StravaActivitiesService, StravaIngestionService],
 })

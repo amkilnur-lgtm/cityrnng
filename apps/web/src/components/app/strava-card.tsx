@@ -4,6 +4,7 @@ import { useState, useTransition } from "react";
 import {
   disconnectStravaAction,
   startStravaConnect,
+  syncStravaAction,
 } from "@/app/app/profile/actions";
 import type { StravaStatus } from "@/lib/api-strava";
 
@@ -16,6 +17,7 @@ const STRAVA_POWERED_BY_LOGO = "/brand/strava/api_logo_pwrdBy_strava_horiz_black
 export function StravaCard({ status }: { status: StravaStatus }) {
   const [pending, startTransition] = useTransition();
   const [error, setError] = useState<string | null>(null);
+  const [syncInfo, setSyncInfo] = useState<string | null>(null);
 
   function onConnect() {
     setError(null);
@@ -47,6 +49,26 @@ export function StravaCard({ status }: { status: StravaStatus }) {
     });
   }
 
+  function onSync() {
+    setError(null);
+    setSyncInfo(null);
+    startTransition(async () => {
+      const result = await syncStravaAction();
+      if (!result.ok) {
+        setError(result.message);
+        return;
+      }
+      const { ingested, matched, awarded } = result;
+      if (ingested === 0) {
+        setSyncInfo("Новых пробежек не нашли.");
+      } else {
+        setSyncInfo(
+          `Подтянули ${ingested}, засчитали ${matched}, начислили ${awarded}.`,
+        );
+      }
+    });
+  }
+
   if (status.connected) {
     const expires = status.tokenExpiresAt
       ? new Date(status.tokenExpiresAt).toLocaleString("ru-RU")
@@ -67,19 +89,34 @@ export function StravaCard({ status }: { status: StravaStatus }) {
           />
           <Row k="Токен живёт до" v={expires} />
         </dl>
+        {syncInfo ? (
+          <p className="border border-ink/20 bg-paper-2 px-3 py-2 text-[13px] text-ink">
+            {syncInfo}
+          </p>
+        ) : null}
         {error ? (
           <p className="border border-brand-red bg-brand-tint/50 px-3 py-2 text-[13px] text-brand-red-ink">
             {error}
           </p>
         ) : null}
-        <button
-          type="button"
-          onClick={onDisconnect}
-          disabled={pending}
-          className="self-start font-sans text-[13px] font-medium text-muted underline-offset-4 hover:text-brand-red hover:underline disabled:opacity-50"
-        >
-          {pending ? "Отключаем…" : "Отключить Strava"}
-        </button>
+        <div className="flex flex-wrap items-center gap-3">
+          <button
+            type="button"
+            onClick={onSync}
+            disabled={pending}
+            className="inline-flex h-10 items-center border border-ink bg-paper px-4 font-sans text-[13px] font-semibold text-ink transition-colors hover:bg-ink hover:text-paper disabled:cursor-not-allowed disabled:opacity-60"
+          >
+            {pending ? "Синхронизируем…" : "Синхронизировать сейчас"}
+          </button>
+          <button
+            type="button"
+            onClick={onDisconnect}
+            disabled={pending}
+            className="font-sans text-[13px] font-medium text-muted underline-offset-4 hover:text-brand-red hover:underline disabled:opacity-50"
+          >
+            {pending ? "…" : "Отключить Strava"}
+          </button>
+        </div>
         <PoweredByStrava />
       </div>
     );

@@ -37,3 +37,23 @@ export interface StateClaims {
   kind: "strava_oauth";
   nonce: string;
 }
+
+export interface StravaSubscription {
+  id: number;
+  resource_state: number;
+  application_id: number;
+  callback_url: string;
+  created_at: string;
+  updated_at: string;
+}
+
+/** Webhook event payload Strava POSTs to our callback. */
+export interface StravaWebhookEvent {
+  object_type: "activity" | "athlete";
+  object_id: number;
+  aspect_type: "create" | "update" | "delete";
+  updates?: Record<string, string | boolean>;
+  owner_id: number; // Strava athlete id
+  subscription_id: number;
+  event_time: number;
+}

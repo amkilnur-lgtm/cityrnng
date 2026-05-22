@@ -74,6 +74,12 @@ export default function AdminDashboardPage() {
             title="Обмены"
             body="Redemption-коды: фильтры по статусу/партнёру/коду, погашение и отмена с возвратом баллов."
           />
+          <DashboardCard
+            href="/admin/integrations/strava"
+            kind="10"
+            title="Strava webhook"
+            body="Регистрация push-subscription Strava: один раз настроил — и активности юзеров сами прилетают, без поллинга."
+          />
         </Wrap>
       </section>
     </main>

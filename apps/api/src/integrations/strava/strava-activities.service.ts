@@ -31,4 +31,9 @@ export class StravaActivitiesService {
       perPage: options.perPage,
     });
   }
+
+  async fetchSingle(userId: string, activityId: number | string): Promise<StravaActivity> {
+    const accessToken = await this.accounts.getFreshAccessToken(userId);
+    return this.api.getActivity(accessToken, activityId);
+  }
 }
