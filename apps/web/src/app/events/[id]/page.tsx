@@ -7,7 +7,7 @@ import { Wrap } from "@/components/site/wrap";
 import { Badge } from "@/components/ui/badge";
 import {
   getInterestCounts,
-  getMyInterest,
+  getMyEventStatus,
 } from "@/lib/api-event-interest";
 import { getPublicEvent, type ApiEvent } from "@/lib/api-events";
 import { CLUB } from "@/lib/club";
@@ -76,12 +76,17 @@ export default async function EventDetailPage({
 }: {
   params: { id: string };
 }) {
-  const [state, apiEvent, myInterest, counts] = await Promise.all([
+  const [state, apiEvent, myStatus, counts] = await Promise.all([
     getSiteState(),
     getPublicEvent(params.id),
-    getMyInterest(params.id),
+    getMyEventStatus(params.id),
     getInterestCounts(params.id),
   ]);
+  const myInterest =
+    myStatus?.interest && myStatus.interest.status === "going"
+      ? myStatus.interest
+      : null;
+  const myAttended = myStatus?.attended ?? null;
   // Fall back to mock UPCOMING_EVENTS so non-UUID ids (e.g. "spec-25") still resolve.
   const event = apiEvent ?? mockToApiEvent(params.id);
   if (!event) notFound();
@@ -181,6 +186,7 @@ export default async function EventDetailPage({
                       paceGroups: l.paceGroups,
                     }))}
                     myLocationId={myInterest?.locationId ?? null}
+                    myAttended={myAttended}
                     countsByLocation={countsByLocation}
                     isAuthed={state.isAuthed}
                   />

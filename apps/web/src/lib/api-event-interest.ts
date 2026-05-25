@@ -11,6 +11,18 @@ export type EventInterest = {
   cancelledAt: string | null;
 };
 
+/**
+ * "Me" status for an event — going-interest (if RSVP'd) plus attendance
+ * (if Strava already credited the run). Either can be null independently:
+ * — RSVP'd but didn't run yet → interest!=null, attended=null
+ * — Ran without RSVP-ing → interest=null, attended!=null
+ * — Neither → API returns null, getMyEventStatus returns null too
+ */
+export type MyEventStatus = {
+  interest: EventInterest | null;
+  attended: { km: number | null; points: number | null } | null;
+};
+
 export type LocationCount = {
   locationId: string;
   count: number;
@@ -29,10 +41,13 @@ function safeEventKey(eventKey: string): string {
   return encodeURIComponent(decodeURIComponent(eventKey));
 }
 
-/** Server-only — checks if the current user has an active RSVP for the event. */
-export async function getMyInterest(
+/**
+ * Server-only — full "me" status for an event. Returns null when the user
+ * has neither an active RSVP nor a credited attendance.
+ */
+export async function getMyEventStatus(
   eventKey: string,
-): Promise<EventInterest | null> {
+): Promise<MyEventStatus | null> {
   const token = cookies().get(AT_COOKIE)?.value;
   if (!token) return null;
   try {
@@ -44,11 +59,22 @@ export async function getMyInterest(
       },
     );
     if (!res.ok) return null;
-    const body = (await res.json()) as EventInterest | null;
-    return body && body.status === "going" ? body : null;
+    return (await res.json()) as MyEventStatus | null;
   } catch {
     return null;
   }
+}
+
+/**
+ * Convenience: returns just the going-interest, dropping attendance.
+ * Existing call sites that only care about "is user RSVPed" keep working.
+ */
+export async function getMyInterest(
+  eventKey: string,
+): Promise<EventInterest | null> {
+  const status = await getMyEventStatus(eventKey);
+  if (!status?.interest) return null;
+  return status.interest.status === "going" ? status.interest : null;
 }
 
 /** Public — counts of "going" RSVPs grouped by location. */

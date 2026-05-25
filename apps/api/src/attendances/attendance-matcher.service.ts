@@ -1,4 +1,4 @@
-import { Injectable, Logger } from "@nestjs/common";
+import { Inject, Injectable, Logger, forwardRef } from "@nestjs/common";
 import {
   AttendanceSource,
   AttendanceStatus,
@@ -9,8 +9,10 @@ import {
   EventType,
   ExternalActivity,
   Prisma,
+  RecurrenceRuleStatus,
   SyncProvider,
 } from "@prisma/client";
+import { EventOccurrenceService } from "../events/event-occurrence.service";
 import { PointsAwardsService } from "../points/points-awards.service";
 import { PrismaService } from "../prisma/prisma.service";
 
@@ -44,6 +46,8 @@ export class AttendanceMatcherService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly pointsAwards: PointsAwardsService,
+    @Inject(forwardRef(() => EventOccurrenceService))
+    private readonly occurrences: EventOccurrenceService,
   ) {}
 
   async matchForUser(userId: string, options: MatchOptions = {}): Promise<MatchSummary> {
@@ -73,6 +77,15 @@ export class AttendanceMatcherService {
 
     const minStart = activities[0]!.startedAt;
     const maxStart = activities[activities.length - 1]!.startedAt;
+
+    // Pre-step: materialize Event-rows for every regular recurrence occurrence
+    // that any activity's time window could overlap. Otherwise EventSyncRule
+    // for that rule date doesn't exist yet and the matcher can't write
+    // attendance. Idempotent — repeated calls are no-ops.
+    await this.materializeRuleOccurrencesInRange(
+      new Date(minStart.getTime() - MATCH_WINDOW_BUFFER_MS),
+      new Date(maxStart.getTime() + MATCH_WINDOW_BUFFER_MS),
+    );
 
     // Pre-filter rules by event time (with buffer) instead of the legacy
     // windowStartsAt/EndsAt fields — those are no longer the source of truth
@@ -117,6 +130,60 @@ export class AttendanceMatcherService {
       attendancesCreated,
       awardsPosted,
     };
+  }
+
+  /**
+   * Walk every active recurrence rule and materialize any occurrence that
+   * falls in [from, to]. Idempotent — ensureMaterializedEvent is a no-op
+   * when the row already exists. Bounded by the active-rule set, so cost
+   * is O(rules × occurrences_in_window), typically <10 calls per matcher run.
+   */
+  private async materializeRuleOccurrencesInRange(
+    from: Date,
+    to: Date,
+  ): Promise<void> {
+    const rules = await this.prisma.eventRecurrenceRule.findMany({
+      where: {
+        status: RecurrenceRuleStatus.active,
+        startsFromDate: { lte: to },
+        OR: [{ endsAtDate: null }, { endsAtDate: { gte: from } }],
+      },
+      select: {
+        id: true,
+        dayOfWeek: true,
+        timeOfDay: true,
+        startsFromDate: true,
+        endsAtDate: true,
+      },
+    });
+    const DAY = 86_400_000;
+    for (const rule of rules) {
+      // Roll a cursor through the window emitting only occurrences on the
+      // rule's weekday at its time-of-day.
+      let cursor = new Date(from);
+      while (cursor <= to) {
+        if (cursor.getDay() === rule.dayOfWeek) {
+          const [h, m] = rule.timeOfDay.split(":").map((s) => Number.parseInt(s, 10));
+          if (!Number.isNaN(h) && !Number.isNaN(m)) {
+            const occurrence = new Date(cursor);
+            occurrence.setHours(h, m, 0, 0);
+            if (
+              occurrence >= rule.startsFromDate &&
+              (!rule.endsAtDate || occurrence <= rule.endsAtDate)
+            ) {
+              try {
+                await this.occurrences.ensureMaterializedEvent(rule.id, occurrence);
+              } catch (err) {
+                this.logger.warn(
+                  `Failed to materialize occurrence ${rule.id} @ ${occurrence.toISOString()}: ${(err as Error).message}`,
+                );
+              }
+            }
+          }
+        }
+        cursor = new Date(cursor.getTime() + DAY);
+      }
+    }
   }
 
   private async createAttendanceAndAward(

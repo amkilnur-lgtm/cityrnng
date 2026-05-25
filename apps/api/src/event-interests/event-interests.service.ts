@@ -1,5 +1,6 @@
 import {
   BadRequestException,
+  ConflictException,
   Injectable,
   NotFoundException,
 } from "@nestjs/common";
@@ -10,6 +11,7 @@ import {
   Prisma,
   RecurrenceRuleStatus,
 } from "@prisma/client";
+import { EventOccurrenceService } from "../events/event-occurrence.service";
 import { PrismaService } from "../prisma/prisma.service";
 
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
@@ -17,12 +19,23 @@ const RULE_KEY_RE = /^rule:([0-9a-f-]{36}):(\d{4}-\d{2}-\d{2})$/i;
 
 @Injectable()
 export class EventInterestsService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly occurrences: EventOccurrenceService,
+  ) {}
 
   /**
    * Mark the user as "going" to a given event/occurrence at a chosen
    * starting location. Idempotent — same (user, eventKey) returns the
    * existing row, refreshed to status=going if it was cancelled.
+   *
+   * For regular recurrence occurrences (eventKey = `rule:UUID:DATE`),
+   * materializes a backing Event-row so the matcher and attendance
+   * pipeline can FK to a real Event.id later.
+   *
+   * Rejects with EVENT_INTEREST_DATE_TAKEN if user already RSVPed to a
+   * different event on the same calendar date — can't be in two places at
+   * once.
    */
   async markGoing(opts: {
     userId: string;
@@ -31,6 +44,20 @@ export class EventInterestsService {
   }) {
     await this.assertEventExists(opts.eventKey);
     await this.assertLocationActive(opts.locationId);
+
+    // Materialize Event-row for regular rule occurrences before recording
+    // interest — matcher needs a real DB row + EventSyncRule to attribute
+    // attendance back to this date.
+    const ruleMatch = opts.eventKey.match(RULE_KEY_RE);
+    if (ruleMatch) {
+      const [, ruleId, dateStr] = ruleMatch;
+      const day = new Date(`${dateStr}T00:00:00.000Z`);
+      await this.occurrences.ensureMaterializedEvent(ruleId, day);
+    }
+
+    // Block double-RSVP on the same calendar date: a user can only be in
+    // one place at a time. Idempotent re-RSVP to the same event still works.
+    await this.assertNoConflictingInterest(opts.userId, opts.eventKey);
 
     const existing = await this.prisma.eventInterest.findUnique({
       where: { userId_eventKey: { userId: opts.userId, eventKey: opts.eventKey } },
@@ -69,13 +96,58 @@ export class EventInterestsService {
     return { ok: true };
   }
 
-  /** Returns the current user's interest for an event, or null. */
+  /**
+   * Returns the current user's "me" status for an event: going-interest (if any)
+   * plus whether the user has been credited with attendance (km + points if
+   * known). Returns null when there's neither interest nor attendance.
+   *
+   * Attendance lookup resolves the eventKey to a real Event UUID — for
+   * rule occurrences that means the materialized override Event (if any
+   * exists yet). When no DB row exists for a rule occurrence yet, attended
+   * is automatically false (matcher hasn't run anything there).
+   */
   async getForUser(userId: string, eventKey: string) {
     const row = await this.prisma.eventInterest.findUnique({
       where: { userId_eventKey: { userId, eventKey } },
     });
-    if (!row || row.status !== EventInterestStatus.going) return null;
-    return row;
+    const interest = row && row.status === EventInterestStatus.going ? row : null;
+
+    const eventId = await this.resolveEventId(eventKey);
+    let attended: { km: number | null; points: number | null } | null = null;
+    if (eventId) {
+      const attendance = await this.prisma.eventAttendance.findFirst({
+        where: { userId, eventId, source: "sync" },
+        include: { externalActivity: { select: { distanceMeters: true } } },
+      });
+      if (attendance) {
+        const km = attendance.externalActivity?.distanceMeters
+          ? Math.round(attendance.externalActivity.distanceMeters / 1000)
+          : null;
+        const txns = await this.prisma.pointTransaction.findMany({
+          where: { userId, reasonRef: attendance.id, direction: "credit" },
+          select: { amount: true },
+        });
+        const points = txns.reduce((sum, t) => sum + t.amount, 0);
+        attended = { km, points: points > 0 ? points : null };
+      }
+    }
+
+    if (!interest && !attended) return null;
+    return { interest, attended };
+  }
+
+  /** Resolve an eventKey to the real Event UUID, if a backing row exists. */
+  private async resolveEventId(eventKey: string): Promise<string | null> {
+    if (UUID_RE.test(eventKey)) return eventKey;
+    const ruleMatch = eventKey.match(RULE_KEY_RE);
+    if (!ruleMatch) return null;
+    const [, ruleId, dateStr] = ruleMatch;
+    const day = new Date(`${dateStr}T00:00:00.000Z`);
+    const ev = await this.prisma.event.findFirst({
+      where: { recurrenceRuleId: ruleId, overridesOccurrenceAt: day },
+      select: { id: true },
+    });
+    return ev?.id ?? null;
   }
 
   /** Public count of "going" RSVPs for an event, broken down by location. */
@@ -123,4 +195,51 @@ export class EventInterestsService {
       throw new NotFoundException({ code: "LOCATION_NOT_FOUND" });
     }
   }
+
+  /**
+   * Reject when user already has a going-status interest for a different
+   * event on the same calendar date. Same-key re-RSVP is allowed (idempotent).
+   */
+  private async assertNoConflictingInterest(userId: string, eventKey: string) {
+    const myDate = await this.eventKeyToDate(eventKey);
+    if (!myDate) return;
+    const others = await this.prisma.eventInterest.findMany({
+      where: {
+        userId,
+        status: EventInterestStatus.going,
+        NOT: { eventKey },
+      },
+    });
+    for (const other of others) {
+      const otherDate = await this.eventKeyToDate(other.eventKey);
+      if (otherDate && otherDate === myDate) {
+        throw new ConflictException({
+          code: "EVENT_INTEREST_DATE_TAKEN",
+          message: "Уже записан на другое событие в этот день.",
+        });
+      }
+    }
+  }
+
+  /** Resolve an eventKey to its YYYY-MM-DD local date, or null if unknown. */
+  private async eventKeyToDate(eventKey: string): Promise<string | null> {
+    if (UUID_RE.test(eventKey)) {
+      const ev = await this.prisma.event.findUnique({
+        where: { id: eventKey },
+        select: { startsAt: true },
+      });
+      return ev ? toDateKey(ev.startsAt) : null;
+    }
+    const ruleMatch = eventKey.match(RULE_KEY_RE);
+    if (ruleMatch) return ruleMatch[2] ?? null;
+    return null;
+  }
+}
+
+/** YYYY-MM-DD in server local-time (matches occurrence date layouts). */
+function toDateKey(d: Date): string {
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, "0");
+  const day = String(d.getDate()).padStart(2, "0");
+  return `${y}-${m}-${day}`;
 }
