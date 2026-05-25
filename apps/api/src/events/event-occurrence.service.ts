@@ -197,6 +197,106 @@ export class EventOccurrenceService {
     };
   }
 
+  /**
+   * Idempotently ensure a real Event-row exists for a regular recurrence's
+   * occurrence on a given calendar day. Needed because EventAttendance and
+   * EventSyncRule both FK to Event by UUID — virtual `rule:UUID:DATE`
+   * occurrences need a backing row before the matcher can write attendance.
+   *
+   * Behavior:
+   *   - returns existing override Event when found
+   *   - otherwise creates an Event tagged with `recurrenceRuleId` +
+   *     `overridesOccurrenceAt` and a copy of the rule's locations as an
+   *     EventSyncRule, so the matcher picks it up automatically.
+   *   - autoApprove=true so Strava matches credit points without manual
+   *     review (consistent with how admin-created events with locations work).
+   *
+   * Called from two places:
+   *   - EventInterestsService.markGoing when a user RSVPs to a rule occurrence
+   *   - AttendanceMatcherService when Strava activity overlaps a rule's window
+   */
+  async ensureMaterializedEvent(
+    ruleId: string,
+    occurrenceDate: Date,
+  ): Promise<Event> {
+    const day = this.dayOnly(occurrenceDate);
+    const existing = await this.prisma.event.findFirst({
+      where: { recurrenceRuleId: ruleId, overridesOccurrenceAt: day },
+    });
+    if (existing) return existing;
+
+    const rule = await this.prisma.eventRecurrenceRule.findUnique({
+      where: { id: ruleId },
+      ...ruleInclude,
+    });
+    if (!rule || rule.status !== RecurrenceRuleStatus.active) {
+      throw new NotFoundException({ code: "RECURRENCE_RULE_NOT_FOUND" });
+    }
+    const dateStr = day.toISOString().slice(0, 10);
+    const startsAt = this.composeOccurrence(rule, dateStr);
+    if (!startsAt) {
+      throw new NotFoundException({ code: "RECURRENCE_OCCURRENCE_INVALID" });
+    }
+    if (startsAt.getDay() !== rule.dayOfWeek) {
+      throw new NotFoundException({ code: "RECURRENCE_OCCURRENCE_INVALID" });
+    }
+    const endsAt = new Date(startsAt.getTime() + rule.durationMinutes * 60_000);
+    // Slug must be unique on Event; "mat-" prefix marks materialized rows
+    // visually and keeps the format short. Truncated rule prefix avoids
+    // hitting 200 char limit.
+    const slug = `mat-${rule.id.slice(0, 8)}-${dateStr}`;
+
+    try {
+      return await this.prisma.$transaction(async (tx) => {
+        const event = await tx.event.create({
+          data: {
+            title: rule.title,
+            slug,
+            type: rule.type,
+            status: EventStatus.published,
+            startsAt,
+            endsAt,
+            isPointsEligible: rule.isPointsEligible,
+            basePointsAward: rule.basePointsAward,
+            createdById: rule.createdById,
+            recurrenceRuleId: rule.id,
+            overridesOccurrenceAt: day,
+          },
+        });
+        // SyncRule windows are placeholder — the matcher reads from
+        // event.startsAt/endsAt ±30min, not from these fields (see PR #100).
+        // DTO still requires them, so we keep them aligned for completeness.
+        await tx.eventSyncRule.create({
+          data: {
+            eventId: event.id,
+            windowStartsAt: new Date(startsAt.getTime() - 30 * 60_000),
+            windowEndsAt: new Date(endsAt.getTime() + 30 * 60_000),
+            autoApprove: true,
+            locations: {
+              create: rule.locations.map((rl) => ({
+                locationId: rl.locationId,
+              })),
+            },
+          },
+        });
+        return event;
+      });
+    } catch (err) {
+      // Race: two requests materialized at the same time. Re-read and
+      // return the winning row (unique on recurrenceRuleId+date).
+      if (
+        err instanceof Prisma.PrismaClientKnownRequestError &&
+        err.code === "P2002"
+      ) {
+        const winner = await this.prisma.event.findFirst({
+          where: { recurrenceRuleId: ruleId, overridesOccurrenceAt: day },
+        });
+        if (winner) return winner;
+      }
+      throw err;
+    }
+  }
+
   private composeOccurrence(
     rule: EventRecurrenceRule,
     dateStr: string,

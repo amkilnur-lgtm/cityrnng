@@ -25,6 +25,14 @@ type Props = {
   locations: EventLocation[];
   /** Currently chosen location id from server, or null if user hasn't RSVPed. */
   myLocationId: string | null;
+  /**
+   * Attendance state for the current user. When set, the user has been
+   * credited for this event already (Strava match landed) — we hide the
+   * "Отменить запись" action and show a static "Ты бежал" panel instead,
+   * because attendance is a historical fact that shouldn't be undone by
+   * cancelling the RSVP.
+   */
+  myAttended?: { km: number | null; points: number | null } | null;
   /** Per-location RSVP counts ("N идут"). */
   countsByLocation: Record<string, number>;
   /** When false, render read-only cards (guest view). */
@@ -68,6 +76,7 @@ export function EventRsvp({
   eventKey,
   locations,
   myLocationId,
+  myAttended = null,
   countsByLocation,
   isAuthed,
 }: Props) {
@@ -205,7 +214,27 @@ export function EventRsvp({
         </>
       ) : null}
 
-      {!isAuthed ? null : isGoing && movingTo === null ? (
+      {!isAuthed ? null : myAttended ? (
+        // Attended already — RSVP cancel is meaningless (you can't unrun a run).
+        // Show the credited result as a static, terminal panel.
+        <div className="flex flex-col gap-2">
+          <div
+            className="flex h-14 w-full flex-wrap items-center justify-center gap-x-3 gap-y-1 border-2 border-ink bg-ink px-5 font-sans text-[16px] font-bold tracking-tight text-paper"
+            role="status"
+          >
+            <span>Ты бежал это событие</span>
+            <span aria-hidden className="font-mono text-[18px]">✓</span>
+          </div>
+          {myAttended.km != null || myAttended.points != null ? (
+            <div className="flex flex-wrap items-center justify-center gap-x-4 font-mono text-[13px] tracking-[0.04em] text-graphite">
+              {myAttended.km != null ? <span>{myAttended.km}&nbsp;км</span> : null}
+              {myAttended.points != null ? (
+                <span className="text-brand-red">+{myAttended.points}&nbsp;Б</span>
+              ) : null}
+            </div>
+          ) : null}
+        </div>
+      ) : isGoing && movingTo === null ? (
         <div className="flex flex-col gap-2">
           <div
             className="flex h-14 w-full items-center justify-center gap-3 border-2 border-ink bg-ink px-5 font-sans text-[16px] font-bold tracking-tight text-paper"

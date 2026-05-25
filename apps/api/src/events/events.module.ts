@@ -1,4 +1,4 @@
-import { Module } from "@nestjs/common";
+import { Module, forwardRef } from "@nestjs/common";
 import { AttendancesModule } from "../attendances/attendances.module";
 import { AdminEventsController } from "./admin-events.controller";
 import { AdminRecurrenceController } from "./admin-recurrence.controller";
@@ -9,7 +9,7 @@ import { RecurrenceRulesService } from "./recurrence-rules.service";
 import { SyncRulesService } from "./sync-rules.service";
 
 @Module({
-  imports: [AttendancesModule],
+  imports: [forwardRef(() => AttendancesModule)],
   controllers: [
     EventsController,
     AdminEventsController,
