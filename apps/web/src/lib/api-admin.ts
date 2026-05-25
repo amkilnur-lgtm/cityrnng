@@ -1,32 +1,16 @@
-import { cookies } from "next/headers";
-import { API_BASE_URL, AT_COOKIE } from "@/lib/api-config";
+import { API_BASE_URL } from "@/lib/api-config";
+import { apiFetch } from "@/lib/api-fetch";
 
 /**
- * Server-side admin API client. Uses the access-token cookie. Real admin
- * sessions get real data; dev-mock admin (no token) gets empty fallbacks.
+ * Server-side admin API client. Uses the access-token cookie via apiFetch
+ * (which transparently refreshes on 401). Real admin sessions get real
+ * data; dev-mock admin (no token) gets empty fallbacks.
  */
-
-function adminHeaders(): HeadersInit | null {
-  const token = cookies().get(AT_COOKIE)?.value;
-  if (!token) return null;
-  return { Authorization: `Bearer ${token}` };
-}
-
 async function fetchJson<T>(path: string, init?: RequestInit): Promise<T | null> {
-  const headers = adminHeaders();
-  if (!headers) return null;
-  try {
-    const res = await fetch(`${API_BASE_URL}${path}`, {
-      ...init,
-      cache: "no-store",
-      headers: { ...headers, ...(init?.headers ?? {}) },
-    });
-    if (!res.ok) return null;
-    if (res.status === 204) return null;
-    return (await res.json()) as T;
-  } catch {
-    return null;
-  }
+  const res = await apiFetch(`${API_BASE_URL}${path}`, init);
+  if (!res || !res.ok) return null;
+  if (res.status === 204) return null;
+  return (await res.json()) as T;
 }
 
 // === Location admin types ===
