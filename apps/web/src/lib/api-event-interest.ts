@@ -1,5 +1,5 @@
-import { cookies } from "next/headers";
-import { API_BASE_URL, AT_COOKIE } from "@/lib/api-config";
+import { API_BASE_URL } from "@/lib/api-config";
+import { apiFetch } from "@/lib/api-fetch";
 
 export type EventInterest = {
   id: string;
@@ -48,21 +48,11 @@ function safeEventKey(eventKey: string): string {
 export async function getMyEventStatus(
   eventKey: string,
 ): Promise<MyEventStatus | null> {
-  const token = cookies().get(AT_COOKIE)?.value;
-  if (!token) return null;
-  try {
-    const res = await fetch(
-      `${API_BASE_URL}/events/${safeEventKey(eventKey)}/interest/me`,
-      {
-        headers: { Authorization: `Bearer ${token}` },
-        cache: "no-store",
-      },
-    );
-    if (!res.ok) return null;
-    return (await res.json()) as MyEventStatus | null;
-  } catch {
-    return null;
-  }
+  const res = await apiFetch(
+    `${API_BASE_URL}/events/${safeEventKey(eventKey)}/interest/me`,
+  );
+  if (!res || !res.ok) return null;
+  return (await res.json()) as MyEventStatus | null;
 }
 
 /**

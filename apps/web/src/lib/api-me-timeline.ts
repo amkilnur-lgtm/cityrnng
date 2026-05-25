@@ -1,5 +1,5 @@
-import { cookies } from "next/headers";
-import { API_BASE_URL, AT_COOKIE } from "@/lib/api-config";
+import { API_BASE_URL } from "@/lib/api-config";
+import { apiFetch } from "@/lib/api-fetch";
 
 export type TimelineCellKind = "done" | "skipped" | "tomorrow" | "upcoming";
 
@@ -22,28 +22,15 @@ export type Timeline = {
   totals: { done: number; total: number; progressPct: number };
 };
 
-function authHeaders(): HeadersInit | null {
-  const token = cookies().get(AT_COOKIE)?.value;
-  if (!token) return null;
-  return { Authorization: `Bearer ${token}` };
-}
-
 /**
  * Fetch the current user's month-grid for /app dashboard.
  * Returns null when there's no session (dev-mock callers fall back to
  * static WEEK_CELLS so the UI stays useful in mock-only flows).
  */
 export async function getMyTimeline(monthOffset = 0): Promise<Timeline | null> {
-  const headers = authHeaders();
-  if (!headers) return null;
-  try {
-    const res = await fetch(
-      `${API_BASE_URL}/me/timeline?monthOffset=${monthOffset}`,
-      { headers, cache: "no-store" },
-    );
-    if (!res.ok) return null;
-    return (await res.json()) as Timeline;
-  } catch {
-    return null;
-  }
+  const res = await apiFetch(
+    `${API_BASE_URL}/me/timeline?monthOffset=${monthOffset}`,
+  );
+  if (!res || !res.ok) return null;
+  return (await res.json()) as Timeline;
 }

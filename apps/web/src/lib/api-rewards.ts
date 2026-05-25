@@ -1,5 +1,5 @@
-import { cookies } from "next/headers";
-import { API_BASE_URL, AT_COOKIE } from "@/lib/api-config";
+import { API_BASE_URL } from "@/lib/api-config";
+import { apiFetch } from "@/lib/api-fetch";
 
 /**
  * Public + authed fetchers for the rewards/partners domain.
@@ -61,12 +61,6 @@ export type ApiRedemption = {
   reward: ApiReward;
 };
 
-function authHeaders(): HeadersInit | null {
-  const token = cookies().get(AT_COOKIE)?.value;
-  if (!token) return null;
-  return { Authorization: `Bearer ${token}` };
-}
-
 export async function listPartners(): Promise<ApiPartner[]> {
   try {
     const res = await fetch(`${API_BASE_URL}/partners`, { cache: "no-store" });
@@ -105,18 +99,9 @@ export async function getReward(slug: string): Promise<ApiReward | null> {
 }
 
 export async function listMyRedemptions(): Promise<ApiRedemption[]> {
-  const headers = authHeaders();
-  if (!headers) return [];
-  try {
-    const res = await fetch(`${API_BASE_URL}/me/redemptions`, {
-      headers,
-      cache: "no-store",
-    });
-    if (!res.ok) return [];
-    return (await res.json()) as ApiRedemption[];
-  } catch {
-    return [];
-  }
+  const res = await apiFetch(`${API_BASE_URL}/me/redemptions`);
+  if (!res || !res.ok) return [];
+  return (await res.json()) as ApiRedemption[];
 }
 
 export type ApiAdminRedemption = ApiRedemption & {
@@ -133,20 +118,11 @@ export async function listRedemptionsAdmin(opts: {
   partnerId?: string;
   code?: string;
 }): Promise<ApiAdminRedemption[]> {
-  const headers = authHeaders();
-  if (!headers) return [];
   const url = new URL(`${API_BASE_URL}/admin/redemptions`);
   if (opts.status) url.searchParams.set("status", opts.status);
   if (opts.partnerId) url.searchParams.set("partnerId", opts.partnerId);
   if (opts.code) url.searchParams.set("code", opts.code);
-  try {
-    const res = await fetch(url.toString(), {
-      headers,
-      cache: "no-store",
-    });
-    if (!res.ok) return [];
-    return (await res.json()) as ApiAdminRedemption[];
-  } catch {
-    return [];
-  }
+  const res = await apiFetch(url.toString());
+  if (!res || !res.ok) return [];
+  return (await res.json()) as ApiAdminRedemption[];
 }
