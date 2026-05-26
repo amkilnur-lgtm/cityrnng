@@ -241,6 +241,35 @@ export class EventOccurrenceService {
       throw new NotFoundException({ code: "RECURRENCE_OCCURRENCE_INVALID" });
     }
     const endsAt = new Date(startsAt.getTime() + rule.durationMinutes * 60_000);
+
+    // Apply same-day exclusions — special events with excludesRegularLocationIds
+    // pull those locations OUT of this rule's occurrence for the date. Without
+    // this, the matcher's geofence on a special's location double-credits the
+    // user against the regular Wednesday too (issue caught 2026-05-26).
+    const dayStart = this.dayOnly(startsAt);
+    const dayEnd = new Date(dayStart.getTime() + DAY_MS);
+    const sameDayExplicits = await this.prisma.event.findMany({
+      where: {
+        status: EventStatus.published,
+        startsAt: { gte: dayStart, lt: dayEnd },
+        NOT: { excludesRegularLocationIds: { equals: [] } },
+      },
+      select: { excludesRegularLocationIds: true },
+    });
+    const excludedIds = new Set<string>();
+    for (const e of sameDayExplicits) {
+      for (const id of e.excludesRegularLocationIds) excludedIds.add(id);
+    }
+    const ruleLocations = rule.locations.filter(
+      (rl) => !excludedIds.has(rl.locationId),
+    );
+    if (ruleLocations.length === 0) {
+      // All locations are pulled into specials — regular doesn't run today.
+      // No point materializing an Event with empty SyncRule (matcher would
+      // never match anyway, but it'd still show as an empty card).
+      throw new NotFoundException({ code: "REGULAR_OCCURRENCE_FULLY_EXCLUDED" });
+    }
+
     // Slug must be unique on Event; "mat-" prefix marks materialized rows
     // visually and keeps the format short. Truncated rule prefix avoids
     // hitting 200 char limit.
@@ -273,7 +302,7 @@ export class EventOccurrenceService {
             windowEndsAt: new Date(endsAt.getTime() + 30 * 60_000),
             autoApprove: true,
             locations: {
-              create: rule.locations.map((rl) => ({
+              create: ruleLocations.map((rl) => ({
                 locationId: rl.locationId,
               })),
             },

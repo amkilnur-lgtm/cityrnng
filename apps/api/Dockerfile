@@ -60,6 +60,10 @@ COPY --from=builder --chown=app:app /prod-api/node_modules ./node_modules
 COPY --from=builder --chown=app:app /prod-api/dist ./dist
 COPY --from=builder --chown=app:app /prod-api/prisma ./prisma
 COPY --from=builder --chown=app:app /prod-api/package.json ./package.json
+# One-shot maintenance scripts (e.g. cleanup-duplicate-attendances). Run
+# them from the runtime via:
+#   docker compose exec api node --import tsx /app/scripts/<name>.ts
+COPY --chown=app:app apps/api/scripts ./scripts
 
 USER app
 ENTRYPOINT ["/sbin/tini", "--"]

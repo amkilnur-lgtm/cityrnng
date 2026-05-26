@@ -132,6 +132,18 @@ jobs:
             docker compose --env-file .env.staging exec -T api npx prisma db seed" || \
             echo "Seed step failed — check api container logs; deploy not aborted."
 
+      - name: Cleanup duplicate attendances (idempotent)
+        # Removes EventAttendances that landed on the same (user, date) more
+        # than once, reverses their credited points. No-op when DB is clean.
+        # Triggered to clean up the 2026-05-26 incident where one Strava
+        # run got double-credited as both a special and a regular event.
+        # Safe to keep around — script is idempotent.
+        run: |
+          ssh "${{ secrets.STAGING_USER }}@${{ secrets.STAGING_HOST }}" "set -e; \
+            cd /opt/cityrnng && \
+            docker compose --env-file .env.staging exec -T api ./node_modules/.bin/tsx /app/scripts/cleanup-duplicate-attendances.ts --apply" 2>&1 || \
+            echo "Dedupe script failed — non-fatal; check api logs."
+
       - name: Health check
         run: |
           for i in 1 2 3 4 5 6 7 8 9 10; do
