@@ -12,7 +12,11 @@ permissions:
 
 # Two pushes shouldn't deploy in parallel — second one wins, first is cancelled.
 concurrency:
-  group: deploy-staging
+  # Renamed from `deploy-staging` to `deploy-staging-v2` on 2026-05-26 to
+  # break out of a zombie queued run that GitHub Actions refused to cancel
+  # (Cancel API returned 409 "Cannot cancel a workflow re-run that has not
+  # yet queued"). Group name is shared across runs to keep deploys serial.
+  group: deploy-staging-v2
   cancel-in-progress: false
 
 env:
