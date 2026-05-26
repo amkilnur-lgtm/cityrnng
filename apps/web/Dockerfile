@@ -40,6 +40,16 @@ ARG NEXT_PUBLIC_SENTRY_DSN=
 ENV NEXT_PUBLIC_SENTRY_DSN=$NEXT_PUBLIC_SENTRY_DSN
 ARG NEXT_PUBLIC_SENTRY_ENVIRONMENT=
 ENV NEXT_PUBLIC_SENTRY_ENVIRONMENT=$NEXT_PUBLIC_SENTRY_ENVIRONMENT
+# Sentry source-map upload credentials. When all three are set,
+# withSentryConfig uploads sourcemaps + tags a release on each build.
+# Empty (default) silences the plugin — local builds and unauthed CI
+# still work, they just don't upload maps.
+ARG SENTRY_AUTH_TOKEN=
+ENV SENTRY_AUTH_TOKEN=$SENTRY_AUTH_TOKEN
+ARG SENTRY_ORG=
+ENV SENTRY_ORG=$SENTRY_ORG
+ARG SENTRY_PROJECT=
+ENV SENTRY_PROJECT=$SENTRY_PROJECT
 ENV NEXT_TELEMETRY_DISABLED=1
 
 RUN pnpm --filter @cityrnng/web build
