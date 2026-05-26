@@ -87,10 +87,10 @@ export function PersonalDashboard({
                     </b>
                   </>
                 ) : null}
-                . Следующая среда в&nbsp;{CLUB.runTime}.
+                .
               </>
             ) : (
-              <>Пока пробежек в этом месяце нет — следующая среда в&nbsp;{CLUB.runTime}.</>
+              <>Пока пробежек в&nbsp;этом месяце нет.</>
             )}
           </p>
         </div>
