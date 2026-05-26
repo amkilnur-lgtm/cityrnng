@@ -1,5 +1,5 @@
-import { API_BASE_URL } from "@/lib/api-config";
-import { apiFetch } from "@/lib/api-fetch";
+import { cookies } from "next/headers";
+import { API_BASE_URL, AT_COOKIE } from "@/lib/api-config";
 
 export type StravaStatus =
   | { connected: false }
@@ -11,11 +11,26 @@ export type StravaStatus =
       tokenExpiresAt: string | null;
     };
 
+function authHeaders(): HeadersInit | null {
+  const token = cookies().get(AT_COOKIE)?.value;
+  if (!token) return null;
+  return { Authorization: `Bearer ${token}` };
+}
+
 /** Server-side fetch of Strava connection status. Returns { connected: false } on any error. */
 export async function getStravaStatus(): Promise<StravaStatus> {
-  const res = await apiFetch(`${API_BASE_URL}/integrations/strava/status`);
-  if (!res || !res.ok) return { connected: false };
-  return (await res.json()) as StravaStatus;
+  const headers = authHeaders();
+  if (!headers) return { connected: false };
+  try {
+    const res = await fetch(`${API_BASE_URL}/integrations/strava/status`, {
+      headers,
+      cache: "no-store",
+    });
+    if (!res.ok) return { connected: false };
+    return (await res.json()) as StravaStatus;
+  } catch {
+    return { connected: false };
+  }
 }
 
 /**
@@ -23,17 +38,33 @@ export async function getStravaStatus(): Promise<StravaStatus> {
  * the client redirects the browser to this URL.
  */
 export async function getStravaAuthorizeUrl(): Promise<string | null> {
-  const res = await apiFetch(`${API_BASE_URL}/integrations/strava/connect`);
-  if (!res || !res.ok) return null;
-  const data = (await res.json()) as { authorizeUrl?: string };
-  return data.authorizeUrl ?? null;
+  const headers = authHeaders();
+  if (!headers) return null;
+  try {
+    const res = await fetch(`${API_BASE_URL}/integrations/strava/connect`, {
+      headers,
+      cache: "no-store",
+    });
+    if (!res.ok) return null;
+    const data = (await res.json()) as { authorizeUrl?: string };
+    return data.authorizeUrl ?? null;
+  } catch {
+    return null;
+  }
 }
 
 export async function disconnectStrava(): Promise<boolean> {
-  const res = await apiFetch(`${API_BASE_URL}/integrations/strava/disconnect`, {
-    method: "DELETE",
-  });
-  return !!res && res.ok;
+  const headers = authHeaders();
+  if (!headers) return false;
+  try {
+    const res = await fetch(`${API_BASE_URL}/integrations/strava/disconnect`, {
+      method: "DELETE",
+      headers,
+    });
+    return res.ok;
+  } catch {
+    return false;
+  }
 }
 
 export type StravaSyncResult = {
@@ -49,9 +80,17 @@ export type StravaSyncResult = {
 
 /** User-triggered manual sync. Backend bounds the window to max(connectedAt, now-30d). */
 export async function syncStrava(): Promise<StravaSyncResult | null> {
-  const res = await apiFetch(`${API_BASE_URL}/integrations/strava/sync`, {
-    method: "POST",
-  });
-  if (!res || !res.ok) return null;
-  return (await res.json()) as StravaSyncResult;
+  const headers = authHeaders();
+  if (!headers) return null;
+  try {
+    const res = await fetch(`${API_BASE_URL}/integrations/strava/sync`, {
+      method: "POST",
+      headers,
+      cache: "no-store",
+    });
+    if (!res.ok) return null;
+    return (await res.json()) as StravaSyncResult;
+  } catch {
+    return null;
+  }
 }
