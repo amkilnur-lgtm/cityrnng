@@ -16,7 +16,8 @@
     "prisma:migrate:reset": "dotenv -e ../../.env -- prisma migrate reset",
     "prisma:studio": "dotenv -e ../../.env -- prisma studio",
     "prisma:validate": "dotenv -e ../../.env -- prisma validate",
-    "prisma:seed": "dotenv -e ../../.env -- prisma db seed"
+    "prisma:seed": "dotenv -e ../../.env -- prisma db seed",
+    "cleanup:dupes": "tsx scripts/cleanup-duplicate-attendances.ts"
   },
   "prisma": {
     "schema": "prisma/schema.prisma",

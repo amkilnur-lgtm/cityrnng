@@ -90,7 +90,7 @@ export class AttendanceMatcherService {
     // Pre-filter rules by event time (with buffer) instead of the legacy
     // windowStartsAt/EndsAt fields — those are no longer the source of truth
     // for the match window.
-    const rules = (await this.prisma.eventSyncRule.findMany({
+    const rulesRaw = (await this.prisma.eventSyncRule.findMany({
       where: {
         provider: SyncProvider.strava,
         event: {
@@ -98,7 +98,6 @@ export class AttendanceMatcherService {
           startsAt: { lte: new Date(maxStart.getTime() + MATCH_WINDOW_BUFFER_MS) },
         },
       },
-      orderBy: [{ eventId: "asc" }],
       include: {
         event: true,
         locations: {
@@ -107,6 +106,20 @@ export class AttendanceMatcherService {
         },
       },
     })) as SyncRuleWithContext[];
+    // Sort so special events win the same-day race with regular events.
+    // Combined with the per-user one-per-day guard below, this guarantees
+    // that on a date with both a special and a regular, the special is
+    // the one credited.
+    const typeOrder: Record<EventType, number> = {
+      [EventType.special]: 0,
+      [EventType.partner]: 1,
+      [EventType.regular]: 2,
+    };
+    const rules = rulesRaw.sort((a, b) => {
+      const dt = a.event.startsAt.getTime() - b.event.startsAt.getTime();
+      if (dt !== 0) return dt;
+      return typeOrder[a.event.type] - typeOrder[b.event.type];
+    });
 
     let candidatesAttempted = 0;
     let attendancesCreated = 0;
@@ -193,6 +206,28 @@ export class AttendanceMatcherService {
   ): Promise<{ created: boolean; awarded: boolean }> {
     try {
       return await this.prisma.$transaction(async (tx) => {
+        // Physical reality: a runner can attend at most one event per day.
+        // If we already credited them for any event on this day, skip —
+        // even if our geofence/window logic now matches another one.
+        // Protects against double-credits when a special event's geofence
+        // overlaps a regular's (matcher saw both as valid).
+        const dayStart = new Date(rule.event.startsAt);
+        dayStart.setHours(0, 0, 0, 0);
+        const dayEnd = new Date(dayStart.getTime() + 24 * 60 * 60 * 1000);
+        const sameDayAttendance = await tx.eventAttendance.findFirst({
+          where: {
+            userId,
+            event: { startsAt: { gte: dayStart, lt: dayEnd } },
+          },
+          select: { id: true, eventId: true },
+        });
+        if (sameDayAttendance && sameDayAttendance.eventId !== rule.eventId) {
+          this.logger.log(
+            `Skipping attendance for user=${userId} event=${rule.eventId} — already attended event=${sameDayAttendance.eventId} on ${dayStart.toISOString().slice(0, 10)}`,
+          );
+          return { created: false, awarded: false };
+        }
+
         const status = rule.autoApprove ? AttendanceStatus.approved : AttendanceStatus.pending;
         const now = new Date();
         const attendance = await tx.eventAttendance.create({
