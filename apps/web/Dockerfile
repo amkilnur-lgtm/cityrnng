@@ -50,6 +50,12 @@ ARG SENTRY_ORG=
 ENV SENTRY_ORG=$SENTRY_ORG
 ARG SENTRY_PROJECT=
 ENV SENTRY_PROJECT=$SENTRY_PROJECT
+# Tag each build's source maps with the git SHA so Sentry can resolve
+# stack traces back to the exact release that emitted them. Without this
+# uploads land under "Found in Releases: undefined" and Sentry falls back
+# to hash matching — usually works but flaky for hot-fix iterations.
+ARG SENTRY_RELEASE=
+ENV SENTRY_RELEASE=$SENTRY_RELEASE
 ENV NEXT_TELEMETRY_DISABLED=1
 
 RUN pnpm --filter @cityrnng/web build
