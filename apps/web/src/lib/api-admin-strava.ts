@@ -1,5 +1,5 @@
-import { API_BASE_URL } from "@/lib/api-config";
-import { apiFetch } from "@/lib/api-fetch";
+import { cookies } from "next/headers";
+import { API_BASE_URL, AT_COOKIE } from "@/lib/api-config";
 
 export type StravaSubscription = {
   id: number;
@@ -15,10 +15,26 @@ export type StravaSubscriptionStatus = {
   subscription: StravaSubscription | null;
 };
 
+function authHeaders(): HeadersInit | null {
+  const token = cookies().get(AT_COOKIE)?.value;
+  if (!token) return null;
+  return { Authorization: `Bearer ${token}` };
+}
+
 export async function getStravaSubscriptionStatus(): Promise<StravaSubscriptionStatus | null> {
-  const res = await apiFetch(
-    `${API_BASE_URL}/admin/integrations/strava/subscription`,
-  );
-  if (!res || !res.ok) return null;
-  return (await res.json()) as StravaSubscriptionStatus;
+  const headers = authHeaders();
+  if (!headers) return null;
+  try {
+    const res = await fetch(
+      `${API_BASE_URL}/admin/integrations/strava/subscription`,
+      {
+        headers,
+        cache: "no-store",
+      },
+    );
+    if (!res.ok) return null;
+    return (await res.json()) as StravaSubscriptionStatus;
+  } catch {
+    return null;
+  }
 }

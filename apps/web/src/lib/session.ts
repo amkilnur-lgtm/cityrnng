@@ -1,5 +1,5 @@
-import { API_BASE_URL } from "@/lib/api-config";
-import { apiFetch } from "@/lib/api-fetch";
+import { cookies } from "next/headers";
+import { API_BASE_URL, AT_COOKIE } from "@/lib/api-config";
 
 export type AuthedUser = {
   id: string;
@@ -19,13 +19,19 @@ export type AuthedUser = {
 /**
  * Server-side session read. Returns the current user or null if not
  * authenticated (no access token cookie or /me returns 401).
- *
- * Uses apiFetch so a stale access token triggers a one-shot refresh
- * instead of silently returning null — important for RSC routes where
- * a "logged out" return cascades into mock fallbacks.
  */
 export async function getSession(): Promise<AuthedUser | null> {
-  const res = await apiFetch(`${API_BASE_URL}/me`);
-  if (!res || !res.ok) return null;
-  return (await res.json()) as AuthedUser;
+  const token = cookies().get(AT_COOKIE)?.value;
+  if (!token) return null;
+
+  try {
+    const res = await fetch(`${API_BASE_URL}/me`, {
+      headers: { Authorization: `Bearer ${token}` },
+      cache: "no-store",
+    });
+    if (!res.ok) return null;
+    return (await res.json()) as AuthedUser;
+  } catch {
+    return null;
+  }
 }
