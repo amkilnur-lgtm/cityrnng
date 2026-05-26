@@ -58,13 +58,22 @@ function groupByDistance(
   return [...map.entries()].sort((a, b) => b[0] - a[0]);
 }
 
+/** Russian plural for "идут/идёт" by count (1, 21, 31 → singular; rest → plural). */
+function verbGoing(count: number): "идёт" | "идут" {
+  const mod10 = count % 10;
+  const mod100 = count % 100;
+  if (mod100 >= 11 && mod100 <= 14) return "идут";
+  return mod10 === 1 ? "идёт" : "идут";
+}
+
 function goingLabel(count: number, isMine: boolean): string | null {
   if (count === 0) return "будь первым";
   if (isMine) {
     if (count === 1) return "ты идёшь";
-    return `ты и ещё ${count - 1} идут`;
+    const others = count - 1;
+    return `ты и ещё ${others} ${verbGoing(others)}`;
   }
-  return `${count} идут`;
+  return `${count} ${verbGoing(count)}`;
 }
 
 /**

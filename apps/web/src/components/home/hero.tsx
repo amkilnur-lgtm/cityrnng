@@ -70,6 +70,12 @@ function HeroSide() {
           style={{ objectFit: "contain", padding: "8%" }}
           priority
         />
+        {/* Mirrors the "Без паролей: жми по ссылке…" microcopy under the
+            email form on the left — keeps the two columns visually
+            balanced and gives the illustration a grounding caption. */}
+        <span className="absolute bottom-5 left-5 right-5 font-mono text-[11px] font-medium uppercase tracking-[0.14em] text-muted">
+          {CLUB.city} · с&nbsp;{CLUB.foundedYear} года · городские пробежки
+        </span>
       </div>
 
       <div className="grid h-[58px] grid-cols-3 border border-t-0 border-ink bg-paper">

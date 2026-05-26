@@ -22,6 +22,14 @@ function formatDate(iso: string) {
   };
 }
 
+/** Russian plural for "идут/идёт" by count (1, 21 → singular). */
+function verbGoing(count: number): "идёт" | "идут" {
+  const mod10 = count % 10;
+  const mod100 = count % 100;
+  if (mod100 >= 11 && mod100 <= 14) return "идут";
+  return mod10 === 1 ? "идёт" : "идут";
+}
+
 export type EventSignals = {
   /** Total runners who RSVPed across all locations. */
   totalGoing: number;
@@ -108,7 +116,7 @@ export function EventRow({
           {signals.totalGoing > 0 ? (
             <span className="font-mono text-[12px] tracking-[0.04em] text-muted">
               <span className="text-brand-red">●</span>{" "}
-              {signals.totalGoing}&nbsp;идут
+              {signals.totalGoing}&nbsp;{verbGoing(signals.totalGoing)}
             </span>
           ) : null}
         </div>
