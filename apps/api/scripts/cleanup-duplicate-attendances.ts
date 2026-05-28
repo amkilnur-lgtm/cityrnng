@@ -2,7 +2,7 @@
  * Find users with >1 EventAttendance on the same calendar date and keep
  * only the "winner" — special > partner > regular, then earliest matchedAt
  * on tie. Losing attendances are deleted and their credited points are
- * reversed with a `event_attendance_reversal` PointTransaction.
+ * reversed with a `reversal` PointTransaction.
  *
  * Idempotent: re-running on a clean DB is a no-op. Safe to wire into
  * deploys (we do — see deploy-staging.yml).
@@ -126,7 +126,7 @@ async function main() {
               direction: "debit",
               amount: loser.points,
               balanceAfter: newBalance,
-              reasonType: "event_attendance_reversal",
+              reasonType: "reversal",
               reasonRef: loser.id,
               idempotencyKey: `dedup-reversal:${loser.id}`,
               comment: `Reversal: duplicate attendance on ${group.dateKey} (winner was ${winner!.eventType} "${winner!.eventTitle}")`,
