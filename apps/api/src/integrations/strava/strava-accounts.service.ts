@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException } from "@nestjs/common";
+import { ConflictException, Injectable, NotFoundException } from "@nestjs/common";
 import { SyncProvider, UserProviderAccount } from "@prisma/client";
 import { CryptoService } from "../../crypto/crypto.service";
 import { PrismaService } from "../../prisma/prisma.service";
@@ -10,6 +10,12 @@ const REFRESH_SKEW_SECONDS = 120;
 
 @Injectable()
 export class StravaAccountsService {
+  // Singleflight per userId: serializes concurrent token refreshes so we
+  // don't double-rotate Strava's refresh_token (which would invalidate it
+  // and silently lock the user out). In-process only — fine for the
+  // single-node API; if we ever scale out, swap for a Redis lock.
+  private readonly refreshLocks = new Map<string, Promise<string>>();
+
   constructor(
     private readonly prisma: PrismaService,
     private readonly crypto: CryptoService,
@@ -21,6 +27,26 @@ export class StravaAccountsService {
     const providerUserId = tokens.athlete?.id
       ? String(tokens.athlete.id)
       : await this.fetchAthleteId(tokens.access_token);
+
+    // Block silent account-swap: if this user already has a Strava link to
+    // a different athlete, refuse to overwrite. The intended flow is
+    // disconnect → reconnect, which clears providerUserId. Without this,
+    // a compromised session could rebind to an attacker's Strava account
+    // (or vice versa) and start crediting points to the wrong place.
+    const existing = await this.prisma.userProviderAccount.findUnique({
+      where: { userId_provider: { userId, provider: SyncProvider.strava } },
+    });
+    if (
+      existing &&
+      existing.providerUserId &&
+      existing.providerUserId !== providerUserId
+    ) {
+      throw new ConflictException({
+        code: "STRAVA_ACCOUNT_MISMATCH",
+        message:
+          "Этот Strava уже привязан к другому атлету. Сначала отключи текущий, потом подключай заново.",
+      });
+    }
 
     const data = {
       provider: SyncProvider.strava,
@@ -102,15 +128,33 @@ export class StravaAccountsService {
       return this.crypto.decrypt(account.accessTokenEncrypted);
     }
 
-    const refreshToken = this.crypto.decrypt(account.refreshTokenEncrypted);
+    const inflight = this.refreshLocks.get(userId);
+    if (inflight) return inflight;
+
+    const work = this.doRefresh(account.id, userId, account.refreshTokenEncrypted, account.scope);
+    this.refreshLocks.set(userId, work);
+    try {
+      return await work;
+    } finally {
+      this.refreshLocks.delete(userId);
+    }
+  }
+
+  private async doRefresh(
+    accountId: string,
+    userId: string,
+    refreshTokenEncrypted: string,
+    currentScope: string | null,
+  ): Promise<string> {
+    const refreshToken = this.crypto.decrypt(refreshTokenEncrypted);
     const tokens = await this.oauth.refreshToken(refreshToken);
     await this.prisma.userProviderAccount.update({
-      where: { id: account.id },
+      where: { id: accountId },
       data: {
         accessTokenEncrypted: this.crypto.encrypt(tokens.access_token),
         refreshTokenEncrypted: this.crypto.encrypt(tokens.refresh_token),
         tokenExpiresAt: new Date(tokens.expires_at * 1000),
-        scope: tokens.scope ?? account.scope,
+        scope: tokens.scope ?? currentScope,
       },
     });
     return tokens.access_token;
