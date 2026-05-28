@@ -136,6 +136,17 @@ jobs:
             docker compose --env-file .env.staging exec -T api npx prisma db seed" || \
             echo "Seed step failed — check api container logs; deploy not aborted."
 
+      - name: Rekey orphan EventInterests (idempotent)
+        # Back-fills EventInterest rows that were created with the override
+        # Event's UUID as eventKey instead of the canonical rule-key. No-op
+        # when DB is clean. Triggered to clean up RSVPs made before the
+        # 2026-05-28 canonical-id fix landed.
+        run: |
+          ssh "${{ secrets.STAGING_USER }}@${{ secrets.STAGING_HOST }}" "set -e; \
+            cd /opt/cityrnng && \
+            docker compose --env-file .env.staging exec -T api ./node_modules/.bin/tsx /app/scripts/rekey-orphan-event-interests.ts --apply" 2>&1 || \
+            echo "Rekey script failed — non-fatal; check api logs."
+
       - name: Cleanup duplicate attendances (idempotent)
         # Removes EventAttendances that landed on the same (user, date) more
         # than once, reverses their credited points. No-op when DB is clean.

@@ -132,7 +132,11 @@ export class EventOccurrenceService {
       },
       include: { syncRule: { include: publicSyncRuleInclude.include } },
     });
-    if (override) return mapEventPublic(override);
+    // Public id stays the synthetic rule-key even when an override exists —
+    // override's UUID is an internal detail (matcher/EventAttendance FK).
+    // EventInterest keys, /events list ids, and detail URLs all use the
+    // rule-key as the single canonical id for any rule occurrence.
+    if (override) return { ...mapEventPublic(override), id };
 
     // Collect same-day exclusions from any published explicit event whose
     // excludesRegularLocationIds names a CityLocation. Those locations are
@@ -401,7 +405,15 @@ export class EventOccurrenceService {
         const key = this.overrideKey(rule.id, this.dayOnly(cursor));
         const override = overrides.get(key);
         if (override) {
-          out.push(this.toMaterialized(override, rule));
+          // Same rationale as getRuleOccurrenceById: when an override Event
+          // exists for a rule occurrence, the public id is still the rule-key.
+          // Override UUID stays internal so all UI references (lists, detail
+          // URLs, EventInterest.eventKey) line up on a single canonical id.
+          const dateKey = this.dayOnly(cursor).toISOString().slice(0, 10);
+          out.push({
+            ...this.toMaterialized(override, rule),
+            id: `rule:${rule.id}:${dateKey}`,
+          });
         } else {
           const dateKey = cursor.toISOString().slice(0, 10);
           const excluded = exclusionsByDate.get(dateKey) ?? null;
