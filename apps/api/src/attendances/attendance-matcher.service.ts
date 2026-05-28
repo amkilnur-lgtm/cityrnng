@@ -21,6 +21,22 @@ const DEFAULT_LOCATION_RADIUS_METERS = 500;
 // Hardcoded for now — admin can't override per-event yet.
 const MATCH_WINDOW_BUFFER_MS = 30 * 60 * 1000;
 
+// Run-shaped Strava sport_type/type values. Used as the implicit allow-list
+// when a sync-rule doesn't pin an activityType — otherwise a bike ride
+// through a starting-point geofence during the event window would be
+// credited as an attendance. Source: Strava sport_type enum (subset).
+const DEFAULT_RUN_TYPES = new Set([
+  "run",
+  "trailrun",
+  "virtualrun",
+  "treadmillrun",
+]);
+
+// How many times to retry a Serializable transaction conflict before giving
+// up. Postgres returns SQLSTATE 40001 (Prisma P2034) when two concurrent
+// txns step on each other; the standard remediation is restart.
+const SERIALIZATION_RETRIES = 2;
+
 type SyncRuleWithContext = EventSyncRule & {
   event: Event;
   locations: Array<{ location: CityLocation }>;
@@ -204,65 +220,86 @@ export class AttendanceMatcherService {
     activity: ExternalActivity,
     rule: SyncRuleWithContext,
   ): Promise<{ created: boolean; awarded: boolean }> {
-    try {
-      return await this.prisma.$transaction(async (tx) => {
-        // Physical reality: a runner can attend at most one event per day.
-        // If we already credited them for any event on this day, skip —
-        // even if our geofence/window logic now matches another one.
-        // Protects against double-credits when a special event's geofence
-        // overlaps a regular's (matcher saw both as valid).
-        const dayStart = new Date(rule.event.startsAt);
-        dayStart.setHours(0, 0, 0, 0);
-        const dayEnd = new Date(dayStart.getTime() + 24 * 60 * 60 * 1000);
-        const sameDayAttendance = await tx.eventAttendance.findFirst({
-          where: {
-            userId,
-            event: { startsAt: { gte: dayStart, lt: dayEnd } },
+    // Serializable + retry: the same-day guard reads a row, then writes a
+    // new one based on the absence of conflicts. Under READ_COMMITTED two
+    // concurrent matcher runs (e.g. webhook firing while user clicks Sync)
+    // can both see "no attendance today" and both write — for different
+    // events same day. Serializable forces Postgres to detect the conflict
+    // and abort one; we retry on P2034.
+    let attempt = 0;
+    while (true) {
+      try {
+        return await this.prisma.$transaction(
+          async (tx) => {
+            // Physical reality: a runner can attend at most one event per day.
+            // If we already credited them for any event on this day, skip —
+            // even if our geofence/window logic now matches another one.
+            // Protects against double-credits when a special event's geofence
+            // overlaps a regular's (matcher saw both as valid).
+            const dayStart = new Date(rule.event.startsAt);
+            dayStart.setHours(0, 0, 0, 0);
+            const dayEnd = new Date(dayStart.getTime() + 24 * 60 * 60 * 1000);
+            const sameDayAttendance = await tx.eventAttendance.findFirst({
+              where: {
+                userId,
+                event: { startsAt: { gte: dayStart, lt: dayEnd } },
+              },
+              select: { id: true, eventId: true },
+            });
+            if (sameDayAttendance && sameDayAttendance.eventId !== rule.eventId) {
+              this.logger.log(
+                `Skipping attendance for user=${userId} event=${rule.eventId} — already attended event=${sameDayAttendance.eventId} on ${dayStart.toISOString().slice(0, 10)}`,
+              );
+              return { created: false, awarded: false };
+            }
+
+            const status = rule.autoApprove ? AttendanceStatus.approved : AttendanceStatus.pending;
+            const now = new Date();
+            const attendance = await tx.eventAttendance.create({
+              data: {
+                eventId: rule.eventId,
+                userId,
+                externalActivityId: activity.id,
+                source: AttendanceSource.sync,
+                status,
+                matchedAt: now,
+                reviewedAt: rule.autoApprove ? now : null,
+              },
+            });
+
+            let awarded = false;
+            if (rule.autoApprove) {
+              const award = await this.pointsAwards.awardEventAttendance(attendance, rule.event, tx);
+              if (award) awarded = true;
+            }
+            return { created: true, awarded };
           },
-          select: { id: true, eventId: true },
-        });
-        if (sameDayAttendance && sameDayAttendance.eventId !== rule.eventId) {
-          this.logger.log(
-            `Skipping attendance for user=${userId} event=${rule.eventId} — already attended event=${sameDayAttendance.eventId} on ${dayStart.toISOString().slice(0, 10)}`,
-          );
+          { isolationLevel: Prisma.TransactionIsolationLevel.Serializable },
+        );
+      } catch (err) {
+        if (
+          err instanceof Prisma.PrismaClientKnownRequestError &&
+          err.code === "P2002" &&
+          uniqueTargetIncludes(err, "event_id") &&
+          uniqueTargetIncludes(err, "user_id")
+        ) {
+          // Another attendance already exists for this (event, user) — preserve it, no duplicate.
           return { created: false, awarded: false };
         }
-
-        const status = rule.autoApprove ? AttendanceStatus.approved : AttendanceStatus.pending;
-        const now = new Date();
-        const attendance = await tx.eventAttendance.create({
-          data: {
-            eventId: rule.eventId,
-            userId,
-            externalActivityId: activity.id,
-            source: AttendanceSource.sync,
-            status,
-            matchedAt: now,
-            reviewedAt: rule.autoApprove ? now : null,
-          },
-        });
-
-        let awarded = false;
-        if (rule.autoApprove) {
-          const award = await this.pointsAwards.awardEventAttendance(attendance, rule.event, tx);
-          if (award) awarded = true;
+        if (
+          err instanceof Prisma.PrismaClientKnownRequestError &&
+          err.code === "P2034" &&
+          attempt < SERIALIZATION_RETRIES
+        ) {
+          attempt += 1;
+          await new Promise((r) => setTimeout(r, 10 + attempt * 20));
+          continue;
         }
-        return { created: true, awarded };
-      });
-    } catch (err) {
-      if (
-        err instanceof Prisma.PrismaClientKnownRequestError &&
-        err.code === "P2002" &&
-        uniqueTargetIncludes(err, "event_id") &&
-        uniqueTargetIncludes(err, "user_id")
-      ) {
-        // Another attendance already exists for this (event, user) — preserve it, no duplicate.
-        return { created: false, awarded: false };
+        this.logger.error(
+          `Attendance insert failed for user=${userId} event=${rule.eventId} activity=${activity.id}: ${(err as Error).message}`,
+        );
+        throw err;
       }
-      this.logger.error(
-        `Attendance insert failed for user=${userId} event=${rule.eventId} activity=${activity.id}: ${(err as Error).message}`,
-      );
-      throw err;
     }
   }
 
@@ -274,10 +311,15 @@ export class AttendanceMatcherService {
     if (activity.startedAt < windowStart) return false;
     if (activityEnd > windowEnd) return false;
 
+    const actualType = (activity.activityType ?? "").toLowerCase();
     if (rule.activityType) {
       const expected = rule.activityType.toLowerCase();
-      const actual = (activity.activityType ?? "").toLowerCase();
-      if (expected !== actual) return false;
+      if (expected !== actualType) return false;
+    } else if (!DEFAULT_RUN_TYPES.has(actualType)) {
+      // No explicit type pin on the rule → only allow running-shaped
+      // activities. Otherwise a bike ride starting at the locale during
+      // the event window would be credited as a run attendance.
+      return false;
     }
 
     // Special events: skip distance + duration checks — being in the right
