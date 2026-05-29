@@ -7,6 +7,9 @@ import { PrismaService } from "../prisma/prisma.service";
 const DAY_MS = 86_400_000;
 const WEEK_MS = 7 * DAY_MS;
 
+const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+const RULE_KEY_RE = /^rule:([0-9a-f-]{36}):(\d{4}-\d{2}-\d{2})$/i;
+
 export interface DashboardSummary {
   health: {
     webhookSubscription: {
@@ -181,6 +184,24 @@ export class AdminDashboardService {
     return rows.length;
   }
 
+  /**
+   * Resolve a public event-id (either UUID or synthetic `rule:UUID:DATE`)
+   * to the real Event row UUID. Returns null for rule occurrences that
+   * haven't been materialized yet (no override Event exists for that date).
+   */
+  private async resolveEventUuid(publicId: string): Promise<string | null> {
+    if (UUID_RE.test(publicId)) return publicId;
+    const m = publicId.match(RULE_KEY_RE);
+    if (!m) return null;
+    const [, ruleId, dateStr] = m;
+    const day = new Date(`${dateStr}T00:00:00.000Z`);
+    const ev = await this.prisma.event.findFirst({
+      where: { recurrenceRuleId: ruleId, overridesOccurrenceAt: day },
+      select: { id: true },
+    });
+    return ev?.id ?? null;
+  }
+
   private async eventsSummary(now: Date): Promise<DashboardSummary["events"]> {
     // Next upcoming: nearest materialized occurrence in the next 14 days.
     // Reuses event-occurrence logic so rule-based regulars surface too.
@@ -196,14 +217,23 @@ export class AdminDashboardService {
       orderBy: { startsAt: "desc" },
     });
 
+    // next.id can be a synthetic rule-key (`rule:UUID:DATE`) when the
+    // occurrence isn't materialized yet — see PR #123. EventAttendance.eventId
+    // is a UUID column, so passing the rule-key to `eventAttendance.count`
+    // makes Prisma blow up with "Inconsistent column data: Error creating
+    // UUID". Resolve to the override Event's real UUID first; if no override
+    // exists yet, attendedCount is naturally 0 (the matcher hasn't created
+    // any attendance for this date because no backing event existed).
+    // EventInterest.eventKey is a String column, so the rule-key works there.
+    const nextEventUuid = next ? await this.resolveEventUuid(next.id) : null;
     const [nextGoing, nextAttended] = next
       ? await Promise.all([
           this.prisma.eventInterest.count({
             where: { eventKey: next.id, status: "going" },
           }),
-          this.prisma.eventAttendance.count({
-            where: { eventId: next.id },
-          }),
+          nextEventUuid
+            ? this.prisma.eventAttendance.count({ where: { eventId: nextEventUuid } })
+            : Promise.resolve(0),
         ])
       : [0, 0];
 
