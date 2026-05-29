@@ -38,3 +38,107 @@ export async function getStravaSubscriptionStatus(): Promise<StravaSubscriptionS
     return null;
   }
 }
+
+export type StravaTraceCandidate = {
+  eventId: string;
+  eventTitle: string;
+  eventStartsAt: string;
+  eventType: "regular" | "special" | "partner";
+  /** Empty array = activity would match this rule. */
+  reasons: string[];
+};
+
+export type StravaTraceActivity = {
+  externalId: string;
+  activityType: string | null;
+  startedAt: string;
+  elapsedSeconds: number;
+  distanceMeters: number;
+  startLat: number | null;
+  startLng: number | null;
+  matchedEventId: string | null;
+  matchedEventTitle: string | null;
+  candidates: StravaTraceCandidate[];
+};
+
+export type StravaTraceResult = {
+  activitiesEvaluated: number;
+  matchedCount: number;
+  activities: StravaTraceActivity[];
+};
+
+export type DashboardSummary = {
+  health: {
+    webhookSubscription: {
+      active: boolean;
+      callbackUrl: string;
+      subscriptionId: number | null;
+      registeredAt: string | null;
+      callbackMatches: boolean;
+    };
+    lastIngestAt: string | null;
+    cachedActivities: number;
+  };
+  kpis: {
+    totalUsers: number;
+    newUsers7d: number;
+    stravaConnected: number;
+    activeRunners7d: number;
+    pointsInCirculation: number;
+  };
+  stravaFlow: {
+    ingested7d: number;
+    attendances7dAuto: number;
+    attendances7dManual: number;
+    matchRate7dPct: number | null;
+  };
+  events: {
+    next: SummaryEvent | null;
+    lastPast: SummaryEvent | null;
+  };
+};
+
+export type SummaryEvent = {
+  id: string;
+  title: string;
+  type: string;
+  startsAt: string;
+  goingCount: number;
+  attendedCount: number;
+};
+
+export async function getDashboardSummary(): Promise<DashboardSummary | null> {
+  const headers = authHeaders();
+  if (!headers) return null;
+  try {
+    const res = await fetch(`${API_BASE_URL}/admin/dashboard/summary`, {
+      headers,
+      cache: "no-store",
+    });
+    if (!res.ok) return null;
+    return (await res.json()) as DashboardSummary;
+  } catch {
+    return null;
+  }
+}
+
+export async function runStravaDebug(opts: {
+  userId: string;
+  after?: string;
+  before?: string;
+}): Promise<StravaTraceResult | null> {
+  const headers = authHeaders();
+  if (!headers) return null;
+  try {
+    const res = await fetch(`${API_BASE_URL}/admin/integrations/strava/debug`, {
+      method: "POST",
+      headers: { ...headers, "Content-Type": "application/json" },
+      cache: "no-store",
+      body: JSON.stringify(opts),
+    });
+    if (!res.ok) return null;
+    return (await res.json()) as StravaTraceResult;
+  } catch {
+    return null;
+  }
+}

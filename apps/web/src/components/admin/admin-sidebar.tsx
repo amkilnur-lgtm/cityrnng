@@ -17,11 +17,12 @@ const SECTIONS: SidebarSection[] = [
   { href: "/admin/locations", label: "Локации" },
   { href: "/admin/recurrence", label: "Расписание" },
   { href: "/admin/events", label: "События" },
-  { href: "/admin/attendances", label: "Attendances" },
+  { href: "/admin/attendances", label: "Посещения" },
   { href: "/admin/partners", label: "Партнёры" },
   { href: "/admin/rewards", label: "Награды" },
   { href: "/admin/users", label: "Пользователи" },
-  { href: "/admin/points", label: "Балльные операции" },
+  { href: "/admin/points", label: "Баллы" },
+  { href: "/admin/strava", label: "Strava" },
 ];
 
 export function AdminSidebar({ isDev }: { isDev: boolean }) {

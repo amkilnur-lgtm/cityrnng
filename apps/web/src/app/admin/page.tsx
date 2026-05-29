@@ -1,115 +1,386 @@
 import Link from "next/link";
 import { Wrap } from "@/components/site/wrap";
+import {
+  getDashboardSummary,
+  type DashboardSummary,
+  type SummaryEvent,
+} from "@/lib/api-admin-strava";
 
-export default function AdminDashboardPage() {
+export const metadata = { title: "Дашборд · Admin · CITYRNNG" };
+
+const RU_MONTHS_SHORT = [
+  "янв", "фев", "мар", "апр", "май", "июн",
+  "июл", "авг", "сен", "окт", "ноя", "дек",
+];
+
+function fmtDateTime(iso: string): string {
+  const d = new Date(iso);
+  return `${d.getDate()} ${RU_MONTHS_SHORT[d.getMonth()]} · ${String(d.getHours()).padStart(2, "0")}:${String(d.getMinutes()).padStart(2, "0")}`;
+}
+
+function fmtRelative(iso: string | null): string {
+  if (!iso) return "никогда";
+  const then = new Date(iso).getTime();
+  const diffSec = Math.round((Date.now() - then) / 1000);
+  if (diffSec < 60) return "только что";
+  if (diffSec < 3600) return `${Math.round(diffSec / 60)} мин назад`;
+  if (diffSec < 86400) return `${Math.round(diffSec / 3600)} ч назад`;
+  return `${Math.round(diffSec / 86400)} дн назад`;
+}
+
+export default async function AdminDashboardPage() {
+  const summary = await getDashboardSummary();
+
   return (
     <main>
       <section className="border-b border-ink bg-paper-2/40">
-        <Wrap className="py-12 lg:py-16">
+        <Wrap className="py-10">
           <span className="type-mono-caps">админка</span>
-          <h1 className="type-hero mt-3" style={{ fontSize: 56 }}>
+          <h1 className="type-hero mt-3" style={{ fontSize: 48 }}>
             Дашборд.
           </h1>
           <p className="type-lede mt-3 max-w-2xl">
-            Панель управления Сити Раннинг. Локации, события, награды
-            и&nbsp;партнёры — всё здесь. Доступ только для роли{" "}
-            <code className="font-mono text-[14px] text-ink">admin</code>.
+            Сводка того, что сейчас происходит в проекте. Навигация по
+            разделам — в сайдбаре слева.
           </p>
         </Wrap>
       </section>
 
-      <section className="border-b border-ink">
-        <Wrap className="grid grid-cols-1 gap-0 border border-ink py-0 md:grid-cols-2 lg:grid-cols-3">
-          <DashboardCard
-            href="/admin/locations"
-            kind="01"
-            title="Локации"
-            body="Точки старта в городе — район, координаты, geofence-радиус для Strava-матчинга. От них зависят и регулярные события, и спецсобытия."
-          />
-          <DashboardCard
-            href="/admin/partners"
-            kind="02"
-            title="Партнёры"
-            body="Кофейни, пекарни, локальные бренды. Создаёшь партнёра один раз — потом добавляешь его награды отдельно."
-          />
-          <DashboardCard
-            href="/admin/rewards"
-            kind="03"
-            title="Награды"
-            body="Каталог обменов. Каждая награда привязана к партнёру, имеет цену в баллах, опциональные срок действия и капасити."
-          />
-          <DashboardCard
-            href="/admin/events"
-            kind="04"
-            title="События"
-            body="Спецсобытия, статусы, sync-rules для Strava. Регулярные среды живут отдельно — в Расписании."
-          />
-          <DashboardCard
-            href="/admin/recurrence"
-            kind="05"
-            title="Расписание"
-            body="Регулярные правила (среда 19:30 со всех точек) — генерируют материализованные события на /events автоматически."
-          />
-          <DashboardCard
-            href="/admin/attendances"
-            kind="06"
-            title="Attendances"
-            body="Подтверждение участия из Strava-синков и ручные approve/reject."
-          />
-          <DashboardCard
-            href="/admin/users"
-            kind="07"
-            title="Пользователи"
-            body="Список + grant/revoke ролей admin/partner. Балансы, статусы, профили."
-          />
-          <DashboardCard
-            href="/admin/points"
-            kind="08"
-            title="Баллы"
-            body="Ручной credit/debit с idempotency-key — для коррекций и компенсаций."
-          />
-          <DashboardCard
-            href="/admin/redemptions"
-            kind="09"
-            title="Обмены"
-            body="Redemption-коды: фильтры по статусу/партнёру/коду, погашение и отмена с возвратом баллов."
-          />
-          <DashboardCard
-            href="/admin/integrations/strava"
-            kind="10"
-            title="Strava webhook"
-            body="Регистрация push-subscription Strava: один раз настроил — и активности юзеров сами прилетают, без поллинга."
-          />
-        </Wrap>
-      </section>
+      {summary ? (
+        <DashboardContent summary={summary} />
+      ) : (
+        <NoDataState />
+      )}
     </main>
   );
 }
 
-function DashboardCard({
-  href,
-  kind,
-  title,
-  body,
+function DashboardContent({ summary }: { summary: DashboardSummary }) {
+  return (
+    <>
+      <HealthBar summary={summary} />
+      <KpiStrip summary={summary} />
+      <StravaFlowStrip summary={summary} />
+      <EventsStrip summary={summary} />
+    </>
+  );
+}
+
+function HealthBar({ summary }: { summary: DashboardSummary }) {
+  const ws = summary.health.webhookSubscription;
+  const webhookOk = ws.active && ws.callbackMatches;
+  const ingestStale =
+    summary.health.lastIngestAt
+      ? Date.now() - new Date(summary.health.lastIngestAt).getTime() > 24 * 3600 * 1000 &&
+        summary.kpis.stravaConnected > 0
+      : summary.kpis.stravaConnected > 0;
+
+  return (
+    <section className="border-b border-ink">
+      <Wrap className="py-6">
+        <div className="grid grid-cols-1 gap-0 border border-ink md:grid-cols-3">
+          <HealthCell
+            ok={webhookOk}
+            label="Strava webhook"
+            primary={
+              ws.active
+                ? ws.callbackMatches
+                  ? `sub #${ws.subscriptionId} активна`
+                  : `sub #${ws.subscriptionId} — stale callback`
+                : "не зарегистрирована"
+            }
+            secondary={
+              <Link
+                href="/admin/strava/webhook"
+                className="font-mono text-[11px] uppercase tracking-[0.14em] text-muted hover:text-brand-red"
+              >
+                Управление →
+              </Link>
+            }
+          />
+          <HealthCell
+            ok={!ingestStale}
+            label="Последний ingest"
+            primary={fmtRelative(summary.health.lastIngestAt)}
+            secondary={
+              <span className="font-mono text-[11px] uppercase tracking-[0.14em] text-muted">
+                в кэше {summary.health.cachedActivities} активн.
+              </span>
+            }
+            borderLeft
+          />
+          <HealthCell
+            ok={true}
+            label="API health"
+            primary="всё ровно"
+            secondary={
+              <span className="font-mono text-[11px] uppercase tracking-[0.14em] text-muted">
+                полный health — в Sentry / Grafana
+              </span>
+            }
+            borderLeft
+          />
+        </div>
+      </Wrap>
+    </section>
+  );
+}
+
+function HealthCell({
+  ok,
+  label,
+  primary,
+  secondary,
+  borderLeft,
 }: {
-  href: string;
-  kind: string;
-  title: string;
-  body: string;
+  ok: boolean;
+  label: string;
+  primary: string;
+  secondary?: React.ReactNode;
+  borderLeft?: boolean;
 }) {
   return (
-    <Link
-      href={href}
-      className="flex flex-col gap-3 border-b border-ink p-6 transition-colors hover:bg-paper-2 md:border-b-0 md:[&:nth-child(2n)]:border-l md:[&:nth-child(2n)]:border-ink md:[&:nth-child(n+3)]:border-t md:[&:nth-child(n+3)]:border-ink lg:[&]:border-t-0 lg:[&:nth-child(2n)]:border-l-0 lg:[&:nth-child(3n+2)]:border-l lg:[&:nth-child(3n+2)]:border-ink lg:[&:nth-child(3n)]:border-l lg:[&:nth-child(3n)]:border-ink lg:[&:nth-child(n+4)]:border-t lg:[&:nth-child(n+4)]:border-ink md:p-8"
+    <div
+      className={
+        "flex flex-col gap-2 p-5 " +
+        (borderLeft ? "md:border-l md:border-ink" : "")
+      }
     >
-      <span className="font-display text-[40px] font-bold leading-none tracking-[-0.03em] text-muted-2">
-        {kind}
+      <div className="flex items-center gap-2">
+        <span
+          aria-hidden
+          className={
+            "block h-2 w-2 " + (ok ? "bg-brand-red" : "bg-ink/30")
+          }
+        />
+        <span className="font-mono text-[11px] font-medium uppercase tracking-[0.14em] text-muted">
+          {label}
+        </span>
+      </div>
+      <span className="font-sans text-[15px] font-semibold text-ink">{primary}</span>
+      {secondary ? <span className="mt-auto">{secondary}</span> : null}
+    </div>
+  );
+}
+
+function KpiStrip({ summary }: { summary: DashboardSummary }) {
+  const k = summary.kpis;
+  const stravaPct =
+    k.totalUsers > 0 ? Math.round((k.stravaConnected / k.totalUsers) * 100) : 0;
+  return (
+    <section className="border-b border-ink">
+      <Wrap className="py-0">
+        <div className="grid grid-cols-1 gap-0 border border-ink md:grid-cols-4">
+          <Kpi label="Юзеров" value={k.totalUsers.toString()} sub={`+${k.newUsers7d} за 7д`} />
+          <Kpi
+            label="Strava подключено"
+            value={k.stravaConnected.toString()}
+            sub={`${stravaPct}% от всех`}
+            borderLeft
+          />
+          <Kpi
+            label="Активных бегунов 7д"
+            value={k.activeRunners7d.toString()}
+            sub="по attendance"
+            borderLeft
+          />
+          <Kpi
+            label="Баллов в обороте"
+            value={k.pointsInCirculation.toLocaleString("ru-RU")}
+            sub="∑ балансов"
+            borderLeft
+          />
+        </div>
+      </Wrap>
+    </section>
+  );
+}
+
+function Kpi({
+  label,
+  value,
+  sub,
+  borderLeft,
+}: {
+  label: string;
+  value: string;
+  sub?: string;
+  borderLeft?: boolean;
+}) {
+  return (
+    <div
+      className={
+        "flex flex-col gap-1.5 p-6 " + (borderLeft ? "md:border-l md:border-ink" : "")
+      }
+    >
+      <span className="font-mono text-[11px] font-medium uppercase tracking-[0.14em] text-muted">
+        {label}
       </span>
-      <h3 className="type-h3">{title}</h3>
-      <p className="text-[14px] leading-[1.55] text-graphite">{body}</p>
-      <span className="mt-auto pt-2 font-sans text-[13px] font-medium text-ink">
-        Открыть →
+      <span className="font-display text-[36px] font-bold leading-none tracking-[-0.03em] text-ink">
+        {value}
       </span>
-    </Link>
+      {sub ? (
+        <span className="font-mono text-[12px] text-graphite">{sub}</span>
+      ) : null}
+    </div>
+  );
+}
+
+function StravaFlowStrip({ summary }: { summary: DashboardSummary }) {
+  const s = summary.stravaFlow;
+  return (
+    <section className="border-b border-ink">
+      <Wrap className="py-0">
+        <div className="grid grid-cols-1 gap-0 border border-ink md:grid-cols-3">
+          <FlowCell
+            label="Подтянули 7д"
+            value={s.ingested7d.toString()}
+            sub="ExternalActivity"
+          />
+          <FlowCell
+            label="Засчитали 7д"
+            value={(s.attendances7dAuto + s.attendances7dManual).toString()}
+            sub={`${s.attendances7dAuto} авто · ${s.attendances7dManual} вручную`}
+            borderLeft
+          />
+          <FlowCell
+            label="Match-rate 7д"
+            value={s.matchRate7dPct == null ? "—" : `${s.matchRate7dPct}%`}
+            sub={
+              s.matchRate7dPct == null
+                ? "нет ingest'ов"
+                : s.matchRate7dPct < 50
+                  ? "низко — глянь /admin/strava/debug"
+                  : "норма"
+            }
+            borderLeft
+            warn={s.matchRate7dPct != null && s.matchRate7dPct < 50}
+          />
+        </div>
+      </Wrap>
+    </section>
+  );
+}
+
+function FlowCell({
+  label,
+  value,
+  sub,
+  borderLeft,
+  warn,
+}: {
+  label: string;
+  value: string;
+  sub?: string;
+  borderLeft?: boolean;
+  warn?: boolean;
+}) {
+  return (
+    <div
+      className={
+        "flex flex-col gap-1.5 p-6 " +
+        (borderLeft ? "md:border-l md:border-ink " : "") +
+        (warn ? "bg-brand-tint/15" : "")
+      }
+    >
+      <span className="font-mono text-[11px] font-medium uppercase tracking-[0.14em] text-muted">
+        {label}
+      </span>
+      <span className="font-display text-[36px] font-bold leading-none tracking-[-0.03em] text-ink">
+        {value}
+      </span>
+      {sub ? (
+        <span
+          className={
+            "font-mono text-[12px] " +
+            (warn ? "text-brand-red-ink" : "text-graphite")
+          }
+        >
+          {sub}
+        </span>
+      ) : null}
+    </div>
+  );
+}
+
+function EventsStrip({ summary }: { summary: DashboardSummary }) {
+  return (
+    <section className="border-b border-ink">
+      <Wrap className="py-0">
+        <div className="grid grid-cols-1 gap-0 border border-ink md:grid-cols-2">
+          <EventBlock title="Ближайшее событие" event={summary.events.next} kind="next" />
+          <EventBlock
+            title="Последнее прошедшее"
+            event={summary.events.lastPast}
+            kind="past"
+            borderLeft
+          />
+        </div>
+      </Wrap>
+    </section>
+  );
+}
+
+function EventBlock({
+  title,
+  event,
+  kind,
+  borderLeft,
+}: {
+  title: string;
+  event: SummaryEvent | null;
+  kind: "next" | "past";
+  borderLeft?: boolean;
+}) {
+  return (
+    <div
+      className={
+        "flex flex-col gap-3 p-6 md:p-8 " +
+        (borderLeft ? "md:border-l md:border-ink" : "")
+      }
+    >
+      <span className="font-mono text-[11px] font-medium uppercase tracking-[0.14em] text-muted">
+        {title}
+      </span>
+      {event == null ? (
+        <span className="font-sans text-[15px] text-graphite">
+          {kind === "next" ? "Нет запланированных в ближайшие 14 дней." : "Нет проведённых событий."}
+        </span>
+      ) : (
+        <>
+          <h3 className="type-h3">{event.title}</h3>
+          <span className="font-mono text-[13px] tracking-[0.04em] text-ink">
+            {fmtDateTime(event.startsAt)} · {event.type}
+          </span>
+          <div className="flex flex-wrap items-baseline gap-x-4 gap-y-1 font-mono text-[13px]">
+            <span className="text-brand-red">{event.goingCount} идут</span>
+            <span className="text-ink">{event.attendedCount} attended</span>
+          </div>
+          <Link
+            href={`/events/${encodeURIComponent(event.id)}`}
+            className="mt-auto font-sans text-[13px] font-semibold text-ink hover:text-brand-red"
+          >
+            Открыть событие →
+          </Link>
+        </>
+      )}
+    </div>
+  );
+}
+
+function NoDataState() {
+  return (
+    <section className="border-b border-ink">
+      <Wrap className="py-12">
+        <div className="border border-ink bg-paper-2 p-8">
+          <h2 className="type-h2">Нет данных</h2>
+          <p className="mt-3 text-[14px] text-graphite">
+            Не удалось получить сводку: проверь, что ты залогинен как
+            <code className="ml-1 font-mono text-[13px] text-ink">admin</code>{" "}
+            и API доступен.
+          </p>
+        </div>
+      </Wrap>
+    </section>
   );
 }

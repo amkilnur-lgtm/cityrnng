@@ -48,6 +48,21 @@ export class AdminStravaController {
     return { matching };
   }
 
+  /**
+   * Read-only diagnostic: for each of the user's ingested Strava activities
+   * in the window, lists candidate sync-rules with the failing reason for
+   * each. Used by /admin/strava/debug to answer "why didn't activity X
+   * count?". Does not write anything to the DB.
+   */
+  @Post("debug")
+  @HttpCode(HttpStatus.OK)
+  async debug(@Body() dto: AdminSyncDto) {
+    return this.matcher.traceForUser(dto.userId, {
+      after: dto.after ? new Date(dto.after) : undefined,
+      before: dto.before ? new Date(dto.before) : undefined,
+    });
+  }
+
   @Get("subscription")
   async getSubscription() {
     const current = await this.subscription.getCurrent();

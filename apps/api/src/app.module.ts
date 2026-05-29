@@ -7,6 +7,7 @@ import { ThrottlerGuard, ThrottlerModule } from "@nestjs/throttler";
 import { SentryGlobalFilter, SentryModule } from "@sentry/nestjs/setup";
 import { LoggerModule } from "nestjs-pino";
 import { randomUUID } from "node:crypto";
+import { AdminDashboardModule } from "./admin-dashboard/admin-dashboard.module";
 import { validateEnv } from "./config/env.validation";
 import type { Env } from "./config/env.schema";
 import { PrismaModule } from "./prisma/prisma.module";
@@ -97,6 +98,7 @@ const monorepoRootEnv = resolve(__dirname, "..", "..", "..", ".env");
     LocationsModule,
     PointsModule,
     RewardsModule,
+    AdminDashboardModule,
   ],
   providers: [
     // SentryGlobalFilter must be first so it sees errors before any

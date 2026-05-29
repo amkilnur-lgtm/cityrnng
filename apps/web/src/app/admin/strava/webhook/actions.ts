@@ -24,7 +24,7 @@ export async function ensureStravaSubscriptionAction(): Promise<void> {
     headers,
     cache: "no-store",
   });
-  revalidatePath("/admin/integrations/strava");
+  revalidatePath("/admin/strava/webhook");
 }
 
 export async function removeStravaSubscriptionAction(): Promise<void> {
@@ -35,5 +35,5 @@ export async function removeStravaSubscriptionAction(): Promise<void> {
     headers,
     cache: "no-store",
   });
-  revalidatePath("/admin/integrations/strava");
+  revalidatePath("/admin/strava/webhook");
 }
