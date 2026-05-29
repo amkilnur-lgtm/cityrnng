@@ -83,27 +83,20 @@ function computeHealth(summary: DashboardSummary): {
     cta: { href: "/admin/strava/webhook", text: "Управление" },
   };
 
-  const ingestStale = summary.health.lastIngestAt
-    ? Date.now() - new Date(summary.health.lastIngestAt).getTime() > 24 * 3600 * 1000 &&
-      summary.kpis.stravaConnected > 0
-    : summary.kpis.stravaConnected > 0;
+  // Информационная ячейка: «когда пришла последняя пробежка». Не алярмим
+  // на staleness — клубный сценарий: 1–2 активных юзера, в норме они
+  // бегают раз в несколько дней. Stale ingest != broken pipeline.
+  // Реальный сигнал о поломке pipeline'а — это webhook subscription (выше).
   const ingestCell: HealthSignal = {
-    status: ingestStale ? "warn" : "ok",
-    label: "Получение пробежек",
-    primary: summary.health.lastIngestAt
-      ? `последняя ${fmtRelative(summary.health.lastIngestAt)}`
-      : "пока ничего не приходило",
-    hint: `в памяти ${summary.health.cachedActivities} ${pluralRu(summary.health.cachedActivities, "пробежка", "пробежек")}`,
-  };
-
-  const serverCell: HealthSignal = {
     status: "ok",
-    label: "Сервер",
-    primary: "работает",
-    hint: "детальная статистика — в Sentry",
+    label: "Последняя пробежка",
+    primary: summary.health.lastIngestAt
+      ? `пришла ${fmtRelative(summary.health.lastIngestAt)}`
+      : "пока ничего не приходило",
+    hint: `в памяти ${fmtNumber(summary.health.cachedActivities)} ${pluralRu(summary.health.cachedActivities, "пробежка", "пробежек")}`,
   };
 
-  const cells = [webhookCell, ingestCell, serverCell];
+  const cells = [webhookCell, ingestCell];
   return { cells, warnCount: cells.filter((c) => c.status === "warn").length };
 }
 
@@ -185,7 +178,7 @@ function HealthSection({ cells }: { cells: HealthSignal[] }) {
         <h2 className="font-mono text-[11px] font-medium uppercase tracking-[0.14em] text-muted">
           состояние систем
         </h2>
-        <div className="mt-4 grid grid-cols-1 border-y-2 border-ink md:grid-cols-3">
+        <div className="mt-4 grid grid-cols-1 border-y-2 border-ink md:grid-cols-2">
           {cells.map((cell, i) => (
             <HealthCell
               key={cell.label}
@@ -211,7 +204,7 @@ function HealthCell({
     <div
       className={
         "flex flex-col gap-2.5 bg-paper p-5 " +
-        (borderLeft ? "md:border-l md:border-ink/40 " : "")
+        (borderLeft ? "md:border-l md:border-ink " : "")
       }
     >
       <div className="flex items-center gap-2">
@@ -258,7 +251,7 @@ function StravaFlowSection({ summary }: { summary: DashboardSummary }) {
 
   return (
     <section className="border-b border-ink">
-      <Wrap className="py-10">
+      <Wrap className="py-8">
         <h2 className="font-mono text-[11px] font-medium uppercase tracking-[0.14em] text-muted">
           поток Strava · за неделю
         </h2>
@@ -274,17 +267,15 @@ function StravaFlowSection({ summary }: { summary: DashboardSummary }) {
           <div className="mt-4 grid grid-cols-1 border-y-2 border-ink lg:grid-cols-[1.4fr_1fr]">
             {/* Hero — absolute count of credited runs */}
             <div className="flex flex-col gap-4 bg-paper p-6 md:p-8">
-              <div className="flex items-center gap-2">
-                <span className="font-mono text-[11px] font-medium uppercase tracking-[0.14em] text-muted">
-                  засчитано на наших событиях
-                </span>
-              </div>
-              <div className="flex items-baseline gap-4">
+              <span className="font-mono text-[11px] font-medium uppercase tracking-[0.14em] text-muted">
+                засчитано на наших событиях
+              </span>
+              <div className="flex flex-col gap-1">
                 <span className="font-display text-[72px] font-bold leading-none tracking-[-0.03em] text-ink">
                   {fmtNumber(credited)}
                 </span>
-                <span className="font-sans text-[18px] text-graphite">
-                  {pluralRu(credited, "пробежка", "пробежек")}
+                <span className="font-sans text-[15px] font-medium text-graphite">
+                  {pluralRu(credited, "пробежка засчитана за неделю", "пробежек засчитано за неделю")}
                 </span>
               </div>
               <p className="max-w-md text-[14px] leading-snug text-graphite">
@@ -302,7 +293,7 @@ function StravaFlowSection({ summary }: { summary: DashboardSummary }) {
             </div>
 
             {/* Supporting metrics */}
-            <div className="grid grid-cols-1 border-t border-ink md:grid-cols-2 lg:border-l lg:border-ink/40 lg:border-t-0 lg:grid-cols-1">
+            <div className="grid grid-cols-1 border-t border-ink md:grid-cols-2 lg:border-l lg:border-ink lg:border-t-0 lg:grid-cols-1">
               <SupportCell
                 label="Подтянули из Strava"
                 value={fmtNumber(s.ingested7d)}
@@ -338,7 +329,7 @@ function SupportCell({
       className={
         "flex flex-col gap-1.5 bg-paper p-5 " +
         (borderTop
-          ? "border-t border-ink/40 md:border-l md:border-ink/40 md:border-t-0 lg:border-t lg:border-l-0"
+          ? "border-t border-ink md:border-l md:border-ink md:border-t-0 lg:border-t lg:border-l-0"
           : "")
       }
     >
@@ -362,7 +353,7 @@ function KpiSection({ summary }: { summary: DashboardSummary }) {
   const stravaPct = k.totalUsers > 0 ? Math.round((k.stravaConnected / k.totalUsers) * 100) : 0;
   return (
     <section className="border-b border-ink bg-paper-2/30">
-      <Wrap className="py-10">
+      <Wrap className="py-8">
         <h2 className="font-mono text-[11px] font-medium uppercase tracking-[0.14em] text-muted">
           ключевые цифры
         </h2>
@@ -415,7 +406,7 @@ function Kpi({
       className={
         "flex flex-col gap-1.5 bg-paper p-6 " +
         (borderLeft
-          ? "lg:border-l lg:border-ink/40 md:border-l md:border-ink/40 md:[&:nth-child(2n+1)]:border-l-0 lg:[&:nth-child(2n+1)]:border-l"
+          ? "lg:border-l lg:border-ink md:border-l md:border-ink md:[&:nth-child(2n+1)]:border-l-0 lg:[&:nth-child(2n+1)]:border-l"
           : "")
       }
     >
@@ -444,7 +435,7 @@ function Kpi({
 function EventsSection({ summary }: { summary: DashboardSummary }) {
   return (
     <section className="border-b border-ink">
-      <Wrap className="py-10">
+      <Wrap className="py-8">
         <h2 className="font-mono text-[11px] font-medium uppercase tracking-[0.14em] text-muted">
           события
         </h2>
@@ -472,7 +463,7 @@ function EventCard({
     <div
       className={
         "flex flex-col gap-3 bg-paper p-6 md:p-8 " +
-        (borderLeft ? "md:border-l md:border-ink/40" : "")
+        (borderLeft ? "md:border-l md:border-ink" : "")
       }
     >
       <span className="font-mono text-[11px] font-medium uppercase tracking-[0.14em] text-muted">
