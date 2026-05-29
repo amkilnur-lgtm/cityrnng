@@ -304,49 +304,195 @@ export class AttendanceMatcherService {
   }
 
   ruleMatchesActivity(rule: SyncRuleWithContext, activity: ExternalActivity): boolean {
+    return this.whyRuleDoesntMatch(rule, activity).length === 0;
+  }
+
+  /**
+   * Same predicate as {@link ruleMatchesActivity} but returns the list of
+   * failing reasons instead of a boolean. Used by the admin debug endpoint
+   * to explain "why didn't activity X match event Y". An empty array means
+   * the rule would match.
+   *
+   * Reason keys (stable strings — frontend hardcodes labels):
+   *   time_window        — activity starts before / ends after rule's ±30m window
+   *   type_mismatch      — activity sport_type doesn't match rule.activityType pin
+   *                        or, when unpinned, isn't run-shaped
+   *   min_distance       — activity shorter than rule.minDistanceMeters
+   *   max_distance       — activity longer than rule.maxDistanceMeters
+   *   min_duration       — activity shorter than rule.minDurationSeconds
+   *   max_duration       — activity longer than rule.maxDurationSeconds
+   *   geofence           — start/end coords outside every active location radius
+   */
+  whyRuleDoesntMatch(
+    rule: SyncRuleWithContext,
+    activity: ExternalActivity,
+  ): string[] {
+    const reasons: string[] = [];
     const activityEnd = new Date(activity.startedAt.getTime() + activity.elapsedSeconds * 1000);
-    // Match window = event.startsAt − 30m to event.endsAt + 30m.
     const windowStart = new Date(rule.event.startsAt.getTime() - MATCH_WINDOW_BUFFER_MS);
     const windowEnd = new Date(rule.event.endsAt.getTime() + MATCH_WINDOW_BUFFER_MS);
-    if (activity.startedAt < windowStart) return false;
-    if (activityEnd > windowEnd) return false;
+    if (activity.startedAt < windowStart || activityEnd > windowEnd) {
+      reasons.push("time_window");
+    }
 
     const actualType = (activity.activityType ?? "").toLowerCase();
     if (rule.activityType) {
-      const expected = rule.activityType.toLowerCase();
-      if (expected !== actualType) return false;
+      if (rule.activityType.toLowerCase() !== actualType) reasons.push("type_mismatch");
     } else if (!DEFAULT_RUN_TYPES.has(actualType)) {
-      // No explicit type pin on the rule → only allow running-shaped
-      // activities. Otherwise a bike ride starting at the locale during
-      // the event window would be credited as a run attendance.
-      return false;
+      reasons.push("type_mismatch");
     }
 
-    // Special events: skip distance + duration checks — being in the right
-    // place at the right time is enough. Regular/partner events still enforce
-    // the rule's distance/duration constraints (e.g. minimum 5 km for a Wed
-    // run, to filter out warm-ups and random walks).
     const skipDistanceAndDuration = rule.event.type === EventType.special;
     if (!skipDistanceAndDuration) {
-      if (rule.minDistanceMeters != null && activity.distanceMeters < rule.minDistanceMeters) return false;
-      if (rule.maxDistanceMeters != null && activity.distanceMeters > rule.maxDistanceMeters) return false;
-      if (rule.minDurationSeconds != null && activity.elapsedSeconds < rule.minDurationSeconds) return false;
-      if (rule.maxDurationSeconds != null && activity.elapsedSeconds > rule.maxDurationSeconds) return false;
+      if (rule.minDistanceMeters != null && activity.distanceMeters < rule.minDistanceMeters) reasons.push("min_distance");
+      if (rule.maxDistanceMeters != null && activity.distanceMeters > rule.maxDistanceMeters) reasons.push("max_distance");
+      if (rule.minDurationSeconds != null && activity.elapsedSeconds < rule.minDurationSeconds) reasons.push("min_duration");
+      if (rule.maxDurationSeconds != null && activity.elapsedSeconds > rule.maxDurationSeconds) reasons.push("max_duration");
     }
 
     const activeLocations = rule.locations.map((l) => l.location);
     if (activeLocations.length > 0) {
-      if (!passesLocations(activeLocations, activity)) return false;
+      if (!passesLocations(activeLocations, activity)) reasons.push("geofence");
     } else if (
       rule.geofenceLat != null &&
       rule.geofenceLng != null &&
       rule.geofenceRadiusMeters != null
     ) {
-      if (!passesLegacyGeofence(rule, activity)) return false;
+      if (!passesLegacyGeofence(rule, activity)) reasons.push("geofence");
     }
 
-    return true;
+    return reasons;
   }
+
+  /**
+   * Read-only diagnostic: for each of the user's recent Strava activities,
+   * lists candidate sync-rules and the reason each one didn't match. If an
+   * activity is already credited (EventAttendance row tied to its
+   * externalActivityId), `matchedEventId` / `matchedEventTitle` are set.
+   *
+   * Used by /admin/strava/debug to answer "why didn't activity X count?".
+   * Side-effect free — does not materialize, write, or award anything.
+   */
+  async traceForUser(userId: string, options: MatchOptions = {}): Promise<TraceSummary> {
+    const activityWhere: Prisma.ExternalActivityWhereInput = {
+      userId,
+      provider: SyncProvider.strava,
+    };
+    if (options.after || options.before) {
+      activityWhere.startedAt = {};
+      if (options.after) activityWhere.startedAt.gte = options.after;
+      if (options.before) activityWhere.startedAt.lte = options.before;
+    }
+
+    const activities = await this.prisma.externalActivity.findMany({
+      where: activityWhere,
+      orderBy: [{ startedAt: "desc" }, { id: "desc" }],
+    });
+    if (activities.length === 0) {
+      return { activitiesEvaluated: 0, matchedCount: 0, activities: [] };
+    }
+
+    const minStart = activities[activities.length - 1]!.startedAt;
+    const maxStart = activities[0]!.startedAt;
+    const rules = (await this.prisma.eventSyncRule.findMany({
+      where: {
+        provider: SyncProvider.strava,
+        event: {
+          endsAt: { gte: new Date(minStart.getTime() - MATCH_WINDOW_BUFFER_MS) },
+          startsAt: { lte: new Date(maxStart.getTime() + MATCH_WINDOW_BUFFER_MS) },
+        },
+      },
+      include: {
+        event: true,
+        locations: {
+          where: { location: { status: CityLocationStatus.active } },
+          include: { location: true },
+        },
+      },
+    })) as SyncRuleWithContext[];
+
+    // Existing attendances for these activities (so we can label matched ones).
+    const attendances = await this.prisma.eventAttendance.findMany({
+      where: {
+        userId,
+        externalActivityId: { in: activities.map((a) => a.id) },
+        source: AttendanceSource.sync,
+      },
+      include: { event: { select: { id: true, title: true } } },
+    });
+    const attendanceByActivityId = new Map(
+      attendances.map((a) => [a.externalActivityId!, a]),
+    );
+
+    let matchedCount = 0;
+    const out: TraceActivity[] = [];
+
+    for (const activity of activities) {
+      const existing = attendanceByActivityId.get(activity.id) ?? null;
+      if (existing) matchedCount += 1;
+
+      // Consider only rules whose time window overlaps the activity at all —
+      // anything else would just say "time_window" forever, which is noise.
+      const activityEnd = new Date(activity.startedAt.getTime() + activity.elapsedSeconds * 1000);
+      const nearbyRules = rules.filter((r) => {
+        const ws = r.event.startsAt.getTime() - MATCH_WINDOW_BUFFER_MS;
+        const we = r.event.endsAt.getTime() + MATCH_WINDOW_BUFFER_MS;
+        return activityEnd.getTime() >= ws && activity.startedAt.getTime() <= we;
+      });
+
+      const candidates = nearbyRules.map((rule) => ({
+        eventId: rule.eventId,
+        eventTitle: rule.event.title,
+        eventStartsAt: rule.event.startsAt.toISOString(),
+        eventType: rule.event.type,
+        reasons: this.whyRuleDoesntMatch(rule, activity),
+      }));
+
+      out.push({
+        externalId: activity.externalId,
+        activityType: activity.activityType,
+        startedAt: activity.startedAt.toISOString(),
+        elapsedSeconds: activity.elapsedSeconds,
+        distanceMeters: activity.distanceMeters,
+        startLat: activity.startLat,
+        startLng: activity.startLng,
+        matchedEventId: existing?.eventId ?? null,
+        matchedEventTitle: existing?.event.title ?? null,
+        candidates,
+      });
+    }
+
+    return {
+      activitiesEvaluated: activities.length,
+      matchedCount,
+      activities: out,
+    };
+  }
+}
+
+export interface TraceActivity {
+  externalId: string;
+  activityType: string | null;
+  startedAt: string;
+  elapsedSeconds: number;
+  distanceMeters: number;
+  startLat: number | null;
+  startLng: number | null;
+  matchedEventId: string | null;
+  matchedEventTitle: string | null;
+  candidates: Array<{
+    eventId: string;
+    eventTitle: string;
+    eventStartsAt: string;
+    eventType: string;
+    reasons: string[];
+  }>;
+}
+
+export interface TraceSummary {
+  activitiesEvaluated: number;
+  matchedCount: number;
+  activities: TraceActivity[];
 }
 
 function activityPoints(activity: ExternalActivity): Array<[number, number]> {
