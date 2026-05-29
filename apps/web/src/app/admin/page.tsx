@@ -6,7 +6,7 @@ import {
   type SummaryEvent,
 } from "@/lib/api-admin-strava";
 
-export const metadata = { title: "Дашборд · Admin · CITYRNNG" };
+export const metadata = { title: "Сводка · Админка · CITYRNNG" };
 
 const RU_MONTHS_SHORT = [
   "янв", "фев", "мар", "апр", "май", "июн",
@@ -29,7 +29,7 @@ function fmtRelative(iso: string | null): string {
 }
 
 export default async function AdminDashboardPage() {
-  const summary = await getDashboardSummary();
+  const result = await getDashboardSummary();
 
   return (
     <main>
@@ -37,19 +37,18 @@ export default async function AdminDashboardPage() {
         <Wrap className="py-10">
           <span className="type-mono-caps">админка</span>
           <h1 className="type-hero mt-3" style={{ fontSize: 48 }}>
-            Дашборд.
+            Сводка.
           </h1>
           <p className="type-lede mt-3 max-w-2xl">
-            Сводка того, что сейчас происходит в проекте. Навигация по
-            разделам — в сайдбаре слева.
+            Что сейчас происходит в проекте. Разделы — слева в меню.
           </p>
         </Wrap>
       </section>
 
-      {summary ? (
-        <DashboardContent summary={summary} />
+      {result.ok ? (
+        <DashboardContent summary={result.data} />
       ) : (
-        <NoDataState />
+        <ErrorState status={result.status} message={result.message} />
       )}
     </main>
   );
@@ -81,41 +80,41 @@ function HealthBar({ summary }: { summary: DashboardSummary }) {
         <div className="grid grid-cols-1 gap-0 border border-ink md:grid-cols-3">
           <HealthCell
             ok={webhookOk}
-            label="Strava webhook"
+            label="Уведомления Strava"
             primary={
               ws.active
                 ? ws.callbackMatches
-                  ? `sub #${ws.subscriptionId} активна`
-                  : `sub #${ws.subscriptionId} — stale callback`
-                : "не зарегистрирована"
+                  ? `подписка №${ws.subscriptionId} активна`
+                  : `подписка №${ws.subscriptionId} — адрес устарел`
+                : "подписка не зарегистрирована"
             }
             secondary={
               <Link
                 href="/admin/strava/webhook"
                 className="font-mono text-[11px] uppercase tracking-[0.14em] text-muted hover:text-brand-red"
               >
-                Управление →
+                Перейти →
               </Link>
             }
           />
           <HealthCell
             ok={!ingestStale}
-            label="Последний ingest"
+            label="Последняя пробежка пришла"
             primary={fmtRelative(summary.health.lastIngestAt)}
             secondary={
               <span className="font-mono text-[11px] uppercase tracking-[0.14em] text-muted">
-                в кэше {summary.health.cachedActivities} активн.
+                в памяти {summary.health.cachedActivities} пробежек
               </span>
             }
             borderLeft
           />
           <HealthCell
             ok={true}
-            label="API health"
-            primary="всё ровно"
+            label="Сервер"
+            primary="работает"
             secondary={
               <span className="font-mono text-[11px] uppercase tracking-[0.14em] text-muted">
-                полный health — в Sentry / Grafana
+                детальная статистика — в Sentry
               </span>
             }
             borderLeft
@@ -171,23 +170,27 @@ function KpiStrip({ summary }: { summary: DashboardSummary }) {
     <section className="border-b border-ink">
       <Wrap className="py-0">
         <div className="grid grid-cols-1 gap-0 border border-ink md:grid-cols-4">
-          <Kpi label="Юзеров" value={k.totalUsers.toString()} sub={`+${k.newUsers7d} за 7д`} />
           <Kpi
-            label="Strava подключено"
+            label="Пользователей"
+            value={k.totalUsers.toString()}
+            sub={`+${k.newUsers7d} за неделю`}
+          />
+          <Kpi
+            label="Подключено к Strava"
             value={k.stravaConnected.toString()}
             sub={`${stravaPct}% от всех`}
             borderLeft
           />
           <Kpi
-            label="Активных бегунов 7д"
+            label="Активных бегунов за неделю"
             value={k.activeRunners7d.toString()}
-            sub="по attendance"
+            sub="хотя бы одна засчитанная пробежка"
             borderLeft
           />
           <Kpi
-            label="Баллов в обороте"
+            label="Баллов на счетах"
             value={k.pointsInCirculation.toLocaleString("ru-RU")}
-            sub="∑ балансов"
+            sub="сумма по всем"
             borderLeft
           />
         </div>
@@ -233,25 +236,25 @@ function StravaFlowStrip({ summary }: { summary: DashboardSummary }) {
       <Wrap className="py-0">
         <div className="grid grid-cols-1 gap-0 border border-ink md:grid-cols-3">
           <FlowCell
-            label="Подтянули 7д"
+            label="Пробежек загружено за неделю"
             value={s.ingested7d.toString()}
-            sub="ExternalActivity"
+            sub="из Strava"
           />
           <FlowCell
-            label="Засчитали 7д"
+            label="Засчитано за неделю"
             value={(s.attendances7dAuto + s.attendances7dManual).toString()}
-            sub={`${s.attendances7dAuto} авто · ${s.attendances7dManual} вручную`}
+            sub={`${s.attendances7dAuto} автоматически · ${s.attendances7dManual} вручную`}
             borderLeft
           />
           <FlowCell
-            label="Match-rate 7д"
+            label="Сколько пробежек привязалось к событиям"
             value={s.matchRate7dPct == null ? "—" : `${s.matchRate7dPct}%`}
             sub={
               s.matchRate7dPct == null
-                ? "нет ingest'ов"
+                ? "нет данных за период"
                 : s.matchRate7dPct < 50
-                  ? "низко — глянь /admin/strava/debug"
-                  : "норма"
+                  ? "низкий показатель — открой диагностику"
+                  : "нормально"
             }
             borderLeft
             warn={s.matchRate7dPct != null && s.matchRate7dPct < 50}
@@ -344,17 +347,19 @@ function EventBlock({
       </span>
       {event == null ? (
         <span className="font-sans text-[15px] text-graphite">
-          {kind === "next" ? "Нет запланированных в ближайшие 14 дней." : "Нет проведённых событий."}
+          {kind === "next"
+            ? "Нет запланированных в ближайшие 14 дней."
+            : "Нет проведённых событий."}
         </span>
       ) : (
         <>
           <h3 className="type-h3">{event.title}</h3>
           <span className="font-mono text-[13px] tracking-[0.04em] text-ink">
-            {fmtDateTime(event.startsAt)} · {event.type}
+            {fmtDateTime(event.startsAt)} · {eventTypeRu(event.type)}
           </span>
           <div className="flex flex-wrap items-baseline gap-x-4 gap-y-1 font-mono text-[13px]">
-            <span className="text-brand-red">{event.goingCount} идут</span>
-            <span className="text-ink">{event.attendedCount} attended</span>
+            <span className="text-brand-red">{event.goingCount} собираются</span>
+            <span className="text-ink">{event.attendedCount} пришли</span>
           </div>
           <Link
             href={`/events/${encodeURIComponent(event.id)}`}
@@ -368,16 +373,44 @@ function EventBlock({
   );
 }
 
-function NoDataState() {
+function eventTypeRu(type: string): string {
+  if (type === "regular") return "среда";
+  if (type === "special") return "спецзабег";
+  if (type === "partner") return "партнёрское";
+  return type;
+}
+
+function ErrorState({ status, message }: { status: number; message: string }) {
   return (
     <section className="border-b border-ink">
       <Wrap className="py-12">
-        <div className="border border-ink bg-paper-2 p-8">
-          <h2 className="type-h2">Нет данных</h2>
-          <p className="mt-3 text-[14px] text-graphite">
-            Не удалось получить сводку: проверь, что ты залогинен как
-            <code className="ml-1 font-mono text-[13px] text-ink">admin</code>{" "}
-            и API доступен.
+        <div className="border border-brand-red bg-brand-tint/30 p-8">
+          <span className="font-mono text-[11px] font-medium uppercase tracking-[0.14em] text-brand-red-ink">
+            не удалось загрузить сводку
+          </span>
+          <h2 className="type-h2 mt-3">
+            {status === 401
+              ? "Сессия не подходит"
+              : status === 403
+                ? "Нет прав admin"
+                : status >= 500
+                  ? "Ошибка на сервере"
+                  : "Сводка недоступна"}
+          </h2>
+          <p className="mt-3 max-w-2xl text-[14px] text-graphite">
+            {status === 401
+              ? "Войди заново через /auth — куки с токеном устарели или их нет."
+              : status === 403
+                ? "У этого пользователя нет роли admin. Зайди под админским аккаунтом."
+                : status >= 500
+                  ? "API упал на агрегации. Полный стек — в Sentry. Подсказка по ошибке ниже."
+                  : "Проверь, что API доступен, и попробуй обновить страницу."}
+          </p>
+          <p className="mt-4 font-mono text-[12px] text-ink">
+            <span className="text-muted">код: </span>
+            {status || "0"}
+            <span className="ml-3 text-muted">сообщение: </span>
+            {message}
           </p>
         </div>
       </Wrap>

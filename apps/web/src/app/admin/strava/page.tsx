@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { Wrap } from "@/components/site/wrap";
 
-export const metadata = { title: "Strava · Admin · CITYRNNG" };
+export const metadata = { title: "Strava · Админка · CITYRNNG" };
 
 export default function AdminStravaIndexPage() {
   return (
@@ -12,15 +12,14 @@ export default function AdminStravaIndexPage() {
             href="/admin"
             className="font-mono text-[11px] font-medium uppercase tracking-[0.14em] text-muted hover:text-brand-red"
           >
-            ← Дашборд
+            ← Сводка
           </Link>
           <h1 className="type-hero mt-3" style={{ fontSize: 40 }}>
             Strava
           </h1>
           <p className="type-lede mt-3 max-w-2xl">
-            Интеграция со Strava: подписка на webhook'и и диагностика
-            матчинга. Сюда добавляются все настройки и инструменты, связанные
-            со Strava-пайплайном.
+            Интеграция со Strava: подписка на уведомления о пробежках и
+            диагностика. Здесь собраны все инструменты для Strava.
           </p>
         </Wrap>
       </section>
@@ -31,14 +30,14 @@ export default function AdminStravaIndexPage() {
             <Card
               href="/admin/strava/webhook"
               kind="01"
-              title="Webhook subscription"
-              body="Регистрация push-subscription на стороне Strava. Один раз настроил — и активности юзеров сами прилетают, без поллинга."
+              title="Подписка на уведомления"
+              body="Регистрация подписки в Strava. Один раз настроишь — и пробежки пользователей сами прилетают, без ручного опроса."
             />
             <Card
               href="/admin/strava/debug"
               kind="02"
-              title="Дебаг матчинга"
-              body="Покажет, какие активности юзера подтянулись из Strava и почему конкретные не сматчились с событиями (тип / окно / дистанция / геофенс)."
+              title="Почему не засчиталось"
+              body="Покажет какие пробежки пользователя загрузились из Strava и почему конкретные не привязались к событиям (тип / время / дистанция / место)."
               borderLeft
             />
           </div>

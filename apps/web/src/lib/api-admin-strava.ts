@@ -107,18 +107,35 @@ export type SummaryEvent = {
   attendedCount: number;
 };
 
-export async function getDashboardSummary(): Promise<DashboardSummary | null> {
+export type DashboardSummaryResult =
+  | { ok: true; data: DashboardSummary }
+  | { ok: false; status: number; message: string };
+
+export async function getDashboardSummary(): Promise<DashboardSummaryResult> {
   const headers = authHeaders();
-  if (!headers) return null;
+  if (!headers) {
+    return { ok: false, status: 0, message: "Нет токена в куке — войди заново как admin." };
+  }
   try {
     const res = await fetch(`${API_BASE_URL}/admin/dashboard/summary`, {
       headers,
       cache: "no-store",
     });
-    if (!res.ok) return null;
-    return (await res.json()) as DashboardSummary;
-  } catch {
-    return null;
+    if (!res.ok) {
+      const body = (await res.json().catch(() => ({}))) as { code?: string; message?: string };
+      return {
+        ok: false,
+        status: res.status,
+        message: body.message ?? body.code ?? `HTTP ${res.status}`,
+      };
+    }
+    return { ok: true, data: (await res.json()) as DashboardSummary };
+  } catch (err) {
+    return {
+      ok: false,
+      status: 0,
+      message: `Не достучались до API: ${(err as Error).message}`,
+    };
   }
 }
 

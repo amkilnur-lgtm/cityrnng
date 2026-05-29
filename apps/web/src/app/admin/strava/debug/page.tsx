@@ -3,18 +3,18 @@ import { Wrap } from "@/components/site/wrap";
 import { listAdminUsers } from "@/lib/api-admin";
 import { runStravaDebug, type StravaTraceActivity } from "@/lib/api-admin-strava";
 
-export const metadata = { title: "Strava debug · Admin · CITYRNNG" };
+export const metadata = { title: "Почему не засчиталось · Админка · CITYRNNG" };
 
-// Human-readable labels for the stable reason keys returned by the API.
-// Keep keys in sync with whyRuleDoesntMatch() in attendance-matcher.service.ts.
+// Подписи на русском к причинам, которые отдаёт API.
+// Ключи должны совпадать с whyRuleDoesntMatch() в attendance-matcher.service.ts.
 const REASON_LABELS: Record<string, string> = {
-  time_window: "Активность не попала в окно события (±30 мин)",
-  type_mismatch: "Тип активности не подходит (не бег / не совпал с rule.activityType)",
-  min_distance: "Дистанция меньше минимума по правилу",
-  max_distance: "Дистанция больше максимума по правилу",
-  min_duration: "Длительность меньше минимума по правилу",
-  max_duration: "Длительность больше максимума по правилу",
-  geofence: "Старт/финиш активности вне геофенса локаций события",
+  time_window: "Пробежка не попала в окно события (±30 минут от старта)",
+  type_mismatch: "Это не бег (или тип не подходит правилу)",
+  min_distance: "Дистанция меньше минимума, заданного для события",
+  max_distance: "Дистанция больше максимума, заданного для события",
+  min_duration: "Слишком короткая по времени для правила",
+  max_duration: "Слишком длинная по времени для правила",
+  geofence: "Старт или финиш пробежки далеко от точек события",
 };
 
 function fmtDateTime(iso: string): string {
@@ -75,12 +75,12 @@ export default async function AdminStravaDebugPage({
             ← Strava
           </Link>
           <h1 className="type-hero mt-3" style={{ fontSize: 40 }}>
-            Дебаг матчинга
+            Почему не засчиталось
           </h1>
           <p className="type-lede mt-3 max-w-2xl">
-            Выбери юзера — покажем все его подтянутые из Strava активности и
-            почему конкретно каждая не сматчилась с событиями (тип / время /
-            дистанция / геофенс).
+            Выбери пользователя — покажем все его пробежки из Strava и
+            причину, по которой каждая не привязалась к событию (тип / время
+            / дистанция / место старта).
           </p>
         </Wrap>
       </section>
@@ -91,7 +91,7 @@ export default async function AdminStravaDebugPage({
             method="GET"
             className="flex flex-col gap-4 border border-ink bg-paper p-6 md:flex-row md:flex-wrap md:items-end md:gap-6 md:p-8"
           >
-            <Field label="Юзер" htmlFor="userId" wide>
+            <Field label="Пользователь" htmlFor="userId" wide>
               <select
                 id="userId"
                 name="userId"
@@ -112,7 +112,7 @@ export default async function AdminStravaDebugPage({
                 })}
               </select>
             </Field>
-            <Field label="С (after)" htmlFor="after">
+            <Field label="С даты" htmlFor="after">
               <input
                 id="after"
                 name="after"
@@ -121,7 +121,7 @@ export default async function AdminStravaDebugPage({
                 className="h-11 w-full border border-ink bg-paper px-3 font-mono text-[13px]"
               />
             </Field>
-            <Field label="По (before)" htmlFor="before">
+            <Field label="По дату" htmlFor="before">
               <input
                 id="before"
                 name="before"
@@ -138,9 +138,8 @@ export default async function AdminStravaDebugPage({
             </button>
           </form>
           <p className="mt-3 text-[12px] text-muted">
-            Окно по умолчанию: до 30 дней назад от текущего момента (как при
-            обычном sync'е). Если задать поля — отфильтруется ровно по ним.
-            Side-effect free, ничего не пишется в БД.
+            По умолчанию — последние 30 дней. Если задать даты — покажем за
+            этот период. Запрос только читает данные, в базу ничего не пишется.
           </p>
         </Wrap>
       </section>
@@ -149,10 +148,10 @@ export default async function AdminStravaDebugPage({
         <section className="border-b border-ink">
           <Wrap className="py-10">
             <h2 className="type-h2">
-              {result.matchedCount}/{result.activitiesEvaluated} сматчено
+              {result.matchedCount} из {result.activitiesEvaluated} засчитано
             </h2>
             <p className="mt-2 text-[13px] text-graphite">
-              Юзер: <span className="font-mono">{selectedUser.email}</span>
+              Пользователь: <span className="font-mono">{selectedUser.email}</span>
             </p>
 
             {result.activities.length === 0 ? (
@@ -161,9 +160,9 @@ export default async function AdminStravaDebugPage({
                   пусто
                 </strong>
                 <span className="mt-2 block">
-                  В выбранном окне нет ингестированных активностей. Запусти
-                  sync на главной /app/profile или Admin → Strava → нет debug
-                  без активностей.
+                  За выбранный период нет загруженных пробежек. Запусти
+                  синхронизацию на странице профиля /app/profile или подожди
+                  следующее уведомление от Strava.
                 </span>
               </div>
             ) : (
@@ -204,6 +203,13 @@ function Field({
   );
 }
 
+function eventTypeRu(type: string): string {
+  if (type === "regular") return "среда";
+  if (type === "special") return "спецзабег";
+  if (type === "partner") return "партнёрское";
+  return type;
+}
+
 function ActivityRow({ activity }: { activity: StravaTraceActivity }) {
   const matched = activity.matchedEventId != null;
   return (
@@ -227,15 +233,15 @@ function ActivityRow({ activity }: { activity: StravaTraceActivity }) {
         <span className="font-mono text-[13px] text-ink">{fmtDuration(activity.elapsedSeconds)}</span>
         {matched ? (
           <span className="ml-auto font-sans text-[13px] font-semibold text-brand-red-ink">
-            ✓ матч с «{activity.matchedEventTitle}»
+            ✓ привязана к «{activity.matchedEventTitle}»
           </span>
         ) : activity.candidates.length === 0 ? (
           <span className="ml-auto font-sans text-[13px] text-muted">
-            нет событий в окне
+            рядом нет подходящих событий
           </span>
         ) : (
           <span className="ml-auto font-sans text-[13px] text-muted">
-            {activity.candidates.length} кандидат(ов)
+            рядом событий: {activity.candidates.length}
           </span>
         )}
       </summary>
@@ -245,21 +251,23 @@ function ActivityRow({ activity }: { activity: StravaTraceActivity }) {
             <thead>
               <tr className="text-left font-mono text-[11px] uppercase tracking-[0.14em] text-muted">
                 <th className="pb-2">Событие</th>
-                <th className="pb-2">Тип</th>
+                <th className="pb-2">Вид</th>
                 <th className="pb-2">Когда</th>
-                <th className="pb-2">Причины несовпадения</th>
+                <th className="pb-2">Почему не подошло</th>
               </tr>
             </thead>
             <tbody>
               {activity.candidates.map((c) => (
                 <tr key={c.eventId} className="border-t border-ink/10 align-top">
                   <td className="py-2 pr-3 font-sans text-ink">{c.eventTitle}</td>
-                  <td className="py-2 pr-3 font-mono text-[12px] text-graphite">{c.eventType}</td>
+                  <td className="py-2 pr-3 font-mono text-[12px] text-graphite">
+                    {eventTypeRu(c.eventType)}
+                  </td>
                   <td className="py-2 pr-3 font-mono text-[12px] text-graphite">{fmtDateTime(c.eventStartsAt)}</td>
                   <td className="py-2">
                     {c.reasons.length === 0 ? (
                       <span className="font-sans font-semibold text-brand-red-ink">
-                        ✓ совпало бы (но что-то перехватило — см. one-per-day)
+                        ✓ подошло бы (но другая пробежка засчиталась раньше этим днём)
                       </span>
                     ) : (
                       <ul className="flex flex-col gap-1">
