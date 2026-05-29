@@ -185,7 +185,7 @@ function HealthSection({ cells }: { cells: HealthSignal[] }) {
         <h2 className="font-mono text-[11px] font-medium uppercase tracking-[0.14em] text-muted">
           состояние систем
         </h2>
-        <div className="mt-4 grid grid-cols-1 gap-0 border border-ink md:grid-cols-3">
+        <div className="mt-4 grid grid-cols-1 border-y-2 border-ink md:grid-cols-3">
           {cells.map((cell, i) => (
             <HealthCell
               key={cell.label}
@@ -210,9 +210,8 @@ function HealthCell({
   return (
     <div
       className={
-        "flex flex-col gap-2.5 p-5 " +
-        (borderLeft ? "md:border-l md:border-ink " : "") +
-        (warn ? "bg-brand-tint/25" : "bg-paper")
+        "flex flex-col gap-2.5 bg-paper p-5 " +
+        (borderLeft ? "md:border-l md:border-ink/40 " : "")
       }
     >
       <div className="flex items-center gap-2">
@@ -245,12 +244,17 @@ function HealthCell({
   );
 }
 
-// ── Strava flow (hero) ──────────────────────────────────────────────────
+// ── Strava flow (hero: засчитано) ───────────────────────────────────────
+// Match-rate (% подтянутых, что попали в события) — это developer-метрика,
+// а не оператора. У клуба пользователи бегают в течение недели много где —
+// большинство активностей НЕ попадёт в окно среды, и это нормально. Поэтому
+// hero — абсолютное число «засчитано», а match-rate показываем мелко как
+// справочное; алярмить им не алярмим.
 
 function StravaFlowSection({ summary }: { summary: DashboardSummary }) {
   const s = summary.stravaFlow;
+  const credited = s.attendances7dAuto + s.attendances7dManual;
   const noData = s.ingested7d === 0;
-  const lowMatchRate = s.matchRate7dPct != null && s.matchRate7dPct < 50;
 
   return (
     <section className="border-b border-ink">
@@ -267,73 +271,49 @@ function StravaFlowSection({ summary }: { summary: DashboardSummary }) {
             ctaText="Проверить подписку"
           />
         ) : (
-          <div className="mt-4 border border-ink">
-            <div className="grid grid-cols-1 lg:grid-cols-[1.4fr_1fr]">
-              {/* Hero — match-rate */}
-              <div
-                className={
-                  "flex flex-col gap-4 p-6 md:p-8 " +
-                  (lowMatchRate ? "bg-brand-tint/25" : "bg-paper")
-                }
+          <div className="mt-4 grid grid-cols-1 border-y-2 border-ink lg:grid-cols-[1.4fr_1fr]">
+            {/* Hero — absolute count of credited runs */}
+            <div className="flex flex-col gap-4 bg-paper p-6 md:p-8">
+              <div className="flex items-center gap-2">
+                <span className="font-mono text-[11px] font-medium uppercase tracking-[0.14em] text-muted">
+                  засчитано на наших событиях
+                </span>
+              </div>
+              <div className="flex items-baseline gap-4">
+                <span className="font-display text-[72px] font-bold leading-none tracking-[-0.03em] text-ink">
+                  {fmtNumber(credited)}
+                </span>
+                <span className="font-sans text-[18px] text-graphite">
+                  {pluralRu(credited, "пробежка", "пробежек")}
+                </span>
+              </div>
+              <p className="max-w-md text-[14px] leading-snug text-graphite">
+                Это пробежки, которые попали в окно события и засчитались в
+                баллы. Strava подтягивает все активности подряд — мимо событий
+                их в норме большинство, низкая доля попадания — не сбой.
+              </p>
+              <Link
+                href="/admin/strava/debug"
+                className="inline-flex w-fit items-center gap-2 border border-ink bg-paper px-4 py-2.5 font-sans text-[13px] font-semibold text-ink transition-colors hover:bg-ink hover:text-paper"
               >
-                <div className="flex items-center gap-2">
-                  <StatusIcon status={lowMatchRate ? "warn" : "ok"} />
-                  <span className="font-mono text-[11px] font-medium uppercase tracking-[0.14em] text-muted">
-                    сколько пробежек привязалось к событиям
-                  </span>
-                </div>
-                <div className="flex items-baseline gap-4">
-                  <span
-                    className={
-                      "font-display text-[72px] font-bold leading-none tracking-[-0.03em] " +
-                      (lowMatchRate ? "text-brand-red" : "text-ink")
-                    }
-                  >
-                    {s.matchRate7dPct == null ? "—" : `${s.matchRate7dPct}%`}
-                  </span>
-                  <span className="font-mono text-[13px] text-graphite">
-                    {s.attendances7dAuto} из {s.ingested7d}
-                  </span>
-                </div>
-                <p
-                  className={
-                    "max-w-md text-[14px] leading-snug " +
-                    (lowMatchRate ? "text-brand-red-ink" : "text-graphite")
-                  }
-                >
-                  {lowMatchRate
-                    ? "Низкий показатель. Скорее всего, пробежки не попадают в окно событий, либо стартуют далеко от точек. Открой диагностику — увидишь причину для каждой."
-                    : "Доля автоматически зачтённых пробежек среди тех, что пришли из Strava за последние 7 дней."}
-                </p>
-                {lowMatchRate ? (
-                  <Link
-                    href="/admin/strava/debug"
-                    className="inline-flex w-fit items-center gap-2 border border-brand-red bg-brand-red px-4 py-2.5 font-sans text-[13px] font-semibold text-paper transition-colors hover:bg-brand-red-ink"
-                  >
-                    Открыть диагностику
-                    <ArrowRight />
-                  </Link>
-                ) : null}
-              </div>
+                Посмотреть диагностику
+                <ArrowRight />
+              </Link>
+            </div>
 
-              {/* Supporting metrics */}
-              <div className="grid grid-cols-1 border-t border-ink md:grid-cols-2 lg:border-l lg:border-t-0 lg:grid-cols-1">
-                <SupportCell
-                  label="Загружено из Strava"
-                  value={fmtNumber(s.ingested7d)}
-                  hint={pluralRu(s.ingested7d, "пробежка", "пробежек") + " за период"}
-                />
-                <SupportCell
-                  label="Засчитано"
-                  value={fmtNumber(s.attendances7dAuto + s.attendances7dManual)}
-                  hint={
-                    s.attendances7dManual > 0
-                      ? `${s.attendances7dAuto} автоматически · ${s.attendances7dManual} вручную`
-                      : "все автоматически"
-                  }
-                  borderTop
-                />
-              </div>
+            {/* Supporting metrics */}
+            <div className="grid grid-cols-1 border-t border-ink md:grid-cols-2 lg:border-l lg:border-ink/40 lg:border-t-0 lg:grid-cols-1">
+              <SupportCell
+                label="Подтянули из Strava"
+                value={fmtNumber(s.ingested7d)}
+                hint={pluralRu(s.ingested7d, "активность", "активностей") + " за период"}
+              />
+              <SupportCell
+                label="Попали в события"
+                value={s.matchRate7dPct == null ? "—" : `${s.matchRate7dPct}%`}
+                hint={`${s.attendances7dAuto} из ${s.ingested7d} активностей`}
+                borderTop
+              />
             </div>
           </div>
         )}
@@ -356,8 +336,10 @@ function SupportCell({
   return (
     <div
       className={
-        "flex flex-col gap-1.5 p-5 " +
-        (borderTop ? "border-t border-ink md:border-l md:border-t-0 lg:border-t lg:border-l-0" : "")
+        "flex flex-col gap-1.5 bg-paper p-5 " +
+        (borderTop
+          ? "border-t border-ink/40 md:border-l md:border-ink/40 md:border-t-0 lg:border-t lg:border-l-0"
+          : "")
       }
     >
       <span className="font-mono text-[11px] font-medium uppercase tracking-[0.14em] text-muted">
@@ -384,7 +366,7 @@ function KpiSection({ summary }: { summary: DashboardSummary }) {
         <h2 className="font-mono text-[11px] font-medium uppercase tracking-[0.14em] text-muted">
           ключевые цифры
         </h2>
-        <div className="mt-4 grid grid-cols-1 gap-0 border border-ink md:grid-cols-2 lg:grid-cols-4">
+        <div className="mt-4 grid grid-cols-1 border-y-2 border-ink md:grid-cols-2 lg:grid-cols-4">
           <Kpi
             label="Пользователей"
             value={fmtNumber(k.totalUsers)}
@@ -432,7 +414,9 @@ function Kpi({
     <div
       className={
         "flex flex-col gap-1.5 bg-paper p-6 " +
-        (borderLeft ? "lg:border-l lg:border-ink md:border-l md:border-ink md:[&:nth-child(2n+1)]:border-l-0 lg:[&:nth-child(2n+1)]:border-l" : "")
+        (borderLeft
+          ? "lg:border-l lg:border-ink/40 md:border-l md:border-ink/40 md:[&:nth-child(2n+1)]:border-l-0 lg:[&:nth-child(2n+1)]:border-l"
+          : "")
       }
     >
       <span className="font-mono text-[11px] font-medium uppercase tracking-[0.14em] text-muted">
@@ -464,7 +448,7 @@ function EventsSection({ summary }: { summary: DashboardSummary }) {
         <h2 className="font-mono text-[11px] font-medium uppercase tracking-[0.14em] text-muted">
           события
         </h2>
-        <div className="mt-4 grid grid-cols-1 gap-0 border border-ink md:grid-cols-2">
+        <div className="mt-4 grid grid-cols-1 border-y-2 border-ink md:grid-cols-2">
           <EventCard title="Ближайшее" kind="next" event={summary.events.next} />
           <EventCard title="Последнее прошедшее" kind="past" event={summary.events.lastPast} borderLeft />
         </div>
@@ -488,7 +472,7 @@ function EventCard({
     <div
       className={
         "flex flex-col gap-3 bg-paper p-6 md:p-8 " +
-        (borderLeft ? "md:border-l md:border-ink" : "")
+        (borderLeft ? "md:border-l md:border-ink/40" : "")
       }
     >
       <span className="font-mono text-[11px] font-medium uppercase tracking-[0.14em] text-muted">
