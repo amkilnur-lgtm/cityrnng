@@ -6,7 +6,7 @@ import {
 } from "./actions";
 import { getStravaSubscriptionStatus } from "@/lib/api-admin-strava";
 
-export const metadata = { title: "Strava webhook · Admin · CITYRNNG" };
+export const metadata = { title: "Подписка Strava · Админка · CITYRNNG" };
 
 export default async function AdminStravaIntegrationPage() {
   const status = await getStravaSubscriptionStatus();
@@ -18,18 +18,18 @@ export default async function AdminStravaIntegrationPage() {
       <section className="border-b border-ink">
         <Wrap className="py-10">
           <Link
-            href="/admin"
+            href="/admin/strava"
             className="font-mono text-[11px] font-medium uppercase tracking-[0.14em] text-muted hover:text-brand-red"
           >
-            ← Дашборд
+            ← Strava
           </Link>
           <h1 className="type-hero mt-3" style={{ fontSize: 40 }}>
-            Strava webhook subscription
+            Подписка на уведомления Strava
           </h1>
           <p className="type-lede mt-3 max-w-2xl">
-            Push-subscription регистрируется один раз на всё приложение. После
-            этого Strava сама шлёт нам события о новых, изменённых и удалённых
-            активностях — поллинг не нужен.
+            Подписка регистрируется один раз на всё приложение. После этого
+            Strava сама шлёт нам уведомления о новых, изменённых и удалённых
+            пробежках — нам не нужно постоянно опрашивать сервис.
           </p>
         </Wrap>
       </section>
@@ -37,25 +37,25 @@ export default async function AdminStravaIntegrationPage() {
       <section className="border-b border-ink">
         <Wrap className="py-10">
           <div className="flex flex-col gap-4 border border-ink bg-paper p-6 md:p-8">
-            <Row k="Callback URL" v={callbackUrl} />
-            <Row k="Subscription ID" v={sub ? String(sub.id) : "—"} />
+            <Row k="Адрес для уведомлений" v={callbackUrl} />
+            <Row k="Номер подписки" v={sub ? String(sub.id) : "—"} />
             <Row
-              k="Зарегистрирована"
+              k="Дата регистрации"
               v={sub ? new Date(sub.created_at).toLocaleString("ru-RU") : "—"}
             />
             <Row
-              k="Callback в Strava"
+              k="Адрес, прописанный в Strava"
               v={sub ? sub.callback_url : "—"}
             />
             <div className="flex flex-wrap gap-3 pt-2">
               <form action={ensureStravaSubscriptionAction}>
                 <SubmitButton primary>
-                  {sub ? "Пересоздать subscription" : "Зарегистрировать"}
+                  {sub ? "Пересоздать подписку" : "Зарегистрировать"}
                 </SubmitButton>
               </form>
               {sub ? (
                 <form action={removeStravaSubscriptionAction}>
-                  <SubmitButton>Удалить subscription</SubmitButton>
+                  <SubmitButton>Удалить подписку</SubmitButton>
                 </form>
               ) : null}
             </div>
@@ -63,13 +63,13 @@ export default async function AdminStravaIntegrationPage() {
 
           {sub && sub.callback_url !== callbackUrl ? (
             <div className="mt-4 border border-brand-red bg-brand-tint/40 p-4 text-[13px] text-brand-red-ink">
-              ⚠ Stale callback URL — нажми «Пересоздать subscription», чтобы
-              Strava начала слать на актуальный домен.
+              ⚠ В Strava прописан старый адрес. Нажми «Пересоздать подписку»,
+              чтобы Strava начала слать уведомления на актуальный домен.
             </div>
           ) : null}
 
           <p className="mt-6 max-w-2xl text-[13px] text-muted">
-            Перед регистрацией убедись, что в .env заполнены{" "}
+            Перед регистрацией убедись, что в настройках сервера заданы{" "}
             <code className="bg-paper-2 px-1.5 py-0.5 font-mono text-[12px] text-ink">
               STRAVA_WEBHOOK_VERIFY_TOKEN
             </code>{" "}
@@ -77,8 +77,7 @@ export default async function AdminStravaIntegrationPage() {
             <code className="bg-paper-2 px-1.5 py-0.5 font-mono text-[12px] text-ink">
               STRAVA_WEBHOOK_CALLBACK_ORIGIN
             </code>
-            . Без них Strava отклонит handshake-проверку или мы не сможем
-            построить публичный URL.
+            . Без них Strava отклонит регистрацию.
           </p>
         </Wrap>
       </section>
