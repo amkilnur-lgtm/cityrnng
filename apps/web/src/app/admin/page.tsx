@@ -174,7 +174,7 @@ function HealthSection({ cells }: { cells: HealthSignal[] }) {
         <h2 className="font-mono text-[11px] font-medium uppercase tracking-[0.14em] text-muted">
           состояние систем
         </h2>
-        <div className="mt-4 grid grid-cols-1 border-y-2 border-ink md:grid-cols-2">
+        <div className="mt-4 grid grid-cols-1 border-2 border-ink md:grid-cols-2">
           {cells.map((cell, i) => (
             <HealthCell
               key={cell.label}
@@ -260,7 +260,7 @@ function StravaFlowSection({ summary }: { summary: DashboardSummary }) {
             ctaText="Проверить подписку"
           />
         ) : (
-          <div className="mt-4 grid grid-cols-1 border-y-2 border-ink lg:grid-cols-[1.4fr_1fr]">
+          <div className="mt-4 grid grid-cols-1 border-2 border-ink lg:grid-cols-[1.4fr_1fr]">
             {/* Hero — absolute count of credited runs */}
             <div className="flex flex-col gap-4 bg-paper p-6 md:p-8">
               <span className="font-mono text-[11px] font-medium uppercase tracking-[0.14em] text-muted">
@@ -353,7 +353,7 @@ function KpiSection({ summary }: { summary: DashboardSummary }) {
         <h2 className="font-mono text-[11px] font-medium uppercase tracking-[0.14em] text-muted">
           ключевые цифры
         </h2>
-        <div className="mt-4 grid grid-cols-1 border-y-2 border-ink md:grid-cols-2 lg:grid-cols-4">
+        <div className="mt-4 grid grid-cols-1 border-2 border-ink md:grid-cols-2 lg:grid-cols-4">
           <Kpi
             label="Пользователей"
             value={fmtNumber(k.totalUsers)}
@@ -425,7 +425,7 @@ function EventsSection({ summary }: { summary: DashboardSummary }) {
         <h2 className="font-mono text-[11px] font-medium uppercase tracking-[0.14em] text-muted">
           события
         </h2>
-        <div className="mt-4 grid grid-cols-1 border-y-2 border-ink md:grid-cols-2">
+        <div className="mt-4 grid grid-cols-1 border-2 border-ink md:grid-cols-2">
           <EventCard title="Ближайшее" kind="next" event={summary.events.next} />
           <EventCard title="Последнее прошедшее" kind="past" event={summary.events.lastPast} borderLeft />
         </div>
@@ -597,7 +597,7 @@ function EmptyBlock({
   ctaText?: string;
 }) {
   return (
-    <div className="mt-4 flex flex-col items-start gap-3 border-y-2 border-ink bg-paper px-6 py-8 md:px-8">
+    <div className="mt-4 flex flex-col items-start gap-3 border-2 border-ink bg-paper px-6 py-8 md:px-8">
       <h3 className="font-display text-[20px] font-bold leading-tight tracking-[-0.02em] text-ink">
         {title}
       </h3>
