@@ -348,7 +348,7 @@ function KpiSection({ summary }: { summary: DashboardSummary }) {
   const k = summary.kpis;
   const stravaPct = k.totalUsers > 0 ? Math.round((k.stravaConnected / k.totalUsers) * 100) : 0;
   return (
-    <section className="bg-paper-2/30">
+    <section>
       <Wrap className="py-8">
         <h2 className="font-mono text-[11px] font-medium uppercase tracking-[0.14em] text-muted">
           ключевые цифры
