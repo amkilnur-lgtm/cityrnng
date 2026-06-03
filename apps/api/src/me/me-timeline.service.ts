@@ -6,7 +6,7 @@ import {
 } from "../events/event-occurrence.service";
 import { PrismaService } from "../prisma/prisma.service";
 
-export type TimelineCellKind = "done" | "skipped" | "tomorrow" | "upcoming";
+export type TimelineCellKind = "done" | "skipped" | "today" | "tomorrow" | "upcoming";
 
 export interface TimelineCell {
   /** YYYY-MM-DD in club local time (Asia/Yekaterinburg / Moscow — currently
@@ -143,15 +143,14 @@ export class MeTimelineService {
         const dateKeyStr = this.dayKey(cellDate);
 
         // Use event.endsAt for the past/future boundary, not just the date.
-        // Otherwise an event scheduled for later today (e.g. Wednesday club
-        // run at 19:30) is classified "skipped" the moment the calendar
-        // ticks over to its date at 00:00 — even though the run hasn't
-        // started, much less ended. With endsAt-based check, today's
-        // upcoming event correctly stays "upcoming" until it ends.
+        // Today's run gets its own kind so the UI can give it the most
+        // prominent treatment (red, "СЕГОДНЯ" badge) — it's the most
+        // imminent event the user has, more than tomorrow's.
         const now = new Date();
         let kind: TimelineCellKind;
         if (attended) kind = "done";
         else if (face.endsAt < now) kind = "skipped";
+        else if (dateKeyStr === today) kind = "today";
         else if (dateKeyStr === tomorrow) kind = "tomorrow";
         else kind = "upcoming";
 
