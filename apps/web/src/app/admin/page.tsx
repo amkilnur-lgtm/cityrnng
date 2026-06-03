@@ -18,9 +18,11 @@ const RU_MONTHS_SHORT = [
   "июл", "авг", "сен", "окт", "ноя", "дек",
 ];
 
+const RU_WEEKDAYS_SHORT = ["вс", "пн", "вт", "ср", "чт", "пт", "сб"];
+
 function fmtDateTime(iso: string): string {
   const d = new Date(iso);
-  return `${d.getDate()} ${RU_MONTHS_SHORT[d.getMonth()]} · ${String(d.getHours()).padStart(2, "0")}:${String(d.getMinutes()).padStart(2, "0")}`;
+  return `${RU_WEEKDAYS_SHORT[d.getDay()]} · ${d.getDate()} ${RU_MONTHS_SHORT[d.getMonth()]} · ${String(d.getHours()).padStart(2, "0")}:${String(d.getMinutes()).padStart(2, "0")}`;
 }
 
 function fmtRelative(iso: string | null): string {
@@ -105,16 +107,82 @@ function computeHealth(summary: DashboardSummary): {
 
 // ── Page ────────────────────────────────────────────────────────────────
 
+// Mock summary used in dev-mock admin sessions (no real API token) so the
+// dashboard renders with realistic numbers for design work and demos
+// without requiring access to staging. In a real admin session the live
+// summary always wins.
+const DEV_MOCK_SUMMARY: DashboardSummary = {
+  health: {
+    webhookSubscription: {
+      active: true,
+      callbackUrl: "https://staging.cityrunning.online/api/v1/integrations/strava/webhook",
+      subscriptionId: 348729,
+      registeredAt: new Date(Date.now() - 9 * 24 * 3600 * 1000).toISOString(),
+      callbackMatches: true,
+    },
+    lastIngestAt: new Date(Date.now() - 2 * 3600 * 1000).toISOString(),
+    cachedActivities: 3,
+  },
+  kpis: {
+    totalUsers: 4,
+    newUsers7d: 1,
+    stravaConnected: 1,
+    activeRunners7d: 1,
+    pointsInCirculation: 180,
+  },
+  stravaFlow: {
+    ingested7d: 3,
+    attendances7dAuto: 1,
+    attendances7dManual: 0,
+    matchRate7dPct: 33,
+  },
+  events: {
+    next: {
+      id: "rule:0000-0000-0000:2026-06-03",
+      title: "Пробежка Ситираннинг",
+      type: "regular",
+      startsAt: new Date(new Date().setHours(19, 30, 0, 0)).toISOString(),
+      goingCount: 0,
+      attendedCount: 0,
+    },
+    lastPast: {
+      id: "rule:0000-0000-0000:2026-05-20",
+      title: "Пробежка Ситираннинг",
+      type: "regular",
+      startsAt: (() => {
+        const d = new Date();
+        d.setDate(d.getDate() - 14);
+        d.setHours(19, 30, 0, 0);
+        return d.toISOString();
+      })(),
+      goingCount: 0,
+      attendedCount: 1,
+    },
+  },
+};
+
 export default async function AdminDashboardPage() {
   const result = await getDashboardSummary();
   const renderedAt = new Date().toISOString();
 
+  // Real admin session → live data. Dev-mock admin (no API token) → sample
+  // numbers so designers can iterate locally. Production failures fall
+  // through to ErrorState — never show fake numbers to a real admin.
+  const summary: DashboardSummary | null = result.ok
+    ? result.data
+    : process.env.NODE_ENV !== "production"
+      ? DEV_MOCK_SUMMARY
+      : null;
+
   return (
     <main>
-      {result.ok ? (
-        <DashboardContent summary={result.data} renderedAt={renderedAt} />
+      {summary ? (
+        <DashboardContent summary={summary} renderedAt={renderedAt} />
       ) : (
-        <ErrorState status={result.status} message={result.message} />
+        <ErrorState
+          status={result.ok ? 0 : result.status}
+          message={result.ok ? "" : result.message}
+        />
       )}
     </main>
   );
@@ -156,9 +224,10 @@ function StatusBanner({ warnCount, renderedAt }: { warnCount: number; renderedAt
                 : `Требует внимания: ${warnCount}.`}
             </h1>
           </div>
-          <span className="font-mono text-[11px] uppercase tracking-[0.14em] text-muted lg:text-right">
-            обновлено {fmtRelative(renderedAt)} · авто-раз в минуту
-          </span>
+          <div className="flex flex-col gap-0.5 font-mono text-[10px] uppercase tracking-[0.14em] text-muted lg:text-right">
+            <span>обновлено {fmtRelative(renderedAt)}</span>
+            <span className="opacity-70">авто-раз в минуту</span>
+          </div>
         </div>
       </Wrap>
     </section>
@@ -366,9 +435,9 @@ function KpiSection({ summary }: { summary: DashboardSummary }) {
             borderLeft
           />
           <Kpi
-            label="Активных бегунов за неделю"
+            label="Активных за неделю"
             value={fmtNumber(k.activeRunners7d)}
-            sub={k.activeRunners7d > 0 ? "с засчитанной пробежкой" : undefined}
+            sub={k.activeRunners7d > 0 ? "хотя бы одна пробежка" : undefined}
             borderLeft
           />
           <Kpi
@@ -403,7 +472,9 @@ function Kpi({
           : "")
       }
     >
-      <span className="font-mono text-[11px] font-medium uppercase tracking-[0.14em] text-muted">
+      {/* Лейбл фиксированной высоты — все KPI выравниваются по числу
+          независимо от того, влез ли заголовок в одну строку или две. */}
+      <span className="min-h-[2.25rem] font-mono text-[11px] font-medium uppercase leading-tight tracking-[0.14em] text-muted">
         {label}
       </span>
       <span className="font-display text-[34px] font-bold leading-none tracking-[-0.03em] text-ink">
@@ -445,10 +516,14 @@ function EventCard({
   kind: "next" | "past";
   borderLeft?: boolean;
 }) {
+  // Прошедшее событие визуально приглушаем — фоном и приглушённым текстом
+  // даты. Ближайшее остаётся на чистом paper'е, акцент на дате.
+  const isPast = kind === "past";
   return (
     <div
       className={
-        "flex flex-col gap-3 bg-paper p-6 md:p-8 " +
+        "flex flex-col gap-3 p-6 md:p-8 " +
+        (isPast ? "bg-paper-2/40 " : "bg-paper ") +
         (borderLeft ? "md:border-l md:border-ink" : "")
       }
     >
@@ -465,7 +540,12 @@ function EventCard({
         <>
           {/* Дата + тип — primary (отличие между картами «ближайшее»/«прошедшее»
               для повторяющихся еженедельных забегов). Название — secondary. */}
-          <h3 className="font-display text-[28px] font-bold leading-tight tracking-[-0.02em] text-ink">
+          <h3
+            className={
+              "font-display text-[28px] font-bold leading-tight tracking-[-0.02em] " +
+              (isPast ? "text-graphite" : "text-ink")
+            }
+          >
             {fmtDateTime(event.startsAt)}
           </h3>
           <span className="font-mono text-[12px] uppercase tracking-[0.14em] text-muted">
