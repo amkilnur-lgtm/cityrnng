@@ -1,7 +1,7 @@
 import { cookies } from "next/headers";
 import { API_BASE_URL, AT_COOKIE } from "@/lib/api-config";
 
-export type TimelineCellKind = "done" | "skipped" | "tomorrow" | "upcoming";
+export type TimelineCellKind = "done" | "skipped" | "today" | "tomorrow" | "upcoming";
 
 export type TimelineCell = {
   date: string;

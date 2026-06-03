@@ -171,9 +171,12 @@ function TimelineCellView({
     </Badge>
   ) : null;
 
-  if (cell.kind === "tomorrow") {
-    // Card links to the actual event so a tap goes straight to RSVP/details.
+  // Today / tomorrow share the same prominent red card. Today is the most
+  // imminent (run is happening in hours), tomorrow is next. Differentiated
+  // only by the badge label ("СЕГОДНЯ" vs "ЗАВТРА").
+  if (cell.kind === "today" || cell.kind === "tomorrow") {
     const time = nextEvent?.time ?? cell.time;
+    const badge = cell.kind === "today" ? "СЕГОДНЯ" : "ЗАВТРА";
     return (
       <Link href={`/events/${encodeURIComponent(cell.eventId)}`} className={`${SHELL} bg-brand-red text-paper transition-colors hover:bg-brand-red-ink`}>
         <div className="flex items-center gap-2">
@@ -181,7 +184,7 @@ function TimelineCellView({
             {cell.dateLabel}
           </span>
           <span className="ml-auto font-mono text-[11px] font-medium uppercase tracking-[0.14em]">
-            ЗАВТРА
+            {badge}
           </span>
         </div>
         <span className="font-display text-[24px] font-bold leading-none">
