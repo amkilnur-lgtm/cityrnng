@@ -93,7 +93,10 @@ function computeHealth(summary: DashboardSummary): {
     primary: summary.health.lastIngestAt
       ? `пришла ${fmtRelative(summary.health.lastIngestAt)}`
       : "пока ничего не приходило",
-    hint: `в памяти ${fmtNumber(summary.health.cachedActivities)} ${pluralRu(summary.health.cachedActivities, "пробежка", "пробежек")}`,
+    hint:
+      summary.health.cachedActivities > 0
+        ? `в базе ${fmtNumber(summary.health.cachedActivities)} ${pluralRu(summary.health.cachedActivities, "пробежка", "пробежек")}`
+        : undefined,
   };
 
   const cells = [webhookCell, ingestCell];
@@ -144,25 +147,18 @@ function StatusBanner({ warnCount, renderedAt }: { warnCount: number; renderedAt
   return (
     <section className={"border-b border-ink " + (allOk ? "bg-paper-2/40" : "bg-brand-tint/30")}>
       <Wrap className="py-10">
-        <div className="flex flex-col gap-6 lg:flex-row lg:items-end lg:justify-between">
-          <div className="flex flex-col gap-3">
-            <span className="type-mono-caps">админка · сводка</span>
-            <div className="flex items-center gap-3">
-              <StatusIcon status={allOk ? "ok" : "warn"} />
-              <h1 className="font-display text-[36px] font-bold leading-none tracking-[-0.025em] text-ink md:text-[44px]">
-                {allOk
-                  ? "Всё работает."
-                  : `Требует внимания: ${warnCount}.`}
-              </h1>
-            </div>
-            <p className="type-lede max-w-2xl text-[15px]">
-              Что сейчас происходит в проекте. Разделы — слева в меню.
-            </p>
+        <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+          <div className="flex items-center gap-3">
+            <StatusIcon status={allOk ? "ok" : "warn"} />
+            <h1 className="font-display text-[36px] font-bold leading-none tracking-[-0.025em] text-ink md:text-[44px]">
+              {allOk
+                ? "Всё работает."
+                : `Требует внимания: ${warnCount}.`}
+            </h1>
           </div>
-          <div className="flex flex-col gap-1 font-mono text-[11px] uppercase tracking-[0.14em] text-muted lg:text-right">
-            <span>обновлено {fmtRelative(renderedAt)}</span>
-            <span className="text-muted/70">обновляется автоматически раз в минуту</span>
-          </div>
+          <span className="font-mono text-[11px] uppercase tracking-[0.14em] text-muted lg:text-right">
+            обновлено {fmtRelative(renderedAt)} · авто-раз в минуту
+          </span>
         </div>
       </Wrap>
     </section>
@@ -173,7 +169,7 @@ function StatusBanner({ warnCount, renderedAt }: { warnCount: number; renderedAt
 
 function HealthSection({ cells }: { cells: HealthSignal[] }) {
   return (
-    <section className="border-b border-ink">
+    <section>
       <Wrap className="py-8">
         <h2 className="font-mono text-[11px] font-medium uppercase tracking-[0.14em] text-muted">
           состояние систем
@@ -227,7 +223,7 @@ function HealthCell({
       {cell.cta ? (
         <Link
           href={cell.cta.href}
-          className="mt-auto inline-flex w-fit items-center gap-1 font-sans text-[13px] font-semibold text-ink hover:text-brand-red"
+          className="mt-auto inline-flex w-fit items-center gap-2 border border-ink bg-paper px-3 py-1.5 font-sans text-[12px] font-semibold text-ink transition-colors hover:bg-ink hover:text-paper"
         >
           {cell.cta.text}
           <ArrowRight />
@@ -250,7 +246,7 @@ function StravaFlowSection({ summary }: { summary: DashboardSummary }) {
   const noData = s.ingested7d === 0;
 
   return (
-    <section className="border-b border-ink">
+    <section>
       <Wrap className="py-8">
         <h2 className="font-mono text-[11px] font-medium uppercase tracking-[0.14em] text-muted">
           поток Strava · за неделю
@@ -352,7 +348,7 @@ function KpiSection({ summary }: { summary: DashboardSummary }) {
   const k = summary.kpis;
   const stravaPct = k.totalUsers > 0 ? Math.round((k.stravaConnected / k.totalUsers) * 100) : 0;
   return (
-    <section className="border-b border-ink bg-paper-2/30">
+    <section className="bg-paper-2/30">
       <Wrap className="py-8">
         <h2 className="font-mono text-[11px] font-medium uppercase tracking-[0.14em] text-muted">
           ключевые цифры
@@ -366,20 +362,19 @@ function KpiSection({ summary }: { summary: DashboardSummary }) {
           <Kpi
             label="Подключено к Strava"
             value={fmtNumber(k.stravaConnected)}
-            sub={k.totalUsers > 0 ? `${stravaPct}% от всех` : undefined}
+            sub={k.stravaConnected > 0 ? `${stravaPct}% от всех` : undefined}
             borderLeft
           />
           <Kpi
             label="Активных бегунов за неделю"
             value={fmtNumber(k.activeRunners7d)}
-            sub="с засчитанной пробежкой"
+            sub={k.activeRunners7d > 0 ? "с засчитанной пробежкой" : undefined}
             borderLeft
           />
           <Kpi
             label="Баллов на счетах"
-            value={fmtNumber(k.pointsInCirculation)}
-            sub="сумма по всем"
-            unit="Б"
+            value={`${fmtNumber(k.pointsInCirculation)} Б`}
+            sub={k.pointsInCirculation > 0 ? "сумма по всем" : undefined}
             borderLeft
           />
         </div>
@@ -392,13 +387,11 @@ function Kpi({
   label,
   value,
   sub,
-  unit,
   borderLeft,
 }: {
   label: string;
   value: string;
   sub?: string;
-  unit?: string;
   borderLeft?: boolean;
 }) {
   return (
@@ -413,15 +406,8 @@ function Kpi({
       <span className="font-mono text-[11px] font-medium uppercase tracking-[0.14em] text-muted">
         {label}
       </span>
-      <span className="flex items-baseline gap-1.5">
-        <span className="font-display text-[34px] font-bold leading-none tracking-[-0.03em] text-ink">
-          {value}
-        </span>
-        {unit ? (
-          <span className="font-mono text-[14px] font-medium text-graphite">
-            {unit}
-          </span>
-        ) : null}
+      <span className="font-display text-[34px] font-bold leading-none tracking-[-0.03em] text-ink">
+        {value}
       </span>
       {sub ? (
         <span className="font-mono text-[12px] text-graphite">{sub}</span>
@@ -434,7 +420,7 @@ function Kpi({
 
 function EventsSection({ summary }: { summary: DashboardSummary }) {
   return (
-    <section className="border-b border-ink">
+    <section>
       <Wrap className="py-8">
         <h2 className="font-mono text-[11px] font-medium uppercase tracking-[0.14em] text-muted">
           события
@@ -477,11 +463,13 @@ function EventCard({
         </span>
       ) : (
         <>
-          <h3 className="font-display text-[22px] font-bold leading-tight tracking-[-0.02em] text-ink">
-            {event.title}
+          {/* Дата + тип — primary (отличие между картами «ближайшее»/«прошедшее»
+              для повторяющихся еженедельных забегов). Название — secondary. */}
+          <h3 className="font-display text-[28px] font-bold leading-tight tracking-[-0.02em] text-ink">
+            {fmtDateTime(event.startsAt)}
           </h3>
-          <span className="font-mono text-[13px] tracking-[0.04em] text-ink">
-            {fmtDateTime(event.startsAt)} · {eventTypeRu(event.type)}
+          <span className="font-mono text-[12px] uppercase tracking-[0.14em] text-muted">
+            {eventTypeRu(event.type)} · {event.title}
           </span>
           {kind === "next" ? (
             <NextEventStats event={event} />
@@ -490,7 +478,7 @@ function EventCard({
           )}
           <Link
             href={`/events/${encodeURIComponent(event.id)}`}
-            className="mt-auto inline-flex w-fit items-center gap-1 font-sans text-[13px] font-semibold text-ink hover:text-brand-red"
+            className="mt-auto inline-flex w-fit items-center gap-2 border border-ink bg-paper px-4 py-2.5 font-sans text-[13px] font-semibold text-ink transition-colors hover:bg-ink hover:text-paper"
           >
             Открыть событие
             <ArrowRight />
@@ -609,7 +597,7 @@ function EmptyBlock({
   ctaText?: string;
 }) {
   return (
-    <div className="mt-4 flex flex-col items-start gap-3 border border-ink bg-paper-2/40 p-6 md:p-8">
+    <div className="mt-4 flex flex-col items-start gap-3 border-y-2 border-ink bg-paper px-6 py-8 md:px-8">
       <h3 className="font-display text-[20px] font-bold leading-tight tracking-[-0.02em] text-ink">
         {title}
       </h3>
@@ -617,7 +605,7 @@ function EmptyBlock({
       {ctaHref && ctaText ? (
         <Link
           href={ctaHref}
-          className="inline-flex items-center gap-1 font-sans text-[13px] font-semibold text-ink hover:text-brand-red"
+          className="mt-1 inline-flex items-center gap-2 border border-ink bg-paper px-4 py-2.5 font-sans text-[13px] font-semibold text-ink transition-colors hover:bg-ink hover:text-paper"
         >
           {ctaText}
           <ArrowRight />

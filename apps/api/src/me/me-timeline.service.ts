@@ -142,11 +142,18 @@ export class MeTimelineService {
         const cellDate = new Date(face.startsAt);
         const dateKeyStr = this.dayKey(cellDate);
 
+        // Use event.endsAt for the past/future boundary, not just the date.
+        // Otherwise an event scheduled for later today (e.g. Wednesday club
+        // run at 19:30) is classified "skipped" the moment the calendar
+        // ticks over to its date at 00:00 — even though the run hasn't
+        // started, much less ended. With endsAt-based check, today's
+        // upcoming event correctly stays "upcoming" until it ends.
+        const now = new Date();
         let kind: TimelineCellKind;
         if (attended) kind = "done";
+        else if (face.endsAt < now) kind = "skipped";
         else if (dateKeyStr === tomorrow) kind = "tomorrow";
-        else if (dateKeyStr > today) kind = "upcoming";
-        else kind = "skipped";
+        else kind = "upcoming";
 
         const cell: TimelineCell = {
           date: dateKeyStr,
