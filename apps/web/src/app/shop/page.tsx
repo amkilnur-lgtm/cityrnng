@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { PageHero, PageShell } from "@/components/site/page-shell";
+import { RewardsGrid } from "@/components/shop/rewards-grid";
 import { Wrap } from "@/components/site/wrap";
 import {
   PARTNERS as MOCK_PARTNERS,
@@ -167,17 +168,12 @@ export default async function ShopPage() {
               ) : null}
             </div>
 
-            <div className="grid grid-cols-1 border border-ink md:grid-cols-2 lg:grid-cols-4">
-              {g.rewards.map((reward, i) => (
-                <RewardCard
-                  key={reward.slug}
-                  reward={reward}
-                  index={i}
-                  isAuthed={state.isAuthed}
-                  userPoints={userPoints}
-                />
-              ))}
-            </div>
+            <RewardsGrid
+              rewards={g.rewards}
+              isAuthed={state.isAuthed}
+              userPoints={userPoints}
+            />
+
           </Wrap>
         </section>
       ))}
@@ -197,76 +193,5 @@ export default async function ShopPage() {
         </Wrap>
       </section>
     </PageShell>
-  );
-}
-
-function RewardCard({
-  reward,
-  index,
-  isAuthed,
-  userPoints,
-}: {
-  reward: RewardView;
-  index: number;
-  isAuthed: boolean;
-  userPoints: number;
-}) {
-  const canAfford = isAuthed && userPoints >= reward.costPoints;
-  const insufficient = isAuthed && !canAfford;
-
-  // Border math for the responsive grid (1 / 2 / 4 columns).
-  const borderClasses = [
-    index > 0 && "border-t border-ink/15",
-    index % 2 === 1 && "md:border-l md:border-ink",
-    index >= 2 && "md:border-t md:border-ink/15",
-    index % 4 !== 0 && "lg:border-l lg:border-ink",
-    "lg:border-t-0",
-  ]
-    .filter(Boolean)
-    .join(" ");
-
-  return (
-    <article className={`flex flex-col gap-3 p-5 md:p-6 ${borderClasses}`}>
-      {reward.badge ? (
-        <span className="self-start font-mono text-[10px] font-medium uppercase tracking-[0.14em] text-brand-red">
-          {reward.badge}
-        </span>
-      ) : null}
-      <h3 className="type-h3">{reward.title}</h3>
-      {reward.description ? (
-        <p className="text-[13px] leading-[1.5] text-graphite">
-          {reward.description}
-        </p>
-      ) : null}
-      <div className="mt-auto flex items-center justify-between border-t border-ink/15 pt-3">
-        <span
-          className={
-            "font-mono text-[16px] font-medium tracking-[0.04em] " +
-            (insufficient ? "text-muted" : "text-brand-red")
-          }
-        >
-          {reward.costPoints}&nbsp;Б
-        </span>
-        {!isAuthed ? (
-          <Link
-            href="/auth"
-            className="font-sans text-[13px] font-semibold text-ink hover:text-brand-red"
-          >
-            Войти →
-          </Link>
-        ) : insufficient ? (
-          <span className="font-mono text-[11px] uppercase tracking-[0.14em] text-muted">
-            не хватает {reward.costPoints - userPoints}&nbsp;Б
-          </span>
-        ) : (
-          <Link
-            href={`/shop/${reward.slug}`}
-            className="font-sans text-[13px] font-semibold text-ink hover:text-brand-red"
-          >
-            Обменять →
-          </Link>
-        )}
-      </div>
-    </article>
   );
 }
