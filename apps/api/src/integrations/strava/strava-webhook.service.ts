@@ -158,24 +158,12 @@ export class StravaWebhookService {
       );
     }
 
-    // Mark our local account as disconnected. We don't call the full
-    // disconnect() flow (which deletes data + revokes again) because Strava
-    // already revoked on their side. Just clear our tokens.
-    await this.prisma.userProviderAccount.updateMany({
-      where: {
-        userId: user.id,
-        provider: SyncProvider.strava,
-        disconnectedAt: null,
-      },
-      data: {
-        disconnectedAt: new Date(),
-        accessTokenEncrypted: null,
-        refreshTokenEncrypted: null,
-        tokenExpiresAt: null,
-        scope: null,
-      },
-    });
-    this.logger.log(`Marked user ${user.id} as Strava-disconnected after athlete revoke webhook`);
+    // Mirror Strava's revoke by running the full disconnect: hard-delete
+    // the UserProviderAccount row + purge derived data (ExternalActivity,
+    // EventAttendance). The token revoke call inside disconnect() will
+    // probably 401 (Strava already revoked), but it logs+swallows that.
+    await this.accounts.disconnect(user.id);
+    this.logger.log(`Disconnected user ${user.id} after Strava athlete revoke webhook`);
   }
 
   private async findUserByAthleteId(stravaAthleteId: number): Promise<{ id: string } | null> {
@@ -183,7 +171,6 @@ export class StravaWebhookService {
       where: {
         provider: SyncProvider.strava,
         providerUserId: String(stravaAthleteId),
-        disconnectedAt: null,
       },
       select: { userId: true },
     });
