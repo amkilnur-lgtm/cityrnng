@@ -74,6 +74,9 @@
   @media (max-width: 800px) {
     .type-hero {
       font-size: 44px;
+      /* На мелких кеглях плотный 0.9 даёт визуальное наложение
+         верхних/нижних выносных. Чуть больше воздуха. */
+      line-height: 0.98;
     }
   }
 
@@ -87,6 +90,7 @@
   @media (max-width: 800px) {
     .type-h2 {
       font-size: 32px;
+      line-height: 1.05;
     }
   }
 
