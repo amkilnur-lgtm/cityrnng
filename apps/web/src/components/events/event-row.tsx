@@ -73,7 +73,7 @@ export function EventRow({
   return (
     <Link
       href={`/events/${encodeURIComponent(event.id)}`}
-      className="grid grid-cols-1 gap-4 p-6 transition-colors hover:bg-paper-2 md:grid-cols-[140px_1fr_auto] md:items-center md:gap-8 md:p-8"
+      className="grid grid-cols-1 gap-4 p-6 transition-[background-color,transform] duration-200 hover:-translate-y-0.5 hover:bg-paper-2 md:grid-cols-[140px_1fr_auto] md:items-center md:gap-8 md:p-8"
     >
       <div className="flex flex-col gap-0.5">
         <span className="type-mono-caps">

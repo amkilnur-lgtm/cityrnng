@@ -29,7 +29,7 @@ export function Journal() {
               href={`/journal/${post.id}`}
               key={post.id}
               className={
-                "flex flex-col gap-4 p-6 transition-colors hover:bg-paper-2 md:p-8" +
+                "flex flex-col gap-4 p-6 transition-[background-color,transform] duration-200 hover:-translate-y-0.5 hover:bg-paper-2 md:p-8" +
                 (idx > 0
                   ? " border-t border-ink md:border-l md:border-t-0"
                   : "")
