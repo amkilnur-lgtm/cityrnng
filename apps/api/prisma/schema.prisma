@@ -348,7 +348,6 @@ model UserProviderAccount {
   tokenExpiresAt        DateTime?    @map("token_expires_at")
   scope                 String?
   connectedAt           DateTime     @default(now()) @map("connected_at")
-  disconnectedAt        DateTime?    @map("disconnected_at")
 
   user               User               @relation(fields: [userId], references: [id], onDelete: Cascade)
   externalActivities ExternalActivity[]

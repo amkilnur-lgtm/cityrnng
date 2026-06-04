@@ -89,7 +89,7 @@ export class AdminDashboardService {
       this.prisma.user.count(),
       this.prisma.user.count({ where: { createdAt: { gte: weekAgo } } }),
       this.prisma.userProviderAccount.count({
-        where: { provider: SyncProvider.strava, disconnectedAt: null },
+        where: { provider: SyncProvider.strava },
       }),
       this.activeRunnersIn(weekAgo, now),
       this.prisma.pointAccount.aggregate({ _sum: { balance: true } }),

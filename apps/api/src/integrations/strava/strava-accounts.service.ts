@@ -28,19 +28,13 @@ export class StravaAccountsService {
       ? String(tokens.athlete.id)
       : await this.fetchAthleteId(tokens.access_token);
 
-    // Block silent account-swap: if this user already has a Strava link to
-    // a different athlete, refuse to overwrite. The intended flow is
-    // disconnect → reconnect, which clears providerUserId. Without this,
-    // a compromised session could rebind to an attacker's Strava account
-    // (or vice versa) and start crediting points to the wrong place.
-    const existing = await this.prisma.userProviderAccount.findUnique({
-      where: { userId_provider: { userId, provider: SyncProvider.strava } },
-    });
-    if (
-      existing &&
-      existing.providerUserId &&
-      existing.providerUserId !== providerUserId
-    ) {
+    // Block silent account-swap: if this user has an ACTIVE Strava link
+    // to a different athlete, refuse. The intended flow is disconnect →
+    // reconnect (disconnect hard-deletes the row, so reconnect with any
+    // athlete works after that). Without this guard, a compromised
+    // session could silently rebind to an attacker's Strava account.
+    const existing = await this.findActive(userId);
+    if (existing && existing.providerUserId !== providerUserId) {
       throw new ConflictException({
         code: "STRAVA_ACCOUNT_MISMATCH",
         message:
@@ -55,7 +49,6 @@ export class StravaAccountsService {
       refreshTokenEncrypted: this.crypto.encrypt(tokens.refresh_token),
       tokenExpiresAt: new Date(tokens.expires_at * 1000),
       scope: tokens.scope ?? null,
-      disconnectedAt: null,
     };
 
     return this.prisma.userProviderAccount.upsert({
@@ -66,8 +59,8 @@ export class StravaAccountsService {
   }
 
   findActive(userId: string): Promise<UserProviderAccount | null> {
-    return this.prisma.userProviderAccount.findFirst({
-      where: { userId, provider: SyncProvider.strava, disconnectedAt: null },
+    return this.prisma.userProviderAccount.findUnique({
+      where: { userId_provider: { userId, provider: SyncProvider.strava } },
     });
   }
 
@@ -77,10 +70,19 @@ export class StravaAccountsService {
    * Per Strava API Agreement §2.14.vi we must delete user's Strava-derived
    * data on disconnect. Concretely:
    *   - revoke access token (Strava deauthorize)
-   *   - clear stored tokens on UserProviderAccount, mark disconnected
+   *   - hard-delete the UserProviderAccount row
    *   - delete ExternalActivity rows we cached from Strava
    *   - delete EventAttendance rows whose source is the sync provider
    *     (they were derived from Strava activity matching)
+   *
+   * Hard-delete (not soft) because `(provider, providerUserId)` is a
+   * global unique. Leaving a tombstone row blocks any future reconnect
+   * of that Strava athlete (whether by the same user with a different
+   * athlete, or by another user with the same athlete).
+   *
+   * Idempotent: if there's no active account, return silently — callers
+   * include user-triggered DELETE and the Strava revoke webhook, both of
+   * which can race or fire twice.
    *
    * Note: PointTransactions credited from those attendances are not reversed
    * here — they're our derived audit ledger, not Strava data. Reversing
@@ -104,15 +106,8 @@ export class StravaAccountsService {
       this.prisma.externalActivity.deleteMany({
         where: { userId, provider: SyncProvider.strava },
       }),
-      this.prisma.userProviderAccount.update({
+      this.prisma.userProviderAccount.delete({
         where: { id: account.id },
-        data: {
-          disconnectedAt: new Date(),
-          accessTokenEncrypted: null,
-          refreshTokenEncrypted: null,
-          tokenExpiresAt: null,
-          scope: null,
-        },
       }),
     ]);
   }
