@@ -5,6 +5,7 @@ import { HowItWorks } from "@/components/home/how-it-works";
 import { Journal } from "@/components/home/journal";
 import { UpcomingEvents } from "@/components/home/upcoming-events";
 import { SiteFooter } from "@/components/site/footer";
+import { Reveal } from "@/components/site/reveal";
 import { SiteNav } from "@/components/site/nav";
 import { getDisplayNextEvent } from "@/lib/display-event";
 import { getSiteState } from "@/lib/site-state";
@@ -26,10 +27,18 @@ export default async function HomePage({
       <SiteNav state={state} />
       <main>
         <Hero event={nextEvent} />
-        <HowItWorks />
-        <UpcomingEvents isAuthed={false} />
-        <Journal />
-        <FinalCta isAuthed={false} />
+        <Reveal>
+          <HowItWorks />
+        </Reveal>
+        <Reveal>
+          <UpcomingEvents isAuthed={false} />
+        </Reveal>
+        <Reveal>
+          <Journal />
+        </Reveal>
+        <Reveal>
+          <FinalCta isAuthed={false} />
+        </Reveal>
       </main>
       <SiteFooter />
     </>
