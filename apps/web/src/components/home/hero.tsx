@@ -2,6 +2,7 @@ import { HeroAuthForm } from "@/components/home/hero-auth-form";
 import { Wrap } from "@/components/site/wrap";
 import { CLUB, wednesdaysSinceFounding } from "@/lib/club";
 import type { DisplayEvent } from "@/lib/display-event";
+import { LOCATIONS } from "@/lib/home-mock";
 
 // `event` prop kept for backward compatibility with caller; upcoming-run
 // info now lives in the dedicated <UpcomingEvents> block below the fold.
@@ -42,6 +43,7 @@ function HeroMain() {
 
 function HeroSide() {
   const runs = wednesdaysSinceFounding();
+  const districts = Object.values(LOCATIONS).map((l) => l.district);
   return (
     <aside className="flex flex-col lg:pb-8">
       {/* lg:pb-8 (32px) = gap-3 (12) + microcopy (~20) below the input
@@ -49,6 +51,12 @@ function HeroSide() {
           58px outer height, both top and bottom of strip line up with
           input wrapper outer top/bottom. */}
       <div className="relative flex aspect-square flex-col items-center justify-center gap-3 border border-ink bg-paper-2 p-6 lg:aspect-auto lg:flex-1">
+        <div className="absolute left-5 top-5 flex flex-col gap-0.5">
+          <span className="type-mono-caps">Три маршрута</span>
+          <span className="font-sans text-[13px] font-medium text-ink">
+            {districts.join(" · ")}
+          </span>
+        </div>
         <span className="font-display font-bold leading-none tracking-[-0.05em] text-brand-red text-[160px] lg:text-[200px]">
           {runs}
         </span>
