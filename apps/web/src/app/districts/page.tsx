@@ -119,13 +119,10 @@ function Row({
   placeholder?: string;
 }) {
   return (
-    <div className="flex min-h-[44px] items-center justify-between gap-4 py-2.5">
-      <dt className="whitespace-nowrap text-muted">{k}</dt>
+    <div className="flex min-h-[44px] items-start justify-between gap-4 py-2.5">
+      <dt className="whitespace-nowrap pt-0.5 text-muted">{k}</dt>
       <dd
-        className={
-          "min-w-0 truncate text-right " + (v ? "text-ink" : "text-muted")
-        }
-        title={v ?? placeholder ?? "—"}
+        className={"text-right " + (v ? "text-ink" : "text-muted")}
       >
         {v ?? placeholder ?? "—"}
       </dd>

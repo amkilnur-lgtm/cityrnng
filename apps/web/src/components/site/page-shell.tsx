@@ -41,9 +41,7 @@ export function PageHero({
       <Wrap className="py-16 lg:py-24">
         <div className="flex flex-col gap-3">
           <span className="type-mono-caps">{eyebrow}</span>
-          <h1 className="type-hero" style={{ fontSize: 72 }}>
-            {title}
-          </h1>
+          <h1 className="type-hero">{title}</h1>
           {lede ? <p className="type-lede max-w-[640px]">{lede}</p> : null}
         </div>
       </Wrap>
