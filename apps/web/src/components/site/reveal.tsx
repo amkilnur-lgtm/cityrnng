@@ -58,7 +58,7 @@ export function Reveal({
       ref={ref}
       data-visible={visible}
       className={
-        "translate-y-2 opacity-0 transition-all duration-500 ease-out " +
+        "translate-y-2 opacity-0 transition-all duration-700 ease-out " +
         "data-[visible=true]:translate-y-0 data-[visible=true]:opacity-100 " +
         className
       }
