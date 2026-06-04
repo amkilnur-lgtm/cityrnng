@@ -51,7 +51,7 @@ export function RewardsGrid({
         <button
           type="button"
           onClick={() => setExpanded((v) => !v)}
-          className="mt-4 inline-flex h-11 w-full items-center justify-center border border-ink bg-paper px-5 font-mono text-[12px] font-medium uppercase tracking-[0.14em] text-ink transition-colors hover:bg-ink hover:text-paper md:hidden"
+          className="mt-4 inline-flex h-11 w-full items-center justify-center px-5 font-mono text-[12px] font-medium uppercase tracking-[0.14em] text-ink transition-colors hover:text-brand-red md:hidden"
           aria-expanded={expanded}
         >
           {expanded
