@@ -1,9 +1,7 @@
-import Image from "next/image";
 import { HeroAuthForm } from "@/components/home/hero-auth-form";
 import { Wrap } from "@/components/site/wrap";
-import { CLUB } from "@/lib/club";
+import { CLUB, wednesdaysSinceFounding } from "@/lib/club";
 import type { DisplayEvent } from "@/lib/display-event";
-import { LOCATIONS } from "@/lib/home-mock";
 
 // `event` prop kept for backward compatibility with caller; upcoming-run
 // info now lives in the dedicated <UpcomingEvents> block below the fold.
@@ -43,28 +41,20 @@ function HeroMain() {
 }
 
 function HeroSide() {
-  const districts = Object.values(LOCATIONS).map((l) => l.district);
+  const runs = wednesdaysSinceFounding();
   return (
     <aside className="flex flex-col lg:pb-8">
       {/* lg:pb-8 (32px) = gap-3 (12) + microcopy (~20) below the input
           on the left. With strip h-[58px] matching the form wrapper's
           58px outer height, both top and bottom of strip line up with
           input wrapper outer top/bottom. */}
-      <div className="relative aspect-square border border-ink bg-paper-2 lg:aspect-auto lg:flex-1">
-        <div className="absolute left-5 top-5 flex flex-col gap-0.5">
-          <span className="type-mono-caps">Три маршрута</span>
-          <span className="font-sans text-[13px] font-medium text-ink">
-            {districts.join(" · ")}
-          </span>
-        </div>
-        <Image
-          src="/brand/runners.png"
-          alt="Бегуны Ситираннинг"
-          fill
-          sizes="(max-width: 1024px) 100vw, 40vw"
-          style={{ objectFit: "contain", padding: "8%" }}
-          priority
-        />
+      <div className="relative flex aspect-square flex-col items-center justify-center gap-3 border border-ink bg-paper-2 p-6 lg:aspect-auto lg:flex-1">
+        <span className="font-display font-bold leading-none tracking-[-0.05em] text-brand-red text-[160px] lg:text-[200px]">
+          {runs}
+        </span>
+        <span className="font-mono text-[12px] font-medium uppercase tracking-[0.14em] text-muted">
+          {pluralRu(runs, "пробежка проведена", "пробежки проведено", "пробежек проведено")}
+        </span>
       </div>
 
       <div className="grid h-[58px] grid-cols-3 border border-t-0 border-ink bg-paper">
@@ -81,6 +71,15 @@ function HeroSide() {
       </p>
     </aside>
   );
+}
+
+function pluralRu(n: number, one: string, few: string, many: string): string {
+  const mod10 = n % 10;
+  const mod100 = n % 100;
+  if (mod100 >= 11 && mod100 <= 14) return many;
+  if (mod10 === 1) return one;
+  if (mod10 >= 2 && mod10 <= 4) return few;
+  return many;
 }
 
 function BrandFact({

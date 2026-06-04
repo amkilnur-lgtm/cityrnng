@@ -36,3 +36,23 @@ export const DISTANCE_RANGE = `${CLUB.distances.join(" или ")} км`;
 export function pointsForDistance(km: ClubDistance): number {
   return km * CLUB.pointsPerKm;
 }
+
+/**
+ * Сколько сред прошло с момента основания клуба (первая среда 2023 года —
+ * 4 января 2023) по сегодня включительно. Используется в hero на главной
+ * для счётчика «N пробежек проведено». Растёт ровно по календарю,
+ * раз в неделю, без зависимости от данных в БД.
+ */
+export function wednesdaysSinceFounding(now: Date = new Date()): number {
+  // First Wednesday of 2023 (founding year): January 4.
+  const start = Date.UTC(CLUB.foundedYear, 0, 4);
+  const todayUtc = Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate());
+  // Snap today back to the most recent Wednesday (≤ today).
+  const today = new Date(todayUtc);
+  const dow = today.getUTCDay(); // Sun=0, Wed=3, Sat=6
+  const daysBack = dow >= 3 ? dow - 3 : dow + 4;
+  const lastWed = todayUtc - daysBack * 24 * 60 * 60 * 1000;
+  if (lastWed < start) return 0;
+  const diffDays = Math.round((lastWed - start) / (24 * 60 * 60 * 1000));
+  return Math.floor(diffDays / 7) + 1;
+}
