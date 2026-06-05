@@ -28,7 +28,7 @@ const SECTIONS: SidebarSection[] = [
 export function AdminSidebar({ isDev }: { isDev: boolean }) {
   const currentPath = usePathname() ?? "/admin";
   return (
-    <aside className="flex h-full min-h-screen flex-col border-r border-ink bg-paper-2/40 lg:w-[260px] lg:flex-none">
+    <aside className="hidden h-full min-h-screen flex-col border-r border-ink bg-paper-2/40 lg:flex lg:w-[260px] lg:flex-none">
       <div className="flex flex-col gap-1 border-b border-ink px-6 py-5">
         <Link
           href="/"
