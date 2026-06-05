@@ -35,6 +35,11 @@ function fmtRelative(iso: string | null): string {
   return `${Math.round(diffSec / 86400)} дн назад`;
 }
 
+function fmtClock(iso: string): string {
+  const d = new Date(iso);
+  return `${String(d.getHours()).padStart(2, "0")}:${String(d.getMinutes()).padStart(2, "0")}`;
+}
+
 function fmtNumber(n: number): string {
   return n.toLocaleString("ru-RU");
 }
@@ -225,8 +230,8 @@ function StatusBanner({ warnCount, renderedAt }: { warnCount: number; renderedAt
             </h1>
           </div>
           <div className="flex flex-col gap-0.5 font-mono text-[10px] uppercase tracking-[0.14em] text-muted lg:text-right">
-            <span>обновлено {fmtRelative(renderedAt)}</span>
-            <span className="opacity-70">авто-раз в минуту</span>
+            <span>снимок · {fmtClock(renderedAt)}</span>
+            <span className="opacity-70">обновляется раз в минуту</span>
           </div>
         </div>
       </Wrap>
@@ -556,13 +561,22 @@ function EventCard({
           ) : (
             <PastEventStats event={event} />
           )}
-          <Link
-            href={`/events/${encodeURIComponent(event.id)}`}
-            className="mt-auto inline-flex w-fit items-center gap-2 border border-ink bg-paper px-4 py-2.5 font-sans text-[13px] font-semibold text-ink transition-colors hover:bg-ink hover:text-paper"
-          >
-            Открыть событие
-            <ArrowRight />
-          </Link>
+          {isPast ? (
+            <Link
+              href={`/events/${encodeURIComponent(event.id)}`}
+              className="mt-auto inline-flex w-fit items-center gap-1 font-sans text-[13px] font-medium text-graphite transition-colors hover:text-brand-red"
+            >
+              посмотреть событие →
+            </Link>
+          ) : (
+            <Link
+              href={`/events/${encodeURIComponent(event.id)}`}
+              className="mt-auto inline-flex w-fit items-center gap-2 border border-ink bg-paper px-4 py-2.5 font-sans text-[13px] font-semibold text-ink transition-colors hover:bg-ink hover:text-paper"
+            >
+              Открыть событие
+              <ArrowRight />
+            </Link>
+          )}
         </>
       )}
     </div>
@@ -637,14 +651,20 @@ function StatusIcon({ status }: { status: Status }) {
       className="inline-flex h-5 w-5 items-center justify-center"
     >
       <svg viewBox="0 0 24 24" className="h-5 w-5 text-brand-red" aria-hidden>
-        <circle cx="12" cy="12" r="10" fill="currentColor" />
         <path
-          d="M12 7 L12 13"
+          d="M12 3 L22 20 L2 20 Z"
+          fill="currentColor"
+          stroke="currentColor"
+          strokeWidth="1.5"
+          strokeLinejoin="round"
+        />
+        <path
+          d="M12 9 L12 14"
           stroke="white"
           strokeWidth="2"
           strokeLinecap="round"
         />
-        <circle cx="12" cy="16.5" r="1.1" fill="white" />
+        <circle cx="12" cy="17" r="1.1" fill="white" />
       </svg>
     </span>
   );
