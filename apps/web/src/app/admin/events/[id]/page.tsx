@@ -41,7 +41,7 @@ export default async function EditEventPage({
           >
             ← События
           </Link>
-          <h1 className="type-hero mt-3" style={{ fontSize: 40 }}>
+          <h1 className="type-h-admin-sub mt-3">
             {event.title}
           </h1>
           <p className="mt-2 font-mono text-[13px] tracking-[0.04em] text-muted">

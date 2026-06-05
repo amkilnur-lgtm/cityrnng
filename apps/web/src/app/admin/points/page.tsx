@@ -35,7 +35,7 @@ export default async function AdminPointsPage({
       <section className="border-b border-ink">
         <Wrap className="flex flex-col gap-4 py-10">
           <span className="type-mono-caps">балльные операции</span>
-          <h1 className="type-hero" style={{ fontSize: 48 }}>
+          <h1 className="type-h-admin">
             <em className="not-italic text-brand-red">Леджер</em> и&nbsp;ручные корректировки.
           </h1>
           <p className="type-lede max-w-2xl">

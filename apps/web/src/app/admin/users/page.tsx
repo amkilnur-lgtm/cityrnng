@@ -2,6 +2,7 @@ import Link from "next/link";
 import { Wrap } from "@/components/site/wrap";
 import { UserRoleToggle } from "@/components/admin/user-role-toggle";
 import { listAdminUsers, type AdminUser } from "@/lib/api-admin";
+import { pluralRu } from "@/lib/plural";
 
 export const metadata = { title: "Пользователи · Admin · CITYRNNG" };
 
@@ -35,14 +36,10 @@ export default async function AdminUsersPage({
         <Wrap className="flex flex-col items-start gap-4 py-10 lg:flex-row lg:items-center lg:justify-between">
           <div className="flex flex-col gap-2">
             <span className="type-mono-caps">пользователи</span>
-            <h1 className="type-hero" style={{ fontSize: 48 }}>
+            <h1 className="type-h-admin">
               {rows.length}{" "}
               <em className="not-italic text-brand-red">
-                {rows.length === 1
-                  ? "пользователь"
-                  : rows.length < 5
-                    ? "пользователя"
-                    : "пользователей"}
+                {pluralRu(rows.length, "пользователь", "пользователя", "пользователей")}
               </em>
               {nextCursor ? "+" : ""}
             </h1>

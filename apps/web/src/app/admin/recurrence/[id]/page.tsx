@@ -34,7 +34,7 @@ export default async function EditRecurrencePage({
           >
             ← Расписание
           </Link>
-          <h1 className="type-hero mt-3" style={{ fontSize: 40 }}>
+          <h1 className="type-h-admin-sub mt-3">
             {rule.title}
           </h1>
         </Wrap>

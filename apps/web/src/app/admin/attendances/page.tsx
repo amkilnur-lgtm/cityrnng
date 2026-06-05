@@ -2,6 +2,7 @@ import Link from "next/link";
 import { AttendanceActions } from "@/components/admin/attendance-actions";
 import { Wrap } from "@/components/site/wrap";
 import { listAdminAttendances } from "@/lib/api-admin";
+import { pluralRu } from "@/lib/plural";
 
 export const metadata = { title: "Attendances · Admin · CITYRNNG" };
 
@@ -29,14 +30,10 @@ export default async function AdminAttendancesPage({
         <Wrap className="flex flex-col items-start gap-4 py-10 lg:flex-row lg:items-end lg:justify-between">
           <div className="flex flex-col gap-2">
             <span className="type-mono-caps">attendances · {status}</span>
-            <h1 className="type-hero" style={{ fontSize: 48 }}>
+            <h1 className="type-h-admin">
               {attendances.length}{" "}
               <em className="not-italic text-brand-red">
-                {attendances.length === 1
-                  ? "запись"
-                  : attendances.length < 5
-                    ? "записи"
-                    : "записей"}
+                {pluralRu(attendances.length, "запись", "записи", "записей")}
               </em>
             </h1>
           </div>

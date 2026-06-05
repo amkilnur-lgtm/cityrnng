@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { Wrap } from "@/components/site/wrap";
 import { listAdminRewards } from "@/lib/api-admin";
+import { pluralRu } from "@/lib/plural";
 
 export const metadata = { title: "Награды · Admin · CITYRNNG" };
 
@@ -13,14 +14,10 @@ export default async function AdminRewardsPage() {
         <Wrap className="flex flex-col items-start gap-4 py-10 lg:flex-row lg:items-center lg:justify-between">
           <div className="flex flex-col gap-2">
             <span className="type-mono-caps">награды</span>
-            <h1 className="type-hero" style={{ fontSize: 48 }}>
+            <h1 className="type-h-admin">
               {rewards.length}{" "}
               <em className="not-italic text-brand-red">
-                {rewards.length === 1
-                  ? "награда"
-                  : rewards.length < 5
-                    ? "награды"
-                    : "наград"}
+                {pluralRu(rewards.length, "награда", "награды", "наград")}
               </em>
             </h1>
           </div>

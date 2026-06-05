@@ -31,7 +31,7 @@ export default async function CancelRedemptionPage({
           >
             ← Обмены
           </Link>
-          <h1 className="type-hero mt-3" style={{ fontSize: 40 }}>
+          <h1 className="type-h-admin-sub mt-3">
             Отменить обмен.
           </h1>
         </Wrap>

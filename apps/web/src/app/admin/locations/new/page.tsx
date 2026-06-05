@@ -16,7 +16,7 @@ export default function NewLocationPage() {
           >
             ← Локации
           </Link>
-          <h1 className="type-hero mt-3" style={{ fontSize: 40 }}>
+          <h1 className="type-h-admin-sub mt-3">
             Новая локация
           </h1>
         </Wrap>
