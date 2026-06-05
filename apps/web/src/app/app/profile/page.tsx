@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
+import { PartnerCabinetCard } from "@/components/app/partner-cabinet-card";
 import { ProfileEditForm } from "@/components/app/profile-edit-form";
 import { StravaCard } from "@/components/app/strava-card";
 import { SiteFooter } from "@/components/site/footer";
@@ -117,6 +118,9 @@ export default async function ProfilePage({
             <div className="flex flex-col gap-6">
               <h2 className="type-h2">Интеграции</h2>
               <StravaCard status={stravaStatus} />
+              {roles.includes("partner") ? (
+                <PartnerCabinetCard />
+              ) : null}
             </div>
           </Wrap>
         </section>

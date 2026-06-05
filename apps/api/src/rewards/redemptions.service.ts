@@ -208,6 +208,31 @@ export class RedemptionsService {
     });
   }
 
+  /**
+   * Partner-scoped variant of listForAdmin. Returns redemptions across an
+   * explicit set of partnerIds (the caller's partner-team memberships).
+   * Used by /partner/redemptions/recent.
+   */
+  async listForPartners(opts: { partnerIds: string[]; take?: number }) {
+    if (opts.partnerIds.length === 0) return [];
+    const take = Math.min(Math.max(opts.take ?? 20, 1), 100);
+    return this.prisma.redemption.findMany({
+      where: { reward: { partnerId: { in: opts.partnerIds } } },
+      include: {
+        reward: { include: { partner: true } },
+        user: {
+          select: {
+            id: true,
+            email: true,
+            profile: { select: { displayName: true } },
+          },
+        },
+      },
+      orderBy: { createdAt: "desc" },
+      take,
+    });
+  }
+
   async getByCodeForUser(userId: string, code: string) {
     const redemption = await this.prisma.redemption.findUnique({
       where: { code },

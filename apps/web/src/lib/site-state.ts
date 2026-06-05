@@ -31,6 +31,7 @@ export async function getSiteState(searchParamState?: string): Promise<SiteState
     return {
       isAuthed: true,
       isAdmin: session.roles?.includes("admin") ?? false,
+      isPartner: session.roles?.includes("partner") ?? false,
       user: {
         name: displayName,
         initial: displayName.slice(0, 1).toUpperCase(),
