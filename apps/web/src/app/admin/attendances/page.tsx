@@ -4,12 +4,24 @@ import { Wrap } from "@/components/site/wrap";
 import { listAdminAttendances } from "@/lib/api-admin";
 import { pluralRu } from "@/lib/plural";
 
-export const metadata = { title: "Attendances · Admin · CITYRNNG" };
+export const metadata = { title: "Посещения · Admin · CITYRNNG" };
 
 const RU_MONTHS = [
   "янв", "фев", "мар", "апр", "май", "июн",
   "июл", "авг", "сен", "окт", "ноя", "дек",
 ];
+
+const STATUS_LABEL: Record<"pending" | "approved" | "rejected", string> = {
+  pending: "ждут проверки",
+  approved: "одобрено",
+  rejected: "отклонено",
+};
+
+const STATUS_TAB: Record<"pending" | "approved" | "rejected", string> = {
+  pending: "ждут",
+  approved: "одобрено",
+  rejected: "отклонено",
+};
 
 function fmt(iso: string) {
   const d = new Date(iso);
@@ -29,7 +41,7 @@ export default async function AdminAttendancesPage({
       <section className="border-b border-ink">
         <Wrap className="flex flex-col items-start gap-4 py-10 lg:flex-row lg:items-end lg:justify-between">
           <div className="flex flex-col gap-2">
-            <span className="type-mono-caps">attendances · {status}</span>
+            <span className="type-mono-caps">посещения · {STATUS_LABEL[status]}</span>
             <h1 className="type-h-admin">
               {attendances.length}{" "}
               <em className="not-italic text-brand-red">
@@ -37,7 +49,7 @@ export default async function AdminAttendancesPage({
               </em>
             </h1>
           </div>
-          <nav className="flex border border-ink bg-paper">
+          <nav className="flex border border-ink bg-paper" aria-label="Фильтр по статусу">
             {(["pending", "approved", "rejected"] as const).map((s) => (
               <Link
                 key={s}
@@ -48,8 +60,9 @@ export default async function AdminAttendancesPage({
                     ? "bg-ink text-paper"
                     : "text-muted hover:text-ink")
                 }
+                aria-current={status === s ? "page" : undefined}
               >
-                {s}
+                {STATUS_TAB[s]}
               </Link>
             ))}
           </nav>
@@ -62,9 +75,9 @@ export default async function AdminAttendancesPage({
             <div className="flex flex-col items-start gap-3 border border-ink bg-paper-2 p-8">
               <span className="type-mono-caps">пусто</span>
               <p className="max-w-xl text-[14px] leading-[1.55] text-graphite">
-                Записей со статусом <b>{status}</b> нет. Strava-матчер
-                создаёт <code className="font-mono text-[13px]">pending</code>
-                записи автоматом, либо админ заводит вручную.
+                Записей со&nbsp;статусом «{STATUS_LABEL[status]}» нет.
+                Привязка пробежек к&nbsp;событиям заводит «ждут проверки»
+                автоматически, либо админ создаёт запись вручную.
               </p>
             </div>
           ) : (
@@ -73,10 +86,10 @@ export default async function AdminAttendancesPage({
                 <thead className="border-b border-ink bg-paper-2/40 text-left">
                   <tr>
                     <Th>Когда</Th>
-                    <Th>Юзер</Th>
+                    <Th>Пользователь</Th>
                     <Th>Событие</Th>
-                    <Th>Source</Th>
-                    {status === "pending" ? <Th /> : <Th>Reviewed</Th>}
+                    <Th>Источник</Th>
+                    {status === "pending" ? <Th /> : <Th>Проверено</Th>}
                   </tr>
                 </thead>
                 <tbody>
