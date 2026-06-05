@@ -18,7 +18,7 @@ export default async function NewEventPage() {
           >
             ← События
           </Link>
-          <h1 className="type-hero mt-3" style={{ fontSize: 40 }}>
+          <h1 className="type-h-admin-sub mt-3">
             Новое событие
           </h1>
           <p className="type-lede mt-2 max-w-2xl">

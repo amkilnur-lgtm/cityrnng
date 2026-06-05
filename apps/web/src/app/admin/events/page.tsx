@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { Wrap } from "@/components/site/wrap";
 import { listAdminEvents } from "@/lib/api-admin";
+import { pluralRu } from "@/lib/plural";
 
 export const metadata = { title: "События · Admin · CITYRNNG" };
 
@@ -23,14 +24,10 @@ export default async function AdminEventsPage() {
         <Wrap className="flex flex-col items-start gap-4 py-10 lg:flex-row lg:items-center lg:justify-between">
           <div className="flex flex-col gap-2">
             <span className="type-mono-caps">явные события</span>
-            <h1 className="type-hero" style={{ fontSize: 48 }}>
+            <h1 className="type-h-admin">
               {events.length}{" "}
               <em className="not-italic text-brand-red">
-                {events.length === 1
-                  ? "событие"
-                  : events.length < 5
-                    ? "события"
-                    : "событий"}
+                {pluralRu(events.length, "событие", "события", "событий")}
               </em>
             </h1>
             <p className="type-lede max-w-2xl">

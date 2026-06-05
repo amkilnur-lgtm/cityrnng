@@ -64,7 +64,7 @@ export default async function AdminRedemptionsPage({
           >
             ← Админка
           </Link>
-          <h1 className="type-hero mt-3" style={{ fontSize: 40 }}>
+          <h1 className="type-h-admin-sub mt-3">
             Обмены.
           </h1>
           <p className="type-lede mt-3 max-w-2xl">

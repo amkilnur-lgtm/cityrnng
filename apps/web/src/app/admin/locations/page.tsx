@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { Wrap } from "@/components/site/wrap";
 import { listAdminLocations } from "@/lib/api-admin";
+import { pluralRu } from "@/lib/plural";
 
 export const metadata = { title: "Локации · Admin · CITYRNNG" };
 
@@ -13,14 +14,10 @@ export default async function AdminLocationsPage() {
         <Wrap className="flex flex-col items-start gap-4 py-10 lg:flex-row lg:items-center lg:justify-between">
           <div className="flex flex-col gap-2">
             <span className="type-mono-caps">локации</span>
-            <h1 className="type-hero" style={{ fontSize: 48 }}>
+            <h1 className="type-h-admin">
               {locations.length}{" "}
               <em className="not-italic text-brand-red">
-                {locations.length === 1
-                  ? "локация"
-                  : locations.length < 5
-                    ? "локации"
-                    : "локаций"}
+                {pluralRu(locations.length, "локация", "локации", "локаций")}
               </em>
             </h1>
           </div>

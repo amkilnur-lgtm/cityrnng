@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { Wrap } from "@/components/site/wrap";
 import { listAdminPartners } from "@/lib/api-admin";
+import { pluralRu } from "@/lib/plural";
 
 export const metadata = { title: "Партнёры · Admin · CITYRNNG" };
 
@@ -13,14 +14,10 @@ export default async function AdminPartnersPage() {
         <Wrap className="flex flex-col items-start gap-4 py-10 lg:flex-row lg:items-center lg:justify-between">
           <div className="flex flex-col gap-2">
             <span className="type-mono-caps">партнёры</span>
-            <h1 className="type-hero" style={{ fontSize: 48 }}>
+            <h1 className="type-h-admin">
               {partners.length}{" "}
               <em className="not-italic text-brand-red">
-                {partners.length === 1
-                  ? "партнёр"
-                  : partners.length < 5
-                    ? "партнёра"
-                    : "партнёров"}
+                {pluralRu(partners.length, "партнёр", "партнёра", "партнёров")}
               </em>
             </h1>
           </div>

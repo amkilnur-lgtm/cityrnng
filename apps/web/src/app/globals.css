@@ -100,6 +100,39 @@
     line-height: 1.3;
   }
 
+  /* Заголовки админских list-страниц («3 локации», «0 правил»).
+     Меньше, чем .type-h2 на десктопе (не отбирает фокус у KPI),
+     уменьшается на мобайле, чтобы длинные слова влезали в одну строку. */
+  .type-h-admin {
+    @apply font-display font-bold text-ink;
+    font-size: 48px;
+    line-height: 0.95;
+    letter-spacing: -0.03em;
+    text-wrap: balance;
+  }
+  @media (max-width: 800px) {
+    .type-h-admin {
+      font-size: 32px;
+      line-height: 1.05;
+    }
+  }
+
+  /* Заголовки edit/new admin-форм («Новая локация»). Меньше list-заголовка,
+     чтобы не конкурировать с лейблами формы. */
+  .type-h-admin-sub {
+    @apply font-display font-bold text-ink;
+    font-size: 40px;
+    line-height: 1.0;
+    letter-spacing: -0.025em;
+    text-wrap: balance;
+  }
+  @media (max-width: 800px) {
+    .type-h-admin-sub {
+      font-size: 28px;
+      line-height: 1.1;
+    }
+  }
+
   .type-lede {
     @apply font-sans text-graphite;
     font-size: 18px;

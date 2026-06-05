@@ -20,7 +20,7 @@ export default async function NewRewardPage() {
           >
             ← Награды
           </Link>
-          <h1 className="type-hero mt-3" style={{ fontSize: 40 }}>
+          <h1 className="type-h-admin-sub mt-3">
             Новая награда
           </h1>
         </Wrap>
