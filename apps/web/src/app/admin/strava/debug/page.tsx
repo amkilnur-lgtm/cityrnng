@@ -117,6 +117,7 @@ export default async function AdminStravaDebugPage({
                 id="after"
                 name="after"
                 type="datetime-local"
+                lang="ru"
                 defaultValue={after}
                 className="h-11 w-full border border-ink bg-paper px-3 font-mono text-[13px]"
               />
@@ -126,6 +127,7 @@ export default async function AdminStravaDebugPage({
                 id="before"
                 name="before"
                 type="datetime-local"
+                lang="ru"
                 defaultValue={before}
                 className="h-11 w-full border border-ink bg-paper px-3 font-mono text-[13px]"
               />
