@@ -25,7 +25,11 @@ export const envSchema = z.object({
   STRAVA_CLIENT_ID: z.string().min(1),
   STRAVA_CLIENT_SECRET: z.string().min(1),
   STRAVA_REDIRECT_URI: z.string().url(),
-  STRAVA_SCOPES: z.string().default("read,activity:read"),
+  // `activity:read_all` (вместо `activity:read`) даёт доступ и к приватным
+  // активностям пользователя — иначе наши клубные пробежки, помеченные у юзера
+  // как «только для меня» / «только подписчики», не попадут в API-ответ и не
+  // привяжутся к событиям. Для running-приложений это стандартный дефолт.
+  STRAVA_SCOPES: z.string().default("read,activity:read_all"),
   /**
    * Random shared secret echoed back to Strava during webhook verification
    * handshake. Generate with `node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"`.

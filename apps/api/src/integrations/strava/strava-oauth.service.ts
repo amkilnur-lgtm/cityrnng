@@ -29,7 +29,12 @@ export class StravaOAuthService {
     url.searchParams.set("client_id", this.config.get("STRAVA_CLIENT_ID", { infer: true }));
     url.searchParams.set("redirect_uri", this.config.get("STRAVA_REDIRECT_URI", { infer: true }));
     url.searchParams.set("response_type", "code");
-    url.searchParams.set("approval_prompt", "auto");
+    // `force` instead of `auto`: гарантирует consent-экран после email-magic-code
+    // логина на Strava. С `auto` Strava после успешной аутентификации иногда
+    // зависает на пустом экране, не перенаправляя на consent — повторный заход
+    // (уже залогиненным) при этом отрабатывает штатно. Цена: подключённым
+    // пользователям при reconnect показывается consent ещё раз — это нормально.
+    url.searchParams.set("approval_prompt", "force");
     url.searchParams.set("scope", this.config.get("STRAVA_SCOPES", { infer: true }));
     url.searchParams.set("state", state);
     return url.toString();
