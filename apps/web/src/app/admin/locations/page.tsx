@@ -99,14 +99,9 @@ function EmptyState() {
         Локации пока не созданы — либо API недоступен, либо ты в&nbsp;
         <code className="font-mono text-[13px] text-ink">dev mock</code>
         -сессии без токена. Реальный список появится когда залогинишься
-        через magic-link с&nbsp;ролью admin.
+        через magic-link с&nbsp;ролью admin. Создать первую — кнопка
+        «+&nbsp;Новая локация» сверху.
       </p>
-      <Link
-        href="/admin/locations/new"
-        className="inline-flex h-10 items-center border border-ink bg-paper px-4 font-sans text-[13px] font-semibold text-ink hover:bg-ink hover:text-paper"
-      >
-        + Создать локацию
-      </Link>
     </div>
   );
 }
