@@ -111,6 +111,9 @@ export async function addPartnerMemberAction(
       return { ok: false, message: p.message ?? p.code ?? `HTTP ${res.status}` };
     }
     revalidatePath(`/admin/partners/${partnerId}`);
+    // Добавление сотрудника выдаёт ему роль `partner` — admin users list
+    // должен показать обновлённое состояние при следующем заходе.
+    revalidatePath("/admin/users");
     return { ok: true };
   } catch {
     return { ok: false, message: "API недоступен." };
@@ -130,6 +133,9 @@ export async function removePartnerMemberAction(
     );
     if (!res.ok) return { ok: false, message: `HTTP ${res.status}` };
     revalidatePath(`/admin/partners/${partnerId}`);
+    // Удаление НЕ снимает роль `partner` (это решение из partner-members.service),
+    // но revalidate'нём на всякий — вдруг таблица показывает кешированные данные.
+    revalidatePath("/admin/users");
     return { ok: true };
   } catch {
     return { ok: false, message: "API недоступен." };

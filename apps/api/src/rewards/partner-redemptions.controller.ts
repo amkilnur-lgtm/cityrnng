@@ -48,6 +48,38 @@ export class PartnerRedemptionsController {
   }
 
   /**
+   * Recent redemptions across all partner-teams the user belongs to. Used by
+   * the /partner cabinet to show "что прошло за последнее время" — кто и
+   * какую награду гасил, когда, статус. Limited to 20 latest across the
+   * user's partner teams.
+   *
+   * If the user has no memberships → empty array (UI shows empty state).
+   */
+  @Get("redemptions/recent")
+  async listRecent(@CurrentUser() user: AuthenticatedUser) {
+    const memberships = await this.members.listPartnersForUser(user.id);
+    if (memberships.length === 0) return [];
+
+    const partnerIds = memberships.map((m) => m.partnerId);
+    const items = await this.redemptions.listForPartners({
+      partnerIds,
+      take: 20,
+    });
+    return items.map((r) => ({
+      id: r.id,
+      code: r.code,
+      status: r.status,
+      createdAt: r.createdAt,
+      usedAt: r.usedAt,
+      partnerName: r.reward.partner.name,
+      partnerSlug: r.reward.partner.slug,
+      rewardTitle: r.reward.title,
+      userEmail: r.user.email,
+      userDisplayName: r.user.profile?.displayName ?? null,
+    }));
+  }
+
+  /**
    * Verify a redemption code on behalf of a partner the user is a member
    * of. `partnerId` query param is required only when the user belongs to
    * multiple partners; otherwise it auto-resolves.

@@ -108,6 +108,7 @@ export function SiteNav({ state }: { state: SiteState }) {
 
         {state.isAuthed ? (
           <>
+            {state.isPartner && <PartnerPill />}
             {state.isAdmin && <AdminPill />}
             <AuthedPill user={state.user} />
           </>
@@ -181,6 +182,17 @@ function MobileDrawer({
             </li>
           );
         })}
+        {state.isAuthed && state.isPartner && (
+          <li className="border-b border-ink/15">
+            <Link
+              href="/partner"
+              onClick={onClose}
+              className="block px-6 py-4 font-sans text-[15px] font-semibold text-ink"
+            >
+              Кабинет партнёра
+            </Link>
+          </li>
+        )}
         {state.isAuthed && state.isAdmin && (
           <li className="border-b border-ink/15">
             <Link
@@ -194,6 +206,17 @@ function MobileDrawer({
         )}
       </ul>
     </div>
+  );
+}
+
+function PartnerPill() {
+  return (
+    <Link
+      href="/partner"
+      className="hidden h-11 items-center border border-ink bg-paper px-3.5 font-mono text-[11px] font-semibold uppercase tracking-[0.14em] text-ink transition-colors hover:bg-ink hover:text-paper md:inline-flex"
+    >
+      Партнёр
+    </Link>
   );
 }
 
