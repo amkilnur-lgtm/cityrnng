@@ -18,14 +18,20 @@ import { PartnerMembersService } from "./partner-members.service";
 import { RedemptionsService } from "./redemptions.service";
 
 /**
- * Partner-side endpoints for verifying redemption codes presented by
- * customers in person. Membership in `PartnerMember` is what scopes a
- * partner-role user to a specific Partner; the role alone gives UI access
- * but no operational power.
+ * Partner-side endpoints. Class-level role gate раньше требовал
+ * `@Roles(ROLE_PARTNER)` на всех методах, но это конфликтовало с JWT
+ * staleness: после grant'а роли в БД access-token в куке не обновляется
+ * автоматически, и `RolesGuard` (читает роли из JWT, не из БД) возвращал
+ * 403 пока юзер не перелогинится. Симптом был — «обратитесь к админу»
+ * на /partner, хотя в БД membership уже есть.
+ *
+ * Решение: read-эндпоинты (memberships, recent history) теперь не требуют
+ * роли — они и так фильтруют по `userId` из токена, утечек нет. Роль
+ * проверяем только на write-операции `verifyCode`, потому что это
+ * мутация. Если у юзера stale JWT и он пытается погасить код, увидит
+ * 403 с понятным сообщением (и поймёт, что надо перелогиниться).
  */
 @Controller("partner")
-@UseGuards(RolesGuard)
-@Roles(ROLE_PARTNER)
 export class PartnerRedemptionsController {
   constructor(
     private readonly members: PartnerMembersService,
@@ -89,6 +95,8 @@ export class PartnerRedemptionsController {
    */
   @Post("redemptions/verify/:code")
   @HttpCode(HttpStatus.OK)
+  @UseGuards(RolesGuard)
+  @Roles(ROLE_PARTNER)
   async verifyCode(
     @CurrentUser() user: AuthenticatedUser,
     @Param("code") code: string,
