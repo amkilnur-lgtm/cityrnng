@@ -1,7 +1,13 @@
 import { cookies } from "next/headers";
 import { API_BASE_URL, AT_COOKIE } from "@/lib/api-config";
 
-export type TimelineCellKind = "done" | "skipped" | "today" | "tomorrow" | "upcoming";
+export type TimelineCellKind =
+  | "done"
+  | "skipped"
+  | "today"
+  | "tomorrow"
+  | "soon"
+  | "upcoming";
 
 export type TimelineCell = {
   date: string;
@@ -14,6 +20,9 @@ export type TimelineCell = {
   kind: TimelineCellKind;
   km?: number;
   points?: number;
+  /** True если у юзера уже есть `going` RSVP. UI показывает «✓ Я иду» вместо
+   *  «Я иду →». Отдаётся бэком только для soon/today/tomorrow. */
+  isGoing?: boolean;
 };
 
 export type Timeline = {
