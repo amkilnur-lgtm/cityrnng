@@ -97,10 +97,10 @@ export function EventRow({
             <Badge variant="default">Среда</Badge>
           )}
           {signals.iAmGoing ? (
-            <span className="inline-flex items-center gap-1.5 border border-brand-red bg-brand-red px-2 py-0.5 font-mono text-[10px] font-semibold uppercase tracking-[0.14em] text-paper">
-              <span className="block h-1.5 w-1.5 bg-paper" />
+            <Badge variant="primary">
+              <span aria-hidden className="block h-1.5 w-1.5 bg-paper" />
               ты&nbsp;идёшь
-            </span>
+            </Badge>
           ) : null}
           <h3 className="type-h3">{event.title}</h3>
         </div>
