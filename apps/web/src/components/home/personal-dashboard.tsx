@@ -171,14 +171,27 @@ function TimelineCellView({
     </Badge>
   ) : null;
 
-  // Today / tomorrow share the same prominent red card. Today is the most
-  // imminent (run is happening in hours), tomorrow is next. Differentiated
-  // only by the badge label ("СЕГОДНЯ" vs "ЗАВТРА").
-  if (cell.kind === "today" || cell.kind === "tomorrow") {
+  // Three close states share the same prominent red card:
+  //   today    — событие сегодня (часы до старта)
+  //   tomorrow — завтра
+  //   soon     — за 2-3 дня (окно RSVP открыто) — только для regular
+  // Различаются только бейджем (СЕГОДНЯ / ЗАВТРА / ОЖИДАЕТСЯ) и наличием
+  // inline-кнопки «Я иду» на soon-карточке.
+  if (cell.kind === "today" || cell.kind === "tomorrow" || cell.kind === "soon") {
     const time = nextEvent?.time ?? cell.time;
-    const badge = cell.kind === "today" ? "СЕГОДНЯ" : "ЗАВТРА";
+    const badge =
+      cell.kind === "today"
+        ? "СЕГОДНЯ"
+        : cell.kind === "tomorrow"
+          ? "ЗАВТРА"
+          : "ОЖИДАЕТСЯ";
+    const showRsvp = cell.kind === "soon" && !isSpecial;
+    const isGoing = cell.isGoing === true;
     return (
-      <Link href={`/events/${encodeURIComponent(cell.eventId)}`} className={`${SHELL} bg-brand-red text-paper transition-colors hover:bg-brand-red-ink`}>
+      <Link
+        href={`/events/${encodeURIComponent(cell.eventId)}`}
+        className={`${SHELL} bg-brand-red text-paper transition-colors hover:bg-brand-red-ink`}
+      >
         <div className="flex items-center gap-2">
           <span className="font-mono text-[11px] font-medium uppercase tracking-[0.14em]">
             {cell.dateLabel}
@@ -187,12 +200,24 @@ function TimelineCellView({
             {badge}
           </span>
         </div>
-        <span className="font-display text-[24px] font-bold leading-none">
+        <span className="font-display text-[18px] font-bold leading-tight">
+          {cell.title}
+        </span>
+        <span className="font-mono text-[20px] font-medium leading-none tracking-[0.04em] opacity-95">
           {time}
         </span>
-        <span className="font-mono text-[12px] font-medium uppercase tracking-[0.08em] opacity-85">
-          {isSpecial ? cell.title : "старт"}
-        </span>
+        {showRsvp ? (
+          isGoing ? (
+            <span className="mt-1 inline-flex h-9 w-fit items-center gap-1.5 self-start border border-paper bg-ink px-3 font-sans text-[12px] font-bold tracking-tight text-paper">
+              <span aria-hidden className="font-mono text-[14px]">✓</span>
+              Я иду
+            </span>
+          ) : (
+            <span className="mt-1 inline-flex h-9 w-fit items-center gap-1.5 self-start border border-paper bg-paper px-3 font-sans text-[12px] font-bold tracking-tight text-brand-red transition-colors hover:bg-paper-2">
+              Я иду →
+            </span>
+          )
+        ) : null}
       </Link>
     );
   }

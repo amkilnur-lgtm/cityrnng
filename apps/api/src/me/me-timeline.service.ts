@@ -1,12 +1,18 @@
 import { Injectable } from "@nestjs/common";
-import { EventType } from "@prisma/client";
+import { EventInterestStatus, EventType } from "@prisma/client";
 import {
   EventOccurrenceService,
   type MaterializedEvent,
 } from "../events/event-occurrence.service";
 import { PrismaService } from "../prisma/prisma.service";
 
-export type TimelineCellKind = "done" | "skipped" | "today" | "tomorrow" | "upcoming";
+export type TimelineCellKind =
+  | "done"
+  | "skipped"
+  | "today"
+  | "tomorrow"
+  | "soon"
+  | "upcoming";
 
 export interface TimelineCell {
   /** YYYY-MM-DD in club local time (Asia/Yekaterinburg / Moscow — currently
@@ -27,6 +33,10 @@ export interface TimelineCell {
   km?: number;
   /** Points credited for this attendance, only when kind === "done". */
   points?: number;
+  /** True when user has a `going` EventInterest for this event. UI shows
+   *  a "✓ Я иду" pill instead of the "Я иду →" call-to-action. Only set
+   *  when meaningful (soon/today/tomorrow). */
+  isGoing?: boolean;
 }
 
 export interface TimelineResponse {
@@ -127,6 +137,26 @@ export class MeTimelineService {
 
     const today = this.dayKey(new Date());
     const tomorrow = this.dayKey(new Date(Date.now() + 24 * 60 * 60 * 1000));
+    // Day-2 и day-3 — окно «ОЖИДАЕТСЯ» для regular event: за 2-3 дня до
+    // старта карточка становится красной с inline-кнопкой «Я иду». Запускает
+    // RSVP-сценарий, когда событие уже близко, но не «завтра».
+    const day2 = this.dayKey(new Date(Date.now() + 2 * 24 * 60 * 60 * 1000));
+    const day3 = this.dayKey(new Date(Date.now() + 3 * 24 * 60 * 60 * 1000));
+
+    // Bulk-fetch user's "going" EventInterest для всех eventId этого окна.
+    // Один запрос на 4-8 ключей — дешевле, чем N+1 на каждую ячейку.
+    const allEventIds = events.map((e) => e.id);
+    const goingInterests = allEventIds.length > 0
+      ? await this.prisma.eventInterest.findMany({
+          where: {
+            userId,
+            eventKey: { in: allEventIds },
+            status: EventInterestStatus.going,
+          },
+          select: { eventKey: true },
+        })
+      : [];
+    const goingEventKeys = new Set(goingInterests.map((i) => i.eventKey));
 
     const cells: TimelineCell[] = dateKeys
       .sort()
@@ -152,6 +182,11 @@ export class MeTimelineService {
         else if (face.endsAt < now) kind = "skipped";
         else if (dateKeyStr === today) kind = "today";
         else if (dateKeyStr === tomorrow) kind = "tomorrow";
+        else if (
+          face.type === EventType.regular &&
+          (dateKeyStr === day2 || dateKeyStr === day3)
+        )
+          kind = "soon";
         else kind = "upcoming";
 
         const cell: TimelineCell = {
@@ -173,6 +208,15 @@ export class MeTimelineService {
         if (attended) {
           const pts = pointsByAttendance.get(attended.id);
           if (pts && pts > 0) cell.points = pts;
+        }
+
+        // isGoing — только для активных RSVP-сценариев (soon/today/tomorrow).
+        // На done/skipped/upcoming не показываем, не зашумляем UI.
+        if (
+          (kind === "soon" || kind === "today" || kind === "tomorrow") &&
+          goingEventKeys.has(face.id)
+        ) {
+          cell.isGoing = true;
         }
 
         return cell;
