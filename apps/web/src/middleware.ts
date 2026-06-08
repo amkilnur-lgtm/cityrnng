@@ -6,18 +6,50 @@ const REFRESH_GRACE_SEC = 60;
 const COOKIE_MAX_AGE_SEC = 60 * 60 * 24 * 30; // 30 days — actual lifetime is governed by API session.expiresAt
 
 /**
+ * Role-sensitive paths и роль, которую JWT должен содержать для доступа.
+ * Если её нет — стоит освежить токен (роль могла быть выдана с момента
+ * выписки текущего AT, тогда новый AT её подхватит из БД).
+ *
+ * `/partners` (marketing) ≠ `/partner` (cabinet). Точное сравнение слэшем.
+ */
+function expectedRoleFor(pathname: string): string | null {
+  if (pathname === "/partner" || pathname.startsWith("/partner/")) return "partner";
+  if (pathname === "/admin" || pathname.startsWith("/admin/")) return "admin";
+  return null;
+}
+
+/**
  * Server-side access-token rotation. Runs before every matched request.
- * If the access cookie is missing or about to expire and a refresh cookie
- * is present, we exchange it for a fresh pair via the API and rewrite the
- * cookies on both the request (so server components see the new token)
- * and the response (so the browser stores them).
+ *
+ * Triggers a refresh in three cases:
+ *  1. AT missing (cold start) but RT present → exchange.
+ *  2. AT about to expire (<60s) → preemptive refresh.
+ *  3. AT valid but lacks the role required by the current path (`/partner/*`
+ *     needs `partner`, `/admin/*` needs `admin`) → role drift detected;
+ *     the API will mint a new AT reading the latest roles from DB. If the
+ *     user genuinely doesn't have the role, the new AT still won't include
+ *     it and the page guard redirects them — same outcome, one extra
+ *     refresh call.
+ *
+ * Updated cookies are written both to the forwarded request (so server
+ * components see the new token in the same render) and to the response
+ * (so the browser stores them).
  */
 export async function middleware(req: NextRequest) {
   const at = req.cookies.get(AT_COOKIE)?.value;
   const rt = req.cookies.get(RT_COOKIE)?.value;
 
   if (!rt) return NextResponse.next();
-  if (at && !isExpiringSoon(at)) return NextResponse.next();
+
+  const expectedRole = expectedRoleFor(req.nextUrl.pathname);
+  const lacksExpectedRole =
+    expectedRole !== null &&
+    at !== undefined &&
+    !decodeJwtRoles(at).includes(expectedRole);
+
+  if (at && !isExpiringSoon(at) && !lacksExpectedRole) {
+    return NextResponse.next();
+  }
 
   try {
     const resp = await fetch(`${API_BASE_URL}/auth/refresh`, {
@@ -76,6 +108,24 @@ function isExpiringSoon(jwt: string): boolean {
     return payload.exp * 1000 - Date.now() < REFRESH_GRACE_SEC * 1000;
   } catch {
     return true;
+  }
+}
+
+/**
+ * Декодируем `roles` из JWT payload без проверки подписи (middleware
+ * сам токен не валидирует — он только смотрит, какие роли в claims, чтобы
+ * решить нужно ли освежать). API JwtAuthGuard валидирует подпись на
+ * каждом запросе.
+ */
+function decodeJwtRoles(jwt: string): string[] {
+  try {
+    const [, payloadB64] = jwt.split(".");
+    if (!payloadB64) return [];
+    const padded = payloadB64.replace(/-/g, "+").replace(/_/g, "/");
+    const payload = JSON.parse(atob(padded)) as { roles?: string[] };
+    return Array.isArray(payload.roles) ? payload.roles : [];
+  } catch {
+    return [];
   }
 }
 
