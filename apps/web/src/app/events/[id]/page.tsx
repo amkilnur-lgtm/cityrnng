@@ -181,6 +181,7 @@ export default async function EventDetailPage({
                     eventKey={event.id}
                     locations={locations.map((l) => ({
                       id: l.id,
+                      slug: l.slug,
                       name: l.name,
                       city: l.city,
                       paceGroups: l.paceGroups,

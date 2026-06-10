@@ -55,4 +55,17 @@ export class EventInterestsController {
   counts(@Param("eventKey") eventKey: string) {
     return this.service.countByLocation(eventKey);
   }
+
+  /**
+   * Public — location info + список идущих сюда (анонимизированный).
+   * Используется страницей /events/[eventKey]/where/[locationSlug].
+   */
+  @Public()
+  @Get("locations/:locationSlug")
+  byLocation(
+    @Param("eventKey") eventKey: string,
+    @Param("locationSlug") locationSlug: string,
+  ) {
+    return this.service.listForEventAndLocation(eventKey, locationSlug);
+  }
 }

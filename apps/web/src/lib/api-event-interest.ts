@@ -92,3 +92,44 @@ export async function getInterestCounts(
     return [];
   }
 }
+
+export type LocationDetailUser = {
+  userId: string;
+  displayName: string;
+  createdAt: string;
+};
+
+export type LocationDetailResponse = {
+  location: {
+    id: string;
+    slug: string;
+    name: string;
+    city: string;
+    venue: string | null;
+    address: string | null;
+    lat: number;
+    lng: number;
+  };
+  going: LocationDetailUser[];
+};
+
+/**
+ * Server-only — детали локации события (имя/адрес/координаты) +
+ * анонимизированный список идущих сюда. Используется страницей
+ * /events/[eventKey]/where/[locationSlug].
+ */
+export async function getEventLocationDetail(
+  eventKey: string,
+  locationSlug: string,
+): Promise<LocationDetailResponse | null> {
+  try {
+    const res = await fetch(
+      `${API_BASE_URL}/events/${safeEventKey(eventKey)}/interest/locations/${encodeURIComponent(locationSlug)}`,
+      { cache: "no-store" },
+    );
+    if (!res.ok) return null;
+    return (await res.json()) as LocationDetailResponse;
+  } catch {
+    return null;
+  }
+}

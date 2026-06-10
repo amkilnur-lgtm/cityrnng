@@ -208,6 +208,7 @@ export const publicSyncRuleInclude = Prisma.validator<Prisma.EventSyncRuleDefaul
         location: {
           select: {
             id: true,
+            slug: true,
             name: true,
             city: true,
             lat: true,

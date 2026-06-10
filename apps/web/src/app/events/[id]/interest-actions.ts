@@ -47,6 +47,7 @@ export async function markGoingAction(
       };
     }
     revalidatePath(`/events/${eventKey}`);
+    revalidatePath(`/events/${eventKey}/where/[locationSlug]`, "page");
     revalidatePath("/events");
     revalidatePath("/app");
     revalidatePath("/");
@@ -68,6 +69,7 @@ export async function cancelGoingAction(eventKey: string): Promise<Result> {
       return { ok: false, message: `HTTP ${res.status}` };
     }
     revalidatePath(`/events/${eventKey}`);
+    revalidatePath(`/events/${eventKey}/where/[locationSlug]`, "page");
     revalidatePath("/events");
     revalidatePath("/app");
     revalidatePath("/");
