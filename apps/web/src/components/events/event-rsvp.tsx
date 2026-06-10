@@ -202,9 +202,21 @@ export function EventRsvp({
             </>
           );
 
+          // Если юзер уже идёт на ЭТУ точку — карточка становится ссылкой
+          // на /events/[id]/where/[slug]: статус «ты идёшь сюда» уже понятен
+          // из бейджа, тап даёт страницу с картой и списком. Чтобы перейти
+          // на другую — тапает не свою карточку, и жмёт «Перенести точку».
           return (
             <li key={loc.id}>
-              {isAuthed ? (
+              {isAuthed && isMine ? (
+                <Link
+                  href={`/events/${encodeURIComponent(eventKey)}/where/${encodeURIComponent(loc.slug)}`}
+                  aria-label={`Открыть точку «${loc.name}»`}
+                  className={`flex h-full w-full flex-col gap-3 border p-4 text-left transition-colors ${accent} cursor-pointer hover:border-ink`}
+                >
+                  {inner}
+                </Link>
+              ) : isAuthed ? (
                 <button
                   type="button"
                   onClick={() => setChosen(loc.id)}
