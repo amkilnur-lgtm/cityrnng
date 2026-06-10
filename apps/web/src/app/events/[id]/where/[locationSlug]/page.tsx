@@ -84,7 +84,7 @@ export default async function LocationDetailPage({
         <section className="border-b border-ink">
           <Wrap className="py-10 lg:py-14">
             <Link
-              href={`/events/${encodeURIComponent(params.id)}`}
+              href={`/events/${encodeURIComponent(decodeURIComponent(params.id))}`}
               className="font-mono text-[11px] font-medium uppercase tracking-[0.14em] text-muted hover:text-brand-red"
             >
               ← к событию
@@ -112,28 +112,28 @@ export default async function LocationDetailPage({
         </section>
 
         {/* Карта — пока внешний переход в Я.Карты; iframe-embed добавим
-            отдельным PR'ом когда подключим API-ключ. */}
+            отдельным PR'ом когда подключим API-ключ. Без Wrap'а чтобы
+            hover-фон растягивался во всю ширину секции, а не упирался
+            в горизонтальные паддинги Wrap'а. */}
         <section className="border-b border-ink">
-          <Wrap className="py-0">
-            <a
-              href={mapUrl}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="grid h-[200px] place-items-center bg-paper-2 transition-colors hover:bg-paper md:h-[260px]"
-            >
-              <div className="flex flex-col items-center gap-2 text-muted">
-                <span className="font-mono text-[10px] uppercase tracking-[0.14em]">
-                  карта
-                </span>
-                <span className="text-[13px] text-ink">
-                  {detail.location.address ?? detail.location.city}
-                </span>
-                <span className="font-mono text-[11px] text-brand-red">
-                  открыть в Яндекс.Картах →
-                </span>
-              </div>
-            </a>
-          </Wrap>
+          <a
+            href={mapUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="grid h-[200px] w-full place-items-center bg-paper-2 transition-colors hover:bg-paper md:h-[260px]"
+          >
+            <div className="flex flex-col items-center gap-2 text-muted">
+              <span className="font-mono text-[10px] uppercase tracking-[0.14em]">
+                карта
+              </span>
+              <span className="text-[13px] text-ink">
+                {detail.location.address ?? detail.location.city}
+              </span>
+              <span className="font-mono text-[11px] text-brand-red">
+                открыть в Яндекс.Картах →
+              </span>
+            </div>
+          </a>
         </section>
 
         <section className="border-b border-ink">
@@ -153,7 +153,7 @@ export default async function LocationDetailPage({
                     Ты идёшь сюда
                   </span>
                   <Link
-                    href={`/events/${encodeURIComponent(params.id)}`}
+                    href={`/events/${encodeURIComponent(decodeURIComponent(params.id))}`}
                     className="font-sans text-[13px] font-medium text-muted underline-offset-4 hover:text-brand-red hover:underline"
                   >
                     перейти на другую точку →
@@ -170,7 +170,7 @@ export default async function LocationDetailPage({
                     label="Переместить сюда →"
                   />
                   <Link
-                    href={`/events/${encodeURIComponent(params.id)}`}
+                    href={`/events/${encodeURIComponent(decodeURIComponent(params.id))}`}
                     className="font-sans text-[13px] font-medium text-muted underline-offset-4 hover:text-brand-red hover:underline"
                   >
                     ← к событию
@@ -260,7 +260,7 @@ export default async function LocationDetailPage({
         <section>
           <Wrap className="py-8">
             <Link
-              href={`/events/${encodeURIComponent(params.id)}`}
+              href={`/events/${encodeURIComponent(decodeURIComponent(params.id))}`}
               className="font-mono text-[12px] font-medium uppercase tracking-[0.14em] text-muted hover:text-brand-red"
             >
               ← к событию

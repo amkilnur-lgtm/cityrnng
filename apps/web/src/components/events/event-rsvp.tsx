@@ -170,13 +170,16 @@ export function EventRsvp({
               </div>
 
               {loc.paceGroups && loc.paceGroups.length > 0 ? (
-                <div className="flex flex-col gap-1 font-mono text-[13px] tracking-[0.02em]">
+                <div className="flex flex-col gap-1 font-mono text-[13px] tabular-nums tracking-[0.02em]">
                   {groupByDistance(loc.paceGroups).map(([dist, paces]) => (
                     <div
                       key={dist}
                       className="flex flex-wrap items-center gap-x-2 gap-y-1"
                     >
-                      <span className="text-ink">{dist}&nbsp;км</span>
+                      <span className="inline-block min-w-[2ch] text-right text-ink">
+                        {dist}
+                      </span>
+                      <span className="text-ink">км</span>
                       {paces.map((pg) => (
                         <Fragment key={pg.id}>
                           <span aria-hidden className="text-ink/25">|</span>
