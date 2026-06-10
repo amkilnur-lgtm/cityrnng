@@ -28,6 +28,7 @@ export type ApiEvent = {
   syncRule: {
     locations: Array<{
       id: string;
+      slug: string;
       name: string;
       city: string;
       lat: number | string | null;

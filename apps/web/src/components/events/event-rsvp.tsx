@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { Fragment, useState, useTransition } from "react";
 import {
   cancelGoingAction,
@@ -15,6 +16,7 @@ export type EventPaceGroup = {
 
 export type EventLocation = {
   id: string;
+  slug: string;
   name: string;
   city: string;
   paceGroups?: EventPaceGroup[];
@@ -252,6 +254,18 @@ export function EventRsvp({
             <span>Ты идёшь на&nbsp;это событие</span>
             <span aria-hidden className="font-mono text-[18px]">✓</span>
           </div>
+          {/* Ссылка на страницу точки старта (адрес, карта, список идущих). */}
+          {(() => {
+            const mine = locations.find((l) => l.id === myLocationId);
+            return mine ? (
+              <Link
+                href={`/events/${encodeURIComponent(eventKey)}/where/${encodeURIComponent(mine.slug)}`}
+                className="self-center font-sans text-[13px] font-medium text-ink underline-offset-4 hover:text-brand-red hover:underline"
+              >
+                открыть точку «{mine.name}» →
+              </Link>
+            ) : null;
+          })()}
           <button
             type="button"
             onClick={cancel}

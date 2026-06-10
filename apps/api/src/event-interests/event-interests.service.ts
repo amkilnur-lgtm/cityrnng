@@ -160,6 +160,76 @@ export class EventInterestsService {
     return rows.map((r) => ({ locationId: r.locationId, count: r._count._all }));
   }
 
+  /**
+   * Список людей, идущих на конкретную точку события. Привязка по
+   * `locationSlug` (из URL) → внутри резолвится в `locationId`, чтобы
+   * можно было кешировать URL'ы вида /events/X/where/centr независимо
+   * от UUID локации.
+   *
+   * Возвращает анонимизированный displayName: «Имя Ф.» (без email и
+   * фамилии целиком). Email нигде не отдаём — приватность.
+   */
+  async listForEventAndLocation(eventKey: string, locationSlug: string) {
+    const location = await this.prisma.cityLocation.findUnique({
+      where: { slug: locationSlug },
+      select: {
+        id: true,
+        slug: true,
+        name: true,
+        city: true,
+        venue: true,
+        address: true,
+        lat: true,
+        lng: true,
+        status: true,
+      },
+    });
+    if (!location || location.status !== CityLocationStatus.active) {
+      throw new NotFoundException({ code: "LOCATION_NOT_FOUND" });
+    }
+
+    const interests = await this.prisma.eventInterest.findMany({
+      where: {
+        eventKey,
+        locationId: location.id,
+        status: EventInterestStatus.going,
+      },
+      include: {
+        user: {
+          select: {
+            id: true,
+            profile: {
+              select: {
+                displayName: true,
+                firstName: true,
+                lastName: true,
+              },
+            },
+          },
+        },
+      },
+      orderBy: { createdAt: "asc" },
+    });
+
+    return {
+      location: {
+        id: location.id,
+        slug: location.slug,
+        name: location.name,
+        city: location.city,
+        venue: location.venue,
+        address: location.address,
+        lat: location.lat,
+        lng: location.lng,
+      },
+      going: interests.map((i) => ({
+        userId: i.user.id,
+        displayName: anonymize(i.user.profile),
+        createdAt: i.createdAt,
+      })),
+    };
+  }
+
   // -- helpers --
 
   private async assertEventExists(eventKey: string) {
@@ -242,4 +312,30 @@ function toDateKey(d: Date): string {
   const m = String(d.getMonth() + 1).padStart(2, "0");
   const day = String(d.getDate()).padStart(2, "0");
   return `${y}-${m}-${day}`;
+}
+
+/**
+ * «Маша Иванова» → «Маша И.». Если у юзера нет имени/фамилии — берём
+ * displayName как есть. Без email и без полной фамилии — приватность
+ * по умолчанию.
+ */
+function anonymize(profile: {
+  displayName: string | null;
+  firstName: string | null;
+  lastName: string | null;
+} | null): string {
+  if (!profile) return "Бегун";
+  const first = profile.firstName?.trim();
+  const last = profile.lastName?.trim();
+  if (first && last) return `${first} ${last.slice(0, 1)}.`;
+  if (first) return first;
+  const display = profile.displayName?.trim();
+  if (display) {
+    const parts = display.split(/\s+/);
+    if (parts.length >= 2 && parts[1]) {
+      return `${parts[0]} ${parts[1].slice(0, 1)}.`;
+    }
+    return parts[0] ?? display;
+  }
+  return "Бегун";
 }
