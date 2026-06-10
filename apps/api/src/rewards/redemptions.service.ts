@@ -26,8 +26,30 @@ const CODE_ALPHABET = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
 const CODE_LENGTH = 6;
 const CODE_RETRIES = 5;
 
-/** Default 7 days for active redemption. */
-const DEFAULT_EXPIRY_MS = 7 * 24 * 60 * 60 * 1000;
+/** Default 14 days for active redemption. */
+const DEFAULT_EXPIRY_MS = 14 * 24 * 60 * 60 * 1000;
+
+/**
+ * Lazy-compute helper: если в БД статус всё ещё `active`, но `expiresAt`
+ * прошёл, в ответ клиенту отдаём `expired`. Это закрывает дыру «код висит
+ * в активных, хотя срок истёк» без отдельного фонового sweep-job'а.
+ *
+ * БД при этом не трогаем — реальный переход в `expired` произойдёт когда:
+ *   а) бариста попытается погасить (markUsedByCode кинет REDEMPTION_EXPIRED)
+ *   б) появится отдельный sweeper-job (когда понадобится — отдельная задача)
+ */
+function withComputedStatus<
+  T extends { status: string; expiresAt: Date | null },
+>(r: T): T {
+  if (
+    r.status === "active" &&
+    r.expiresAt !== null &&
+    r.expiresAt < new Date()
+  ) {
+    return { ...r, status: "expired" };
+  }
+  return r;
+}
 
 @Injectable()
 export class RedemptionsService {
@@ -164,8 +186,8 @@ export class RedemptionsService {
     });
   }
 
-  listForUser(userId: string, opts: { status?: RedemptionStatus } = {}) {
-    return this.prisma.redemption.findMany({
+  async listForUser(userId: string, opts: { status?: RedemptionStatus } = {}) {
+    const rows = await this.prisma.redemption.findMany({
       where: {
         userId,
         status: opts.status,
@@ -173,6 +195,7 @@ export class RedemptionsService {
       include: { reward: { include: { partner: true } } },
       orderBy: { createdAt: "desc" },
     });
+    return rows.map(withComputedStatus);
   }
 
   /**
@@ -187,7 +210,7 @@ export class RedemptionsService {
     take?: number;
   } = {}) {
     const take = Math.min(Math.max(opts.take ?? 50, 1), 200);
-    return this.prisma.redemption.findMany({
+    const rows = await this.prisma.redemption.findMany({
       where: {
         status: opts.status,
         code: opts.code ? opts.code.toUpperCase() : undefined,
@@ -206,6 +229,7 @@ export class RedemptionsService {
       orderBy: { createdAt: "desc" },
       take,
     });
+    return rows.map(withComputedStatus);
   }
 
   /**
@@ -216,7 +240,7 @@ export class RedemptionsService {
   async listForPartners(opts: { partnerIds: string[]; take?: number }) {
     if (opts.partnerIds.length === 0) return [];
     const take = Math.min(Math.max(opts.take ?? 20, 1), 100);
-    return this.prisma.redemption.findMany({
+    const rows = await this.prisma.redemption.findMany({
       where: { reward: { partnerId: { in: opts.partnerIds } } },
       include: {
         reward: { include: { partner: true } },
@@ -231,6 +255,7 @@ export class RedemptionsService {
       orderBy: { createdAt: "desc" },
       take,
     });
+    return rows.map(withComputedStatus);
   }
 
   async getByCodeForUser(userId: string, code: string) {
@@ -241,7 +266,7 @@ export class RedemptionsService {
     if (!redemption || redemption.userId !== userId) {
       throw new NotFoundException({ code: "REDEMPTION_NOT_FOUND" });
     }
-    return redemption;
+    return withComputedStatus(redemption);
   }
 
   /** Admin / partner-side: mark a code used. */
