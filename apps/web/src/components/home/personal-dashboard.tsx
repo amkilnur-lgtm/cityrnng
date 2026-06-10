@@ -174,9 +174,10 @@ function TimelineCellView({
   // Three close states share the same prominent red card:
   //   today    — событие сегодня (часы до старта)
   //   tomorrow — завтра
-  //   soon     — за 2-3 дня (окно RSVP открыто) — только для regular
-  // Различаются только бейджем (СЕГОДНЯ / ЗАВТРА / ОЖИДАЕТСЯ) и наличием
-  // inline-кнопки «Я иду» на soon-карточке.
+  //   soon     — за 2-3 дня (окно RSVP открыто)
+  // Различаются только бейджем (СЕГОДНЯ / ЗАВТРА / ОЖИДАЕТСЯ). Inline-кнопка
+  // «Я иду» / «✓ Я иду» — на всех трёх для regular (special уже выделен
+  // бейджем «спец», а у спецов одна точка старта, выбор не нужен).
   if (cell.kind === "today" || cell.kind === "tomorrow" || cell.kind === "soon") {
     const time = nextEvent?.time ?? cell.time;
     const badge =
@@ -185,7 +186,7 @@ function TimelineCellView({
         : cell.kind === "tomorrow"
           ? "ЗАВТРА"
           : "ОЖИДАЕТСЯ";
-    const showRsvp = cell.kind === "soon" && !isSpecial;
+    const showRsvp = !isSpecial;
     const isGoing = cell.isGoing === true;
     return (
       <Link
