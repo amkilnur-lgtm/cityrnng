@@ -75,14 +75,30 @@ export class StravaWebhookService {
     }
 
     // create or update — fetch the activity fresh and re-ingest, then match
-    // only within a window around the activity's event_time. Open-ended
+    // only within a window around the activity's *start time*. Open-ended
     // scans are wasteful for users with long history.
     const externalId = String(event.object_id);
     await this.ingestion.ingestSingleActivity(user.id, externalId);
-    const eventTimeMs = event.event_time * 1000;
+
+    // Center the window on the activity's real startedAt, NOT on
+    // event.event_time. event_time is when the activity was created/uploaded
+    // on Strava, which can be hours — or the next morning — after the run.
+    // An evening run uploaded the next day would otherwise get a window that
+    // no longer overlaps the event, and the credit is silently lost (and the
+    // raw activity is purged after 7 days, so it can't be recovered later).
+    // Fall back to event_time only if the row somehow isn't found.
+    const ingested = await this.prisma.externalActivity.findUnique({
+      where: {
+        provider_externalId: { provider: SyncProvider.strava, externalId },
+      },
+      select: { startedAt: true },
+    });
+    const centerMs = ingested
+      ? ingested.startedAt.getTime()
+      : event.event_time * 1000;
     await this.matcher.matchForUser(user.id, {
-      after: new Date(eventTimeMs - WEBHOOK_MATCH_WINDOW_MS),
-      before: new Date(eventTimeMs + WEBHOOK_MATCH_WINDOW_MS),
+      after: new Date(centerMs - WEBHOOK_MATCH_WINDOW_MS),
+      before: new Date(centerMs + WEBHOOK_MATCH_WINDOW_MS),
     });
   }
 
