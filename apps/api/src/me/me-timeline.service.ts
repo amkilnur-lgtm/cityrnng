@@ -102,12 +102,62 @@ export class MeTimelineService {
     // Fetch the user's attendances + linked activity + point transactions
     // for the date window in a single query — saves an N+1 lookup per cell.
     const dateKeys = [...cellsByDate.keys()];
-    // EventAttendance.eventId is a real UUID; materialized rule occurrences
-    // use synthetic ids like `rule:UUID:DATE` which Prisma can't cast to
-    // uuid. Filter those out — they never have attendances anyway because
-    // the matcher only fires for events with a real DB row + EventSyncRule.
+
+    // Resolve the real Event UUID that backs each occurrence so we can look
+    // up attendances (EventAttendance.eventId is always a real UUID):
+    //   - standalone / explicit events: the occurrence id IS the UUID;
+    //   - materialized rule occurrences (`rule:UUID:DATE`): the matcher writes
+    //     attendance against an *override* Event row (created on demand by
+    //     ensureMaterializedEvent), whose UUID is hidden behind the rule-key.
+    //     We re-resolve that override UUID here by (ruleId, occurrenceDate) —
+    //     without it the user's matched run shows as "пропуск" despite having
+    //     an approved attendance + credited points (see #timeline-status fix).
+    //   - pure rule occurrences with no override row yet have no backing id
+    //     (and therefore can't have attendances) — they map to null.
     const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
-    const realEventIds = events.map((e) => e.id).filter((id) => UUID_RE.test(id));
+    const RULE_OCCURRENCE_RE = /^rule:([0-9a-f-]{36}):(\d{4}-\d{2}-\d{2})$/i;
+    const ruleOccurrences = events
+      .map((e) => {
+        const m = e.id.match(RULE_OCCURRENCE_RE);
+        return m ? { ruleId: m[1]!, dateStr: m[2]! } : null;
+      })
+      .filter((x): x is { ruleId: string; dateStr: string } => x != null);
+    const overrideByKey = new Map<string, string>();
+    if (ruleOccurrences.length > 0) {
+      const overrideRows = await this.prisma.event.findMany({
+        where: {
+          recurrenceRuleId: { in: ruleOccurrences.map((o) => o.ruleId) },
+          overridesOccurrenceAt: {
+            in: ruleOccurrences.map(
+              (o) => new Date(`${o.dateStr}T00:00:00.000Z`),
+            ),
+          },
+        },
+        select: { id: true, recurrenceRuleId: true, overridesOccurrenceAt: true },
+      });
+      for (const r of overrideRows) {
+        if (!r.recurrenceRuleId || !r.overridesOccurrenceAt) continue;
+        const key = `${r.recurrenceRuleId}:${r.overridesOccurrenceAt
+          .toISOString()
+          .slice(0, 10)}`;
+        overrideByKey.set(key, r.id);
+      }
+    }
+    // Any occurrence id -> backing real Event UUID (or null when none yet).
+    const backingIdOf = (occurrenceId: string): string | null => {
+      if (UUID_RE.test(occurrenceId)) return occurrenceId;
+      const m = occurrenceId.match(RULE_OCCURRENCE_RE);
+      if (!m) return null;
+      return overrideByKey.get(`${m[1]}:${m[2]}`) ?? null;
+    };
+
+    const realEventIds = [
+      ...new Set(
+        events
+          .map((e) => backingIdOf(e.id))
+          .filter((id): id is string => id != null),
+      ),
+    ];
     const attendances = realEventIds.length > 0
       ? await this.prisma.eventAttendance.findMany({
           where: {
@@ -165,9 +215,13 @@ export class MeTimelineService {
         // "Face" = special if any exists for the day; otherwise the first
         // (regular). Type order from listInRange already sorts special first.
         const face = dayEvents[0]!;
-        // Did the user attend ANY event on this day?
+        // Did the user attend ANY event on this day? Look up by the backing
+        // real Event UUID, not the (possibly synthetic) occurrence id.
         const attended = dayEvents
-          .map((e) => attendanceByEventId.get(e.id))
+          .map((e) => {
+            const backing = backingIdOf(e.id);
+            return backing ? attendanceByEventId.get(backing) : undefined;
+          })
           .find((a) => a != null);
         const cellDate = new Date(face.startsAt);
         const dateKeyStr = this.dayKey(cellDate);
