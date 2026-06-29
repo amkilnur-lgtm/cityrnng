@@ -1,4 +1,4 @@
-import { createHash } from "node:crypto";
+import { createHash, randomBytes } from "node:crypto";
 import { Injectable, Logger, UnauthorizedException } from "@nestjs/common";
 import {
   AttendanceSource,
@@ -40,6 +40,11 @@ export class CheckinService {
   /** Devices present a plaintext key; we only ever store/compare its hash. */
   static hashDeviceKey(rawKey: string): string {
     return createHash("sha256").update(rawKey, "utf8").digest("hex");
+  }
+
+  /** Fresh device key, shown to the admin once at creation / rotation. */
+  static generateDeviceKey(): string {
+    return `csk_${randomBytes(24).toString("base64url")}`;
   }
 
   async authenticateDevice(rawKey: string | undefined): Promise<ScanDevice> {
