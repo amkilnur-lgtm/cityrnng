@@ -58,6 +58,7 @@ function mapMe(user: Awaited<ReturnType<UsersService["findByIdWithRelations"]>>)
     email: user.email,
     status: user.status,
     roles: rolesOf(user),
+    checkinCode: user.checkinCode,
     profile: user.profile
       ? {
           displayName: user.profile.displayName,

@@ -1,12 +1,11 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { PartnerCabinetCard } from "@/components/app/partner-cabinet-card";
+import { CheckinQrCard } from "@/components/app/checkin-qr-card";
 import { ProfileEditForm } from "@/components/app/profile-edit-form";
-import { StravaCard } from "@/components/app/strava-card";
 import { SiteFooter } from "@/components/site/footer";
 import { SiteNav } from "@/components/site/nav";
 import { Wrap } from "@/components/site/wrap";
-import { getStravaStatus } from "@/lib/api-strava";
 import { CLUB } from "@/lib/club";
 import { getSession } from "@/lib/session";
 import { getSiteState } from "@/lib/site-state";
@@ -18,11 +17,7 @@ export default async function ProfilePage({
 }: {
   searchParams: { strava?: string; reason?: string };
 }) {
-  const [session, stravaStatus, state] = await Promise.all([
-    getSession(),
-    getStravaStatus(),
-    getSiteState(),
-  ]);
+  const [session, state] = await Promise.all([getSession(), getSiteState()]);
   // Real session OR dev-mock authed unlocks the page.
   if (!state.isAuthed) redirect("/auth");
 
@@ -33,6 +28,12 @@ export default async function ProfilePage({
   const email = session?.email ?? "—";
   const roles = session?.roles ?? [];
   const displayName = state.user.name;
+  // Real code from the session; in dev-mock-authed (no real session) show a
+  // sample so the QR card renders for design review. In production isAuthed
+  // always implies a real session, so the sample never appears there.
+  const checkinCode =
+    session?.checkinCode ??
+    (process.env.NODE_ENV !== "production" && !session ? "CR-DEMO7K2X9QF4" : null);
 
   return (
     <>
@@ -116,8 +117,8 @@ export default async function ProfilePage({
             </div>
 
             <div className="flex flex-col gap-6">
-              <h2 className="type-h2">Интеграции</h2>
-              <StravaCard status={stravaStatus} />
+              <h2 className="type-h2">Отметка на&nbsp;пробежке</h2>
+              <CheckinQrCard code={checkinCode} />
               {roles.includes("partner") ? (
                 <PartnerCabinetCard />
               ) : null}

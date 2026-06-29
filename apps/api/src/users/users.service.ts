@@ -7,6 +7,7 @@ import { Prisma, User } from "@prisma/client";
 import { PrismaService } from "../prisma/prisma.service";
 import { ROLE_ADMIN, ROLE_RUNNER } from "../auth/types";
 import { PointsAwardsService } from "../points/points-awards.service";
+import { generateCheckinCode } from "./checkin-code";
 
 export type UserWithRelations = Prisma.UserGetPayload<{
   include: { profile: true; roles: { include: { role: true } } };
@@ -44,7 +45,19 @@ export class UsersService {
         ? existing.status === "pending"
           ? await tx.user.update({ where: { id: existing.id }, data: { status: "active" } })
           : existing
-        : await tx.user.create({ data: { email, status: "active" } });
+        : await tx.user.create({
+            data: { email, status: "active", checkinCode: generateCheckinCode() },
+          });
+
+      // Backfill the QR check-in code for users created before this feature
+      // (or any row that somehow lacks one) on their next verified login.
+      if (!user.checkinCode) {
+        const updated = await tx.user.update({
+          where: { id: user.id },
+          data: { checkinCode: generateCheckinCode() },
+        });
+        user.checkinCode = updated.checkinCode;
+      }
 
       await tx.profile.upsert({
         where: { userId: user.id },

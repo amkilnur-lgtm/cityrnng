@@ -54,6 +54,15 @@ export type MaterializedEvent = {
 
 const DAY_MS = 86_400_000;
 
+/**
+ * QR check-in window around a regular occurrence. A runner may scan from
+ * CHECKIN_OPEN_BEFORE_MS before the start until CHECKIN_OPEN_AFTER_MS after
+ * the end — covers early arrivals and stragglers without crediting random
+ * mid-day scans.
+ */
+const CHECKIN_OPEN_BEFORE_MS = 60 * 60_000;
+const CHECKIN_OPEN_AFTER_MS = 30 * 60_000;
+
 const ruleInclude = Prisma.validator<Prisma.EventRecurrenceRuleDefaultArgs>()({
   include: {
     locations: {
@@ -328,6 +337,73 @@ export class EventOccurrenceService {
       }
       throw err;
     }
+  }
+
+  /**
+   * Find the points-eligible regular occurrence at `locationId` whose check-in
+   * window is open at `at`, and return its materialized Event row (creating it
+   * if needed). Returns null when no occurrence is open right now. Used by the
+   * QR check-in flow — a runbase scanner is bound to one location, so we only
+   * consider rules attached to it on the current weekday.
+   */
+  async findOpenCheckinOccurrence(
+    locationId: string,
+    at: Date,
+  ): Promise<Event | null> {
+    const rules = await this.prisma.eventRecurrenceRule.findMany({
+      where: {
+        status: RecurrenceRuleStatus.active,
+        isPointsEligible: true,
+        dayOfWeek: at.getDay(),
+        startsFromDate: { lte: at },
+        OR: [{ endsAtDate: null }, { endsAtDate: { gte: this.dayOnly(at) } }],
+        locations: {
+          some: {
+            locationId,
+            location: { status: CityLocationStatus.active },
+          },
+        },
+      },
+    });
+
+    const open: { rule: EventRecurrenceRule; start: Date }[] = [];
+    for (const rule of rules) {
+      const start = this.composeOccurrence(rule, this.localDateStr(at));
+      if (!start) continue;
+      const end = new Date(start.getTime() + rule.durationMinutes * 60_000);
+      const openFrom = start.getTime() - CHECKIN_OPEN_BEFORE_MS;
+      const openUntil = end.getTime() + CHECKIN_OPEN_AFTER_MS;
+      if (at.getTime() >= openFrom && at.getTime() <= openUntil) {
+        open.push({ rule, start });
+      }
+    }
+    if (open.length === 0) return null;
+
+    // If several windows overlap, prefer special over regular, then the
+    // occurrence whose start is nearest to the scan time.
+    const typeOrder: Record<EventType, number> = {
+      [EventType.special]: 0,
+      [EventType.partner]: 1,
+      [EventType.regular]: 2,
+    };
+    open.sort((a, b) => {
+      const t = typeOrder[a.rule.type] - typeOrder[b.rule.type];
+      if (t !== 0) return t;
+      return (
+        Math.abs(a.start.getTime() - at.getTime()) -
+        Math.abs(b.start.getTime() - at.getTime())
+      );
+    });
+
+    const chosen = open[0]!;
+    return this.ensureMaterializedEvent(chosen.rule.id, chosen.start);
+  }
+
+  private localDateStr(d: Date): string {
+    const y = d.getFullYear();
+    const m = String(d.getMonth() + 1).padStart(2, "0");
+    const day = String(d.getDate()).padStart(2, "0");
+    return `${y}-${m}-${day}`;
   }
 
   private composeOccurrence(

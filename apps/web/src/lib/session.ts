@@ -6,6 +6,8 @@ export type AuthedUser = {
   email: string;
   status: string;
   roles: string[];
+  /** Static code behind the runner's personal QR / fob for check-in. */
+  checkinCode?: string | null;
   profile: {
     displayName?: string | null;
     firstName?: string | null;

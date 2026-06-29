@@ -20,6 +20,7 @@ import { EventInterestsModule } from "./event-interests/event-interests.module";
 import { AttendancesModule } from "./attendances/attendances.module";
 import { CryptoModule } from "./crypto/crypto.module";
 import { StravaModule } from "./integrations/strava/strava.module";
+import { CheckinModule } from "./integrations/checkin/checkin.module";
 import { LocationsModule } from "./locations/locations.module";
 import { PointsModule } from "./points/points.module";
 import { RewardsModule } from "./rewards/rewards.module";
@@ -95,6 +96,7 @@ const monorepoRootEnv = resolve(__dirname, "..", "..", "..", ".env");
     AttendancesModule,
     CryptoModule,
     StravaModule,
+    CheckinModule,
     LocationsModule,
     PointsModule,
     RewardsModule,
