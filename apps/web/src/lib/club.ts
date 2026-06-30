@@ -16,8 +16,15 @@ export const CLUB = {
   runTime: "19:30",
   /** Two route options offered at every event — runner picks on the day. */
   distances: [5, 10] as const,
-  /** 1 km of run = this many points, rounded to nearest 10 for display. */
+  /** 1 km of run = this many points, rounded to nearest 10 for display.
+   *  Legacy (distance-based scoring) — kept for any remaining references;
+   *  scoring is now flat per attendance, see `runPoints`. */
   pointsPerKm: 6,
+  /** Flat points credited for showing up at a run (QR check-in). Distance
+   *  and time don't matter — points are for attendance. */
+  runPoints: 60,
+  /** Welcome bonus credited once on sign-up. */
+  signupBonus: 50,
   /** Email & social — used in footer / about / contact CTAs. */
   contacts: {
     email: "cityrnng@yandex.com",

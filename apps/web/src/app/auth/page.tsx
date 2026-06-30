@@ -77,8 +77,8 @@ export default async function AuthPage({
             <li className="flex gap-3">
               <span className="font-mono text-brand-red">→</span>
               <span>
-                На&nbsp;пробежки записываться не&nbsp;нужно — приходи, Strava сама
-                фиксирует.
+                На&nbsp;пробежки записываться не&nbsp;нужно — приходи
+                и&nbsp;отметься своим QR на&nbsp;точке.
               </span>
             </li>
           </ul>

@@ -79,13 +79,14 @@ function EmptyHistory() {
       <span className="type-mono-caps">пока пусто</span>
       <p className="max-w-[520px] text-[15px] leading-[1.55] text-graphite">
         Первые баллы прилетают за&nbsp;регистрацию и&nbsp;первую пробежку.
-        Подключи Strava — и&nbsp;операции появятся здесь автоматически.
+        Отмечайся своим QR на&nbsp;точке — и&nbsp;операции появятся здесь
+        автоматически.
       </p>
       <Link
         href="/app/profile"
         className="inline-flex h-11 items-center border border-ink bg-paper px-4 font-sans text-[14px] font-semibold text-ink hover:bg-ink hover:text-paper"
       >
-        Профиль и&nbsp;Strava →
+        Профиль →
       </Link>
     </div>
   );
