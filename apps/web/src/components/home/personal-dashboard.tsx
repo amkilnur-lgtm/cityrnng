@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { Wrap } from "@/components/site/wrap";
 import { Badge } from "@/components/ui/badge";
-import { CLUB, pointsForDistance } from "@/lib/club";
+import { CLUB } from "@/lib/club";
 import type { DisplayEvent } from "@/lib/display-event";
 import type { Timeline, TimelineCell } from "@/lib/api-me-timeline";
 import { WEEK_CELLS, type AuthedUser, type WeekCell as WeekCellMockT } from "@/lib/home-mock";
@@ -26,8 +26,7 @@ function mockTimeline(): Timeline {
         : w.kind === "tomorrow"
           ? "tomorrow"
           : "skipped",
-    km: w.km,
-    points: w.km ? pointsForDistance(w.km) : undefined,
+    points: w.kind === "done" ? 60 : undefined,
   }));
   const done = cells.filter((c) => c.kind === "done").length;
   return {
@@ -57,7 +56,7 @@ export function PersonalDashboard({
 }) {
   const data = timeline ?? mockTimeline();
   const { cells, totals, monthLabel } = data;
-  const km = cells.reduce((s, c) => s + (c.km ?? 0), 0);
+  const totalPoints = cells.reduce((s, c) => s + (c.points ?? 0), 0);
   // Last done cell (chronologically last) — drives the "last run" lede line.
   const lastDone = [...cells].reverse().find((c) => c.kind === "done");
 
@@ -77,8 +76,7 @@ export function PersonalDashboard({
           <p className="type-lede max-w-[560px]">
             {lastDone ? (
               <>
-                Последняя пробежка —{" "}
-                <b className="font-semibold text-ink">{lastDone.km ?? "—"}&nbsp;км</b>
+                Последняя пробежка засчитана
                 {lastDone.points ? (
                   <>
                     ,{" "}
@@ -129,7 +127,7 @@ export function PersonalDashboard({
           <div className="grid grid-cols-2 divide-ink border-t border-ink md:divide-x">
             {[
               { k: "Пробежек", v: `${totals.done}`, s: `за ${monthLabel}` },
-              { k: "Километров", v: `${km}`, s: `за ${monthLabel}` },
+              { k: "Баллов", v: `${totalPoints}`, s: `за ${monthLabel}` },
             ].map((kpi, i) => (
               <div
                 key={kpi.k}
@@ -239,7 +237,7 @@ function TimelineCellView({
           </span>
         </div>
         <span className="font-display text-[24px] font-bold leading-none text-ink">
-          {cell.km != null ? `${cell.km} км` : cell.title}
+          {cell.title}
         </span>
         <span className="font-mono text-[12px] font-medium tracking-[0.04em] text-brand-red">
           {cell.points ? `+ ${cell.points} Б` : "выполнено"}

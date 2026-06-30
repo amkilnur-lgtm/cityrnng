@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { PageHero, PageShell } from "@/components/site/page-shell";
 import { Wrap } from "@/components/site/wrap";
-import { CLUB, DISTANCE_RANGE, pointsForDistance } from "@/lib/club";
+import { CLUB } from "@/lib/club";
 import { getSiteState } from "@/lib/site-state";
 
 export const metadata = { title: "Как это работает · CITYRNNG" };
@@ -22,14 +22,14 @@ const STEPS = [
   },
   {
     n: "02",
-    title: "Подключаешь Strava",
+    title: "Получаешь свой QR",
     body: (
       <>
-        В&nbsp;профиле жмёшь «Подключить Strava» — стандартный OAuth.
-        Это{" "}
-        <b className="font-semibold text-ink">единственный способ</b>,
-        которым мы&nbsp;узнаём что ты&nbsp;добежал. Garmin / Apple Watch —
-        тоже подойдут, если они синкаются со&nbsp;Strava.
+        В&nbsp;кабинете — твой персональный QR-код. Показывай
+        с&nbsp;телефона или закажи{" "}
+        <b className="font-semibold text-ink">брелок</b> с&nbsp;этим же кодом.
+        Это твой пропуск для&nbsp;отметки на&nbsp;пробежке. Ни&nbsp;Strava,
+        ни&nbsp;часов с&nbsp;GPS не&nbsp;нужно.
       </>
     ),
     cta: { href: "/app/profile", label: "Профиль →" },
@@ -41,27 +41,22 @@ const STEPS = [
       <>
         Одна из&nbsp;трёх точек на&nbsp;выбор: Центр (Карла Маркса 41),
         Проспект (Проспект Октября 63А), Черниковка (Первомайская 22).
-        Дистанция — <b className="font-semibold text-ink">{DISTANCE_RANGE}</b>,
-        выбираешь на&nbsp;месте. Темп любой.
+        Дистанция и&nbsp;темп — любые, это{" "}
+        <b className="font-semibold text-ink">не&nbsp;важно</b>. Просто прибегай.
       </>
     ),
     cta: { href: "/districts", label: "Точки старта →" },
   },
   {
     n: "04",
-    title: "Strava фиксирует, баллы прилетают",
+    title: "Отмечаешься QR — баллы за приход",
     body: (
       <>
-        После пробежки матчер сравнит активность с&nbsp;окном события
-        и&nbsp;начислит автоматически:{" "}
-        <b className="font-semibold text-ink">
-          +{pointsForDistance(5)}&nbsp;Б за&nbsp;5&nbsp;км
-        </b>
-        ,{" "}
-        <b className="font-semibold text-ink">
-          +{pointsForDistance(10)}&nbsp;Б за&nbsp;10&nbsp;км
-        </b>
-        . Видно в&nbsp;истории сразу.
+        На&nbsp;точке подносишь QR к&nbsp;сканеру — пробежка засчитана,
+        на&nbsp;счёт падает{" "}
+        <b className="font-semibold text-ink">+{CLUB.runPoints}&nbsp;Б</b>{" "}
+        за&nbsp;приход. Дистанция и&nbsp;время не&nbsp;влияют — баллы
+        за&nbsp;то, что ты&nbsp;пришёл. Видно в&nbsp;истории сразу.
       </>
     ),
     cta: { href: "/app/points", label: "История баллов →" },
@@ -97,9 +92,9 @@ export default async function HowItWorksPage() {
         lede={
           <>
             Сити Раннинг — открытое беговое сообщество с&nbsp;регулярными
-            пробежками по&nbsp;средам. Регистрируешься один раз, подключаешь
-            Strava, приходишь на&nbsp;пробежку, получаешь баллы
-            и&nbsp;используешь их&nbsp;у&nbsp;партнёров.
+            пробежками по&nbsp;средам. Регистрируешься один раз, приходишь
+            на&nbsp;пробежку, отмечаешься своим QR на&nbsp;точке, получаешь
+            баллы и&nbsp;используешь их&nbsp;у&nbsp;партнёров.
           </>
         }
       />
