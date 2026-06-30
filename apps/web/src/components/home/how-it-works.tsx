@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { Wrap } from "@/components/site/wrap";
+import { CLUB } from "@/lib/club";
 
 type Step = {
   n: string;
@@ -31,12 +32,12 @@ const STEPS: Step[] = [
     titleEm: "баллы",
     body: (
       <>
-        После пробежки баллы начисляются в&nbsp;личный кабинет
-        автоматически.
+        Отмечаешься своим QR на&nbsp;точке — баллы падают в&nbsp;личный
+        кабинет автоматически.
       </>
     ),
     metaLeft: "темп любой",
-    metaRight: "+30 баллов за участие",
+    metaRight: `+${CLUB.runPoints} баллов за приход`,
   },
   {
     n: "03",

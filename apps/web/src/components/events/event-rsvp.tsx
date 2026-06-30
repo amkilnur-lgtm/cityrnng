@@ -251,12 +251,9 @@ export function EventRsvp({
             <span>Ты бежал это событие</span>
             <span aria-hidden className="font-mono text-[18px]">✓</span>
           </div>
-          {myAttended.km != null || myAttended.points != null ? (
+          {myAttended.points != null ? (
             <div className="flex flex-wrap items-center justify-center gap-x-4 font-mono text-[13px] tracking-[0.04em] text-graphite">
-              {myAttended.km != null ? <span>{myAttended.km}&nbsp;км</span> : null}
-              {myAttended.points != null ? (
-                <span className="text-brand-red">+{myAttended.points}&nbsp;Б</span>
-              ) : null}
+              <span className="text-brand-red">+{myAttended.points}&nbsp;Б</span>
             </div>
           ) : null}
         </div>

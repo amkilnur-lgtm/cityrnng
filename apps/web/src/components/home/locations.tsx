@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { Wrap } from "@/components/site/wrap";
-import { CLUB, DISTANCE_RANGE } from "@/lib/club";
+import { CLUB } from "@/lib/club";
 import { LOCATIONS } from "@/lib/home-mock";
 
 export function Locations() {
@@ -60,8 +60,8 @@ export function Locations() {
                   </dd>
                 </div>
                 <div className="flex justify-between gap-4">
-                  <dt className="text-muted">Дистанции</dt>
-                  <dd className="text-right text-ink">{DISTANCE_RANGE}</dd>
+                  <dt className="text-muted">Темп</dt>
+                  <dd className="text-right text-ink">любой</dd>
                 </div>
               </dl>
               <span className="mt-auto text-[13px] font-medium text-ink">

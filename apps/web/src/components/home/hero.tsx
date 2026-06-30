@@ -68,7 +68,7 @@ function HeroSide() {
       <div className="grid h-[58px] grid-cols-3 border border-t-0 border-ink bg-paper">
         <BrandFact label="День" value={CLUB.runDayLong} />
         <BrandFact label="Время" value={CLUB.runTime} accent />
-        <BrandFact label="Дистанции" value={`${CLUB.distances.join(" / ")} км`} />
+        <BrandFact label="Темп" value="любой" />
       </div>
 
       {/* Mirrors the "Без паролей: жми по ссылке…" microcopy under the
