@@ -57,6 +57,21 @@ enum EventInterestStatus {
 enum AttendanceSource {
   sync
   manual_admin
+  qr_scan
+}
+
+enum ScanDeviceStatus {
+  active
+  disabled
+}
+
+/// Outcome of processing a raw QR scan from a runbase device.
+enum CheckinScanResult {
+  matched       // attendance created + (auto) awarded
+  duplicate     // user already checked in for this occurrence / same day
+  no_window     // no points-eligible occurrence at this location right now
+  unknown_code  // QR code matched no user
+  error         // unexpected failure while processing
 }
 
 enum CityLocationStatus {
@@ -127,6 +142,10 @@ model User {
   email     String     @unique
   phone     String?    @unique
   status    UserStatus @default(pending)
+  /// Opaque static code printed on the runner's personal QR / physical fob.
+  /// Scanned at a runbase to check in. Null until generated (backfilled for
+  /// existing users by the migration; new users get one at sign-up).
+  checkinCode String?  @unique @map("checkin_code")
   createdAt DateTime   @default(now()) @map("created_at")
   updatedAt DateTime   @updatedAt @map("updated_at")
 
@@ -148,6 +167,8 @@ model User {
   createdPointTransactions PointTransaction[]    @relation("PointTransactionCreatedBy")
   partnerMemberships       PartnerMember[]       @relation("PartnerMemberUser")
   createdPartnerMembers    PartnerMember[]       @relation("PartnerMemberCreatedBy")
+  checkinScans             CheckinScan[]         @relation("CheckinScanUser")
+  createdScanDevices       ScanDevice[]          @relation("ScanDeviceCreatedBy")
 
   @@map("users")
 }
@@ -263,6 +284,7 @@ model Event {
   recurrenceRule EventRecurrenceRule? @relation("RuleOverrides", fields: [recurrenceRuleId], references: [id])
   syncRule       EventSyncRule?
   attendances    EventAttendance[]
+  checkinScans   CheckinScan[]
 
   @@unique([recurrenceRuleId, overridesOccurrenceAt], map: "uq_event_overrides_per_rule_date")
   @@index([status, startsAt])
@@ -401,11 +423,71 @@ model EventAttendance {
   user             User              @relation("AttendanceUser", fields: [userId], references: [id], onDelete: Cascade)
   externalActivity ExternalActivity? @relation(fields: [externalActivityId], references: [id], onDelete: SetNull)
   reviewedBy       User?             @relation("AttendanceReviewer", fields: [reviewedById], references: [id], onDelete: SetNull)
+  checkinScan      CheckinScan?
 
   @@unique([eventId, userId])
   @@index([eventId, status])
   @@index([userId])
   @@map("event_attendances")
+}
+
+/// A QR scanner stationed at a runbase (CityLocation). Authenticates to the
+/// check-in endpoint with a device key (only its hash is stored). One device
+/// is bound to one location; scans it sends are credited to occurrences at
+/// that location.
+model ScanDevice {
+  id          String           @id @default(uuid()) @db.Uuid
+  locationId  String           @map("location_id") @db.Uuid
+  label       String
+  /// SHA-256 hash of the device API key. The plaintext key is shown once on
+  /// creation and never stored.
+  apiKeyHash  String           @unique @map("api_key_hash")
+  status      ScanDeviceStatus @default(active)
+  lastSeenAt  DateTime?        @map("last_seen_at")
+  createdById String           @map("created_by") @db.Uuid
+  createdAt   DateTime         @default(now()) @map("created_at")
+  updatedAt   DateTime         @updatedAt @map("updated_at")
+
+  location  CityLocation  @relation(fields: [locationId], references: [id], onDelete: Restrict)
+  createdBy User          @relation("ScanDeviceCreatedBy", fields: [createdById], references: [id])
+  scans     CheckinScan[]
+
+  @@index([locationId])
+  @@map("scan_devices")
+}
+
+/// Raw log of every QR scan received from a device. Serves three jobs:
+/// audit trail, idempotency (unique [deviceId, scanId] absorbs offline
+/// re-sends), and diagnostics. `userId`/`eventId`/`attendanceId` stay null
+/// when the scan didn't resolve (unknown code, no open window, duplicate).
+model CheckinScan {
+  id           String            @id @default(uuid()) @db.Uuid
+  deviceId     String            @map("device_id") @db.Uuid
+  locationId   String            @map("location_id") @db.Uuid
+  /// Client-generated id from the device, unique per device. Lets an offline
+  /// buffer re-send safely without creating duplicate attendances.
+  scanId       String            @map("scan_id")
+  /// Raw code string read off the QR/fob — kept even when it matches no user.
+  checkinCode  String            @map("checkin_code")
+  userId       String?           @map("user_id") @db.Uuid
+  eventId      String?           @map("event_id") @db.Uuid
+  attendanceId String?           @unique @map("attendance_id") @db.Uuid
+  result       CheckinScanResult
+  /// When the device physically scanned (may predate receivedAt for buffered
+  /// offline scans).
+  scannedAt    DateTime          @map("scanned_at")
+  receivedAt   DateTime          @default(now()) @map("received_at")
+
+  device     ScanDevice       @relation(fields: [deviceId], references: [id], onDelete: Cascade)
+  location   CityLocation     @relation(fields: [locationId], references: [id], onDelete: Restrict)
+  user       User?            @relation("CheckinScanUser", fields: [userId], references: [id], onDelete: SetNull)
+  event      Event?           @relation(fields: [eventId], references: [id], onDelete: SetNull)
+  attendance EventAttendance? @relation(fields: [attendanceId], references: [id], onDelete: SetNull)
+
+  @@unique([deviceId, scanId])
+  @@index([locationId, scannedAt])
+  @@index([userId])
+  @@map("checkin_scans")
 }
 
 model CityLocation {
@@ -430,6 +512,8 @@ model CityLocation {
   recurrenceRules EventRecurrenceRuleLocation[] @relation("CityLocationRecurrenceRules")
   eventInterests  EventInterest[]
   paceGroups      LocationPaceGroup[]
+  scanDevices     ScanDevice[]
+  checkinScans    CheckinScan[]
 
   @@index([city])
   @@index([status])
