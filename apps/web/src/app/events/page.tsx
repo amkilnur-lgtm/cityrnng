@@ -3,7 +3,7 @@ import { EventRow, loadSignals } from "@/components/events/event-row";
 import { SiteFooter } from "@/components/site/footer";
 import { SiteNav } from "@/components/site/nav";
 import { Wrap } from "@/components/site/wrap";
-import { CLUB, DISTANCE_RANGE } from "@/lib/club";
+import { CLUB } from "@/lib/club";
 import { getDisplayUpcomingList } from "@/lib/display-event";
 import { getSiteState } from "@/lib/site-state";
 
@@ -30,7 +30,7 @@ export default async function EventsPage() {
                 <em className="not-italic text-brand-red">неделе</em>.
               </h1>
               <p className="type-lede max-w-[640px]">
-                Среда, {CLUB.runTime}. Три района, {DISTANCE_RANGE}. Спецзабеги
+                Среда, {CLUB.runTime}. Три района, темп любой. Спецзабеги
                 помечены отдельно.
               </p>
             </div>
