@@ -1,0 +1,12 @@
+# Core scanner runs on the Python standard library only — nothing required
+# for hid+stdin mode. Install extras per the input mode you use:
+
+# HID mode with a pinned /dev/input device (recommended for a real scanner):
+# evdev>=1.6
+
+# Camera mode (USB webcam). Also needs the system lib: apt install libzbar0
+# opencv-python-headless>=4.8
+# pyzbar>=0.1.9
+
+# Optional GPIO buzzer / LEDs on the Pi:
+# gpiozero>=2.0
