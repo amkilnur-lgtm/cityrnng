@@ -1,4 +1,10 @@
-import { createCipheriv, createDecipheriv, randomBytes } from "node:crypto";
+import {
+  createCipheriv,
+  createDecipheriv,
+  randomBytes,
+  scryptSync,
+  timingSafeEqual,
+} from "node:crypto";
 import { Injectable } from "@nestjs/common";
 import { ConfigService } from "@nestjs/config";
 import type { Env } from "../config/env.schema";
@@ -7,6 +13,9 @@ const ALGO = "aes-256-gcm";
 const IV_LEN = 12;
 const TAG_LEN = 16;
 const VERSION = "v1";
+
+// scrypt password hashing. 128*N*r bytes ≈ 16 MiB, under Node's 32 MiB default.
+const SCRYPT = { N: 16384, r: 8, p: 1, keyLen: 64 } as const;
 
 @Injectable()
 export class CryptoService {
@@ -39,5 +48,22 @@ export class CryptoService {
     const decipher = createDecipheriv(ALGO, this.key, iv);
     decipher.setAuthTag(tag);
     return Buffer.concat([decipher.update(ct), decipher.final()]).toString("utf8");
+  }
+
+  /** Hash a password for storage: "scrypt$<salt-hex>$<hash-hex>". */
+  hashPassword(password: string): string {
+    const salt = randomBytes(16);
+    const dk = scryptSync(password, salt, SCRYPT.keyLen, SCRYPT);
+    return `scrypt$${salt.toString("hex")}$${dk.toString("hex")}`;
+  }
+
+  /** Constant-time verify against a stored hash. False on any malformed input. */
+  verifyPassword(password: string, stored: string | null | undefined): boolean {
+    if (!stored) return false;
+    const [scheme, saltHex, hashHex] = stored.split("$");
+    if (scheme !== "scrypt" || !saltHex || !hashHex) return false;
+    const expected = Buffer.from(hashHex, "hex");
+    const actual = scryptSync(password, Buffer.from(saltHex, "hex"), expected.length, SCRYPT);
+    return expected.length === actual.length && timingSafeEqual(expected, actual);
   }
 }

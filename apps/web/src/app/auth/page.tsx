@@ -1,7 +1,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import { redirect } from "next/navigation";
-import { AuthRequestForm } from "@/components/auth/request-form";
+import { AuthPanel } from "@/components/auth/auth-panel";
 import { Wrap } from "@/components/site/wrap";
 import { CLUB } from "@/lib/club";
 import { getSession } from "@/lib/session";
@@ -11,7 +11,7 @@ export const metadata = { title: "Вход · CITYRNNG" };
 export default async function AuthPage({
   searchParams,
 }: {
-  searchParams?: { email?: string };
+  searchParams?: { email?: string; tab?: string };
 }) {
   const session = await getSession();
   if (session) {
@@ -59,19 +59,22 @@ export default async function AuthPage({
             Бегаем по&nbsp;
             <em className="not-italic text-brand-red">средам</em>
             .<br />
-            Письмо со&nbsp;ссылкой — и&nbsp;ты&nbsp;с&nbsp;нами.
+            Имя, почта, пароль — и&nbsp;ты&nbsp;с&nbsp;нами.
           </h1>
           <ul className="flex flex-col gap-3 text-[15px] leading-[1.55] text-graphite">
-            <li className="flex gap-3">
-              <span className="font-mono text-brand-red">→</span>
-              <span>Без пароля. Магик-линк придёт на&nbsp;почту.</span>
-            </li>
             <li className="flex gap-3">
               <span className="font-mono text-brand-red">→</span>
               <span>
                 Регистрация — один раз.{" "}
                 <b className="font-semibold text-ink">+50 баллов</b>{" "}
                 приветственных.
+              </span>
+            </li>
+            <li className="flex gap-3">
+              <span className="font-mono text-brand-red">→</span>
+              <span>
+                Вход по&nbsp;паролю — в&nbsp;той&nbsp;же вкладке, без писем.
+                Можно и&nbsp;по&nbsp;ссылке на&nbsp;почту.
               </span>
             </li>
             <li className="flex gap-3">
@@ -85,7 +88,10 @@ export default async function AuthPage({
         </section>
 
         <section className="flex flex-col justify-center p-8 md:p-12 lg:p-16">
-          <AuthRequestForm initialEmail={initialEmail} />
+          <AuthPanel
+            initialEmail={initialEmail}
+            initialMode={searchParams?.tab === "register" ? "register" : "login"}
+          />
         </section>
       </Wrap>
     </main>
