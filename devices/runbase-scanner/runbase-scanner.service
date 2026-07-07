@@ -1,0 +1,20 @@
+[Unit]
+Description=CITYRNNG runbase QR scanner
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+# Keep the device key out of the world-readable config.ini:
+#   /etc/cityrnng-scanner.env  ->  CITYRNNG_DEVICE_KEY=csk_...
+EnvironmentFile=-/etc/cityrnng-scanner.env
+WorkingDirectory=/opt/cityrnng-scanner
+ExecStart=/usr/bin/python3 /opt/cityrnng-scanner/scanner.py
+Restart=always
+RestartSec=3
+# Buffer dir used by scanner.py (buffer_path default lives here).
+StateDirectory=cityrnng-scanner
+User=pi
+
+[Install]
+WantedBy=multi-user.target
