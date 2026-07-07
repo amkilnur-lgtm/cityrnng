@@ -8,6 +8,8 @@ export type AuthedUser = {
   roles: string[];
   /** Static code behind the runner's personal QR / fob for check-in. */
   checkinCode?: string | null;
+  /** Whether the account has a password set (vs magic-link only). */
+  hasPassword?: boolean;
   profile: {
     displayName?: string | null;
     firstName?: string | null;

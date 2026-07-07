@@ -1,5 +1,6 @@
 import { Injectable, Logger, UnauthorizedException } from "@nestjs/common";
 import { ConfigService } from "@nestjs/config";
+import { CryptoService } from "../crypto/crypto.service";
 import { EmailService } from "../email/email.service";
 import { PrismaService } from "../prisma/prisma.service";
 import { UsersService, rolesOf } from "../users/users.service";
@@ -33,6 +34,7 @@ export class AuthService {
     private readonly challenges: LoginChallengeService,
     private readonly tokens: TokensService,
     private readonly email: EmailService,
+    private readonly crypto: CryptoService,
     private readonly config: ConfigService<Env, true>,
   ) {}
 
@@ -79,6 +81,59 @@ export class AuthService {
       accessToken: issued.accessToken,
       refreshToken: issued.refreshToken,
       user: { id: user.id, email: user.email, roles },
+    };
+  }
+
+  /** Create a new account with a password and log it in immediately. */
+  async registerWithPassword(
+    input: { email: string; password: string; name: string },
+    meta: { userAgent?: string; ipAddress?: string } = {},
+  ): Promise<VerifyLoginResult> {
+    const user = await this.users.registerWithPassword(input);
+    return this.startSession(user.id, user.email, rolesOf(user), meta);
+  }
+
+  /** Verify email + password and log in. Same-tab flow, no email round-trip. */
+  async loginWithPassword(
+    email: string,
+    password: string,
+    meta: { userAgent?: string; ipAddress?: string } = {},
+  ): Promise<VerifyLoginResult> {
+    const user = await this.users.findByEmailForAuth(email);
+    if (!user) {
+      throw new UnauthorizedException({ code: "AUTH_INVALID_CREDENTIALS" });
+    }
+    if (!user.passwordHash) {
+      // Legacy / magic-link-only account — steer them to the link flow.
+      throw new UnauthorizedException({ code: "NO_PASSWORD_SET" });
+    }
+    if (!this.crypto.verifyPassword(password, user.passwordHash)) {
+      throw new UnauthorizedException({ code: "AUTH_INVALID_CREDENTIALS" });
+    }
+    return this.startSession(user.id, user.email, rolesOf(user), meta);
+  }
+
+  /** Issue an access+refresh pair and persist the session row. */
+  private async startSession(
+    userId: string,
+    email: string,
+    roles: string[],
+    meta: { userAgent?: string; ipAddress?: string },
+  ): Promise<VerifyLoginResult> {
+    const issued = await this.tokens.issue({ id: userId, email, roles });
+    await this.prisma.session.create({
+      data: {
+        userId,
+        refreshTokenHash: issued.refreshTokenHash,
+        expiresAt: issued.refreshTokenExpiresAt,
+        userAgent: meta.userAgent ?? null,
+        ipAddress: meta.ipAddress ?? null,
+      },
+    });
+    return {
+      accessToken: issued.accessToken,
+      refreshToken: issued.refreshToken,
+      user: { id: userId, email, roles },
     };
   }
 

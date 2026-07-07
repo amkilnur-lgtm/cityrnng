@@ -21,7 +21,7 @@ export function FinalCta({ isAuthed }: { isAuthed: boolean }) {
         </h2>
         <div className="flex flex-wrap gap-3">
           <Link
-            href={isAuthed ? "/events" : "/auth"}
+            href={isAuthed ? "/events" : "/auth?tab=register"}
             className="inline-flex h-14 items-center border border-brand-red bg-brand-red px-6 font-sans text-[15px] font-semibold text-paper transition-colors hover:bg-brand-red-ink"
           >
             {isAuthed ? "Все маршруты →" : "Присоединиться →"}

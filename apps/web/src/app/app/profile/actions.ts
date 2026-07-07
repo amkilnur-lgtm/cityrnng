@@ -63,6 +63,56 @@ function profileBodyFromForm(form: FormData): Record<string, unknown> {
   };
 }
 
+const PASSWORD_ERRORS: Record<string, string> = {
+  CURRENT_PASSWORD_REQUIRED: "Введи текущий пароль.",
+  CURRENT_PASSWORD_WRONG: "Текущий пароль неверный.",
+};
+
+export async function setPasswordAction(
+  _prev: ProfileResult | undefined,
+  formData: FormData,
+): Promise<ProfileResult> {
+  const token = cookies().get(AT_COOKIE)?.value;
+  if (!token) return { ok: false, message: "Войди заново — нет access-токена." };
+
+  const newPassword = String(formData.get("newPassword") ?? "");
+  const currentPassword = String(formData.get("currentPassword") ?? "");
+  if (newPassword.length < 8) {
+    return { ok: false, message: "Пароль — минимум 8 символов." };
+  }
+
+  try {
+    const res = await fetch(`${API_BASE_URL}/me/password`, {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${token}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        newPassword,
+        currentPassword: currentPassword || undefined,
+      }),
+    });
+    if (!res.ok) {
+      const payload = (await res.json().catch(() => ({}))) as {
+        message?: string;
+        code?: string;
+      };
+      return {
+        ok: false,
+        message:
+          PASSWORD_ERRORS[payload.code ?? ""] ??
+          payload.message ??
+          `HTTP ${res.status}`,
+      };
+    }
+    revalidatePath("/app/profile");
+    return { ok: true };
+  } catch {
+    return { ok: false, message: "API недоступен." };
+  }
+}
+
 export async function updateProfileAction(
   _prev: ProfileResult | undefined,
   formData: FormData,

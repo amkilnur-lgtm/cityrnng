@@ -2,6 +2,7 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import { PartnerCabinetCard } from "@/components/app/partner-cabinet-card";
 import { CheckinQrCard } from "@/components/app/checkin-qr-card";
+import { PasswordCard } from "@/components/app/password-card";
 import { ProfileEditForm } from "@/components/app/profile-edit-form";
 import { SiteFooter } from "@/components/site/footer";
 import { SiteNav } from "@/components/site/nav";
@@ -119,6 +120,8 @@ export default async function ProfilePage({
             <div className="flex flex-col gap-6">
               <h2 className="type-h2">Отметка на&nbsp;пробежке</h2>
               <CheckinQrCard code={checkinCode} />
+              <h2 className="type-h2">Безопасность</h2>
+              <PasswordCard hasPassword={session?.hasPassword ?? false} />
               {roles.includes("partner") ? (
                 <PartnerCabinetCard />
               ) : null}

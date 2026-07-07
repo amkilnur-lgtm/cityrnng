@@ -1,4 +1,5 @@
 import {
+  BadRequestException,
   ConflictException,
   Injectable,
   NotFoundException,
@@ -6,6 +7,7 @@ import {
 import { Prisma, User } from "@prisma/client";
 import { PrismaService } from "../prisma/prisma.service";
 import { ROLE_ADMIN, ROLE_RUNNER } from "../auth/types";
+import { CryptoService } from "../crypto/crypto.service";
 import { PointsAwardsService } from "../points/points-awards.service";
 import { generateCheckinCode } from "./checkin-code";
 
@@ -22,6 +24,7 @@ export class UsersService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly pointsAwards: PointsAwardsService,
+    private readonly crypto: CryptoService,
   ) {}
 
   async findByIdWithRelations(id: string): Promise<UserWithRelations | null> {
@@ -80,6 +83,101 @@ export class UsersService {
         include: { profile: true, roles: { include: { role: true } } },
       });
     });
+  }
+
+  /**
+   * Create a new account with a password. Rejects an already-active email
+   * (they should log in / reset instead) — never silently claims an existing
+   * account. A leftover `pending` row (e.g. from an invite) is upgraded.
+   */
+  async registerWithPassword(input: {
+    email: string;
+    password: string;
+    name: string;
+  }): Promise<UserWithRelations> {
+    const passwordHash = this.crypto.hashPassword(input.password);
+    const displayName = input.name.trim() || defaultDisplayName(input.email);
+    return this.prisma.$transaction(async (tx) => {
+      const runnerRole = await tx.role.upsert({
+        where: { code: ROLE_RUNNER },
+        update: {},
+        create: { code: ROLE_RUNNER, name: "Runner" },
+      });
+
+      const existing = await tx.user.findUnique({ where: { email: input.email } });
+      if (existing && existing.status === "active") {
+        throw new ConflictException({ code: "EMAIL_TAKEN" });
+      }
+
+      const user = existing
+        ? await tx.user.update({
+            where: { id: existing.id },
+            data: {
+              status: "active",
+              passwordHash,
+              checkinCode: existing.checkinCode ?? generateCheckinCode(),
+            },
+          })
+        : await tx.user.create({
+            data: {
+              email: input.email,
+              status: "active",
+              passwordHash,
+              checkinCode: generateCheckinCode(),
+            },
+          });
+
+      await tx.profile.upsert({
+        where: { userId: user.id },
+        update: { displayName },
+        create: { userId: user.id, displayName },
+      });
+      await tx.userRole.upsert({
+        where: { userId_roleId: { userId: user.id, roleId: runnerRole.id } },
+        update: {},
+        create: { userId: user.id, roleId: runnerRole.id },
+      });
+      // First activation → welcome bonus (idempotent per user in the ledger).
+      await this.pointsAwards.awardSignupBonus(user.id, tx);
+
+      return tx.user.findUniqueOrThrow({
+        where: { id: user.id },
+        include: { profile: true, roles: { include: { role: true } } },
+      });
+    });
+  }
+
+  /** Lookup for password login — includes the hash, profile and roles. */
+  findByEmailForAuth(email: string) {
+    return this.prisma.user.findUnique({
+      where: { email },
+      include: { profile: true, roles: { include: { role: true } } },
+    });
+  }
+
+  /**
+   * Set or change the caller's password. If one is already set, the current
+   * password must be supplied and match.
+   */
+  async setPassword(
+    userId: string,
+    input: { currentPassword?: string; newPassword: string },
+  ): Promise<{ ok: true }> {
+    const user = await this.prisma.user.findUnique({ where: { id: userId } });
+    if (!user) throw new NotFoundException({ code: "USER_NOT_FOUND" });
+    if (user.passwordHash) {
+      if (!input.currentPassword) {
+        throw new BadRequestException({ code: "CURRENT_PASSWORD_REQUIRED" });
+      }
+      if (!this.crypto.verifyPassword(input.currentPassword, user.passwordHash)) {
+        throw new BadRequestException({ code: "CURRENT_PASSWORD_WRONG" });
+      }
+    }
+    await this.prisma.user.update({
+      where: { id: userId },
+      data: { passwordHash: this.crypto.hashPassword(input.newPassword) },
+    });
+    return { ok: true };
   }
 
   /**

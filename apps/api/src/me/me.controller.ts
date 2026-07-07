@@ -3,14 +3,18 @@ import {
   Controller,
   DefaultValuePipe,
   Get,
+  HttpCode,
+  HttpStatus,
   NotFoundException,
   ParseIntPipe,
   Patch,
+  Post,
   Query,
 } from "@nestjs/common";
 import { CurrentUser } from "../auth/decorators/current-user.decorator";
 import { UsersService, rolesOf } from "../users/users.service";
 import type { AuthenticatedUser } from "../auth/types";
+import { SetPasswordDto } from "./dto/set-password.dto";
 import { UpdateProfileDto } from "./dto/update-profile.dto";
 import { MeTimelineService } from "./me-timeline.service";
 
@@ -37,6 +41,15 @@ export class MeController {
     return mapMe(user);
   }
 
+  @Post("password")
+  @HttpCode(HttpStatus.OK)
+  setPassword(
+    @CurrentUser() current: AuthenticatedUser,
+    @Body() dto: SetPasswordDto,
+  ) {
+    return this.users.setPassword(current.id, dto);
+  }
+
   /**
    * Personal dashboard's "month grid" data. monthOffset=0 → current month,
    * -1 → previous, etc. Falls back to padding from the previous month if
@@ -59,6 +72,7 @@ function mapMe(user: Awaited<ReturnType<UsersService["findByIdWithRelations"]>>)
     status: user.status,
     roles: rolesOf(user),
     checkinCode: user.checkinCode,
+    hasPassword: user.passwordHash != null,
     profile: user.profile
       ? {
           displayName: user.profile.displayName,

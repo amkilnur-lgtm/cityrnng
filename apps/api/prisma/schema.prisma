@@ -146,6 +146,10 @@ model User {
   /// Scanned at a runbase to check in. Null until generated (backfilled for
   /// existing users by the migration; new users get one at sign-up).
   checkinCode String?  @unique @map("checkin_code")
+  /// scrypt password hash ("scrypt$<salt>$<hash>"). Null for accounts created
+  /// before passwords existed / via magic-link only — they log in by link
+  /// until they set one.
+  passwordHash String? @map("password_hash")
   createdAt DateTime   @default(now()) @map("created_at")
   updatedAt DateTime   @updatedAt @map("updated_at")
 
