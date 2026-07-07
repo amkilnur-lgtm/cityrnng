@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { PageHero, PageShell } from "@/components/site/page-shell";
 import { Wrap } from "@/components/site/wrap";
-import { CLUB, DISTANCE_RANGE } from "@/lib/club";
+import { CLUB } from "@/lib/club";
 import { LOCATIONS } from "@/lib/home-mock";
 import { getSiteState } from "@/lib/site-state";
 
@@ -29,9 +29,9 @@ export default async function DistrictsPage() {
         lede={
           <>
             Каждую {CLUB.runDayLong} стартуем в&nbsp;одном из&nbsp;районов
-            ниже — {CLUB.runTime}, {DISTANCE_RANGE}. Маршруты повторяются,
-            ориентир один. Подключаешь Strava — записываться
-            не&nbsp;нужно.
+            ниже — в&nbsp;{CLUB.runTime}. Маршруты повторяются, ориентир один.
+            Записываться не&nbsp;нужно — приходи и&nbsp;отметься своим QR
+            на&nbsp;точке.
           </>
         }
       />
@@ -65,7 +65,7 @@ export default async function DistrictsPage() {
                     <Row k="Точка старта" v={loc.venue} placeholder="уточняется" />
                     <Row k="Ориентир" v={loc.landmark} placeholder="уточняется" />
                     <Row k="Время" v={`${CLUB.runDayLong} · ${CLUB.runTime}`} />
-                    <Row k="Дистанции" v={DISTANCE_RANGE} />
+                    <Row k="Темп" v="любой" />
                   </dl>
 
                   <div className="flex flex-col gap-2 md:items-stretch md:min-w-[200px]">
