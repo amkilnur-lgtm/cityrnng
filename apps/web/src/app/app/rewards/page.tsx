@@ -130,7 +130,7 @@ export default async function MyRewardsPage() {
               ← Дашборд
             </Link>
             <span className="type-mono-caps mt-4 block">мои обмены</span>
-            <h1 className="type-hero" style={{ fontSize: 64 }}>
+            <h1 className="type-h2">
               {active.length > 0 ? (
                 <>
                   <em className="not-italic text-brand-red">
@@ -176,21 +176,13 @@ export default async function MyRewardsPage() {
 
         <section className="border-b border-ink">
           <Wrap className="py-12 lg:py-16">
-            <div className="mb-6 flex flex-col items-start gap-4 md:flex-row md:items-end md:justify-between">
-              <div className="flex flex-col gap-2">
-                <span className="type-mono-caps">история</span>
-                <h2 className="type-h2">
-                  {past.length > 0
-                    ? "Использованные и истёкшие"
-                    : "Историй обменов пока нет"}
-                </h2>
-              </div>
-              <Link
-                href="/shop"
-                className="inline-flex h-11 items-center border border-ink bg-paper px-4 font-sans text-[14px] font-semibold text-ink hover:bg-ink hover:text-paper"
-              >
-                Магазин →
-              </Link>
+            <div className="mb-6 flex flex-col gap-2">
+              <span className="type-mono-caps">история</span>
+              <h2 className="type-h2">
+                {past.length > 0
+                  ? "Использованные и истёкшие"
+                  : "Историй обменов пока нет"}
+              </h2>
             </div>
 
             {past.length === 0 ? (

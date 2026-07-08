@@ -28,6 +28,13 @@ export class UsersService {
   ) {}
 
   async findByIdWithRelations(id: string): Promise<UserWithRelations | null> {
+    // Lazy backfill: accounts predating the QR feature (or password logins /
+    // long-lived sessions, which never pass through ensureFromVerifiedEmail)
+    // get their check-in code on the next /me read.
+    await this.prisma.user.updateMany({
+      where: { id, checkinCode: null },
+      data: { checkinCode: generateCheckinCode() },
+    });
     return this.prisma.user.findUnique({
       where: { id },
       include: { profile: true, roles: { include: { role: true } } },
