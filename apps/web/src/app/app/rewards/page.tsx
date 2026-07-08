@@ -176,7 +176,7 @@ export default async function MyRewardsPage() {
 
         <section className="border-b border-ink">
           <Wrap className="py-12 lg:py-16">
-            <div className="mb-6 flex items-end justify-between">
+            <div className="mb-6 flex flex-col items-start gap-4 md:flex-row md:items-end md:justify-between">
               <div className="flex flex-col gap-2">
                 <span className="type-mono-caps">история</span>
                 <h2 className="type-h2">

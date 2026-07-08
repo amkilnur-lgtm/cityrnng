@@ -156,3 +156,16 @@
     letter-spacing: 0.04em;
   }
 }
+
+/* Respect the OS "reduce motion" setting: collapse transitions/animations to
+   near-instant instead of removing them (state changes still visible). */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
