@@ -64,6 +64,12 @@ export default async function AppDashboardPage() {
               >
                 Обмены
               </Link>
+              <Link
+                href="/shop"
+                className="inline-flex h-10 items-center border border-ink bg-paper px-4 font-sans text-[13px] font-semibold text-ink hover:bg-ink hover:text-paper"
+              >
+                Магазин
+              </Link>
             </div>
           </Wrap>
         </section>
