@@ -12,7 +12,7 @@ const STEPS = [
     title: "Регистрируешься один раз",
     body: (
       <>
-        Регистрация — одно письмо со&nbsp;ссылкой, без паролей.
+        Имя, почта, пароль — минута, и&nbsp;ты&nbsp;в&nbsp;клубе.
         На&nbsp;счёт сразу падает{" "}
         <b className="font-semibold text-ink">+50&nbsp;Б</b>. Один email —
         один аккаунт.
@@ -36,7 +36,7 @@ const STEPS = [
   },
   {
     n: "03",
-    title: `Приходишь в ${CLUB.runDayLong} в ${CLUB.runTime}`,
+    title: `Приходишь в среду в ${CLUB.runTime}`,
     body: (
       <>
         Одна из&nbsp;трёх точек на&nbsp;выбор: Центр (Карла Маркса 41),
