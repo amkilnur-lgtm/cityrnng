@@ -1,5 +1,6 @@
 import Link from "next/link";
 import QRCode from "qrcode";
+import { QrZoom } from "@/components/app/qr-zoom";
 
 /**
  * Compact check-in QR shown at the very top of the dashboard — first thing a
@@ -19,12 +20,14 @@ export async function CheckinQrBanner({ code }: { code?: string | null }) {
   return (
     <section className="border-b border-ink bg-ink text-paper">
       <div className="mx-auto flex w-full max-w-5xl items-center gap-4 px-5 py-5 md:gap-6 md:px-8">
-        <div
-          className="shrink-0 border border-paper/20 bg-white p-2 [&>svg]:block [&>svg]:h-24 [&>svg]:w-24 md:[&>svg]:h-28 md:[&>svg]:w-28"
-          aria-label="QR-код для отметки на пробежке"
-          // eslint-disable-next-line react/no-danger -- trusted, server-generated SVG
-          dangerouslySetInnerHTML={{ __html: svg }}
-        />
+        <QrZoom svg={svg} code={code}>
+          <div
+            className="shrink-0 border border-paper/20 bg-white p-2 [&>svg]:block [&>svg]:h-24 [&>svg]:w-24 md:[&>svg]:h-28 md:[&>svg]:w-28"
+            aria-label="QR-код для отметки на пробежке"
+            // eslint-disable-next-line react/no-danger -- trusted, server-generated SVG
+            dangerouslySetInnerHTML={{ __html: svg }}
+          />
+        </QrZoom>
         <div className="flex flex-col gap-1.5">
           <span className="font-mono text-[11px] uppercase tracking-[0.14em] text-brand-red">
             твой qr для отметки

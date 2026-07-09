@@ -41,6 +41,12 @@
   ::selection {
     @apply bg-brand-red/25 text-ink;
   }
+
+  /* Branded keyboard-focus ring everywhere — replaces the browser default so
+     Tab looks consistent. Mouse/tap doesn't trigger (focus-visible only). */
+  :is(a, button, input, select, textarea, summary):focus-visible {
+    @apply outline-none ring-2 ring-brand-red ring-offset-2 ring-offset-paper;
+  }
 }
 
 /* =========================================================

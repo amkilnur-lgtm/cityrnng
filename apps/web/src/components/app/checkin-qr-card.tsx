@@ -1,4 +1,5 @@
 import QRCode from "qrcode";
+import { QrZoom } from "@/components/app/qr-zoom";
 
 /**
  * Personal check-in QR shown in the runner cabinet. Renders the static code as
@@ -40,12 +41,14 @@ export async function CheckinQrCard({ code }: { code?: string | null }) {
       </p>
 
       <div className="flex flex-col items-center gap-3 self-start">
-        <div
-          className="border border-ink bg-white p-3 [&>svg]:block [&>svg]:h-44 [&>svg]:w-44"
-          aria-label="QR-код для отметки на пробежке"
-          // eslint-disable-next-line react/no-danger -- trusted, server-generated SVG
-          dangerouslySetInnerHTML={{ __html: svg }}
-        />
+        <QrZoom svg={svg} code={code}>
+          <div
+            className="border border-ink bg-white p-3 [&>svg]:block [&>svg]:h-44 [&>svg]:w-44"
+            aria-label="QR-код для отметки на пробежке"
+            // eslint-disable-next-line react/no-danger -- trusted, server-generated SVG
+            dangerouslySetInnerHTML={{ __html: svg }}
+          />
+        </QrZoom>
         <code className="font-mono text-[13px] tracking-wider text-ink">{code}</code>
       </div>
 
