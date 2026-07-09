@@ -11,10 +11,9 @@ export class AdminDashboardController {
   constructor(private readonly service: AdminDashboardService) {}
 
   /**
-   * Operating-console snapshot: health-bar, KPIs, Strava-flow strip, next
-   * upcoming + last past event. All read-only Prisma aggregates plus a single
-   * Strava push-subscription lookup. Recomputed every call; for ~1k users
-   * this is sub-100ms.
+   * Operating-console snapshot: scanner health, KPIs, QR check-in flow strip,
+   * next upcoming + last past event. All read-only Prisma aggregates —
+   * recomputed every call; for ~1k users this is sub-100ms.
    */
   @Get("summary")
   summary() {

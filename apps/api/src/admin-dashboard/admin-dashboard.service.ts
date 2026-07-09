@@ -1,7 +1,11 @@
-import { Injectable, Logger } from "@nestjs/common";
-import { AttendanceSource, EventStatus, SyncProvider } from "@prisma/client";
+import { Injectable } from "@nestjs/common";
+import {
+  AttendanceSource,
+  CheckinScanResult,
+  EventStatus,
+  ScanDeviceStatus,
+} from "@prisma/client";
 import { EventOccurrenceService } from "../events/event-occurrence.service";
-import { StravaSubscriptionService } from "../integrations/strava/strava-subscription.service";
 import { PrismaService } from "../prisma/prisma.service";
 
 const DAY_MS = 86_400_000;
@@ -12,28 +16,32 @@ const RULE_KEY_RE = /^rule:([0-9a-f-]{36}):(\d{4}-\d{2}-\d{2})$/i;
 
 export interface DashboardSummary {
   health: {
-    webhookSubscription: {
-      active: boolean;
-      callbackUrl: string;
-      subscriptionId: number | null;
-      registeredAt: string | null;
-      callbackMatches: boolean;
+    scanners: {
+      total: number;
+      active: number;
+      /** Devices that phoned home within the last 7 days. */
+      seen7d: number;
+      lastSeenAt: string | null;
     };
-    lastIngestAt: string | null;
-    cachedActivities: number;
+    lastScanAt: string | null;
+    totalScans: number;
   };
   kpis: {
     totalUsers: number;
     newUsers7d: number;
-    stravaConnected: number;
+    withCheckinCode: number;
     activeRunners7d: number;
     pointsInCirculation: number;
   };
-  stravaFlow: {
-    ingested7d: number;
-    attendances7dAuto: number;
+  checkinFlow: {
+    scans7d: number;
+    matched7d: number;
+    duplicates7d: number;
+    noWindow7d: number;
+    unknownCode7d: number;
+    errors7d: number;
+    attendances7dQr: number;
     attendances7dManual: number;
-    matchRate7dPct: number | null;
   };
   events: {
     next: SummaryEvent | null;
@@ -52,11 +60,8 @@ interface SummaryEvent {
 
 @Injectable()
 export class AdminDashboardService {
-  private readonly logger = new Logger(AdminDashboardService.name);
-
   constructor(
     private readonly prisma: PrismaService,
-    private readonly subscription: StravaSubscriptionService,
     private readonly occurrences: EventOccurrenceService,
   ) {}
 
@@ -65,39 +70,43 @@ export class AdminDashboardService {
     const weekAgo = new Date(now.getTime() - WEEK_MS);
 
     const [
-      webhookHealth,
-      lastIngest,
-      cachedActivities,
+      scannersTotal,
+      scannersActive,
+      scannersSeen7d,
+      lastSeenDevice,
+      lastScan,
+      totalScans,
       totalUsers,
       newUsers7d,
-      stravaConnected,
+      withCheckinCode,
       activeRunners7d,
       pointsAccountSum,
-      ingested7d,
+      scans7dByResult,
       attendances7d,
       events,
     ] = await Promise.all([
-      this.webhookHealth(),
-      this.prisma.externalActivity.findFirst({
-        where: { provider: SyncProvider.strava },
-        orderBy: { ingestedAt: "desc" },
-        select: { ingestedAt: true },
+      this.prisma.scanDevice.count(),
+      this.prisma.scanDevice.count({ where: { status: ScanDeviceStatus.active } }),
+      this.prisma.scanDevice.count({ where: { lastSeenAt: { gte: weekAgo } } }),
+      this.prisma.scanDevice.findFirst({
+        where: { lastSeenAt: { not: null } },
+        orderBy: { lastSeenAt: "desc" },
+        select: { lastSeenAt: true },
       }),
-      this.prisma.externalActivity.count({
-        where: { provider: SyncProvider.strava },
+      this.prisma.checkinScan.findFirst({
+        orderBy: { scannedAt: "desc" },
+        select: { scannedAt: true },
       }),
+      this.prisma.checkinScan.count(),
       this.prisma.user.count(),
       this.prisma.user.count({ where: { createdAt: { gte: weekAgo } } }),
-      this.prisma.userProviderAccount.count({
-        where: { provider: SyncProvider.strava },
-      }),
+      this.prisma.user.count({ where: { checkinCode: { not: null } } }),
       this.activeRunnersIn(weekAgo, now),
       this.prisma.pointAccount.aggregate({ _sum: { balance: true } }),
-      this.prisma.externalActivity.count({
-        where: {
-          provider: SyncProvider.strava,
-          ingestedAt: { gte: weekAgo },
-        },
+      this.prisma.checkinScan.groupBy({
+        by: ["result"],
+        where: { scannedAt: { gte: weekAgo } },
+        _count: { _all: true },
       }),
       this.prisma.eventAttendance.groupBy({
         by: ["source"],
@@ -107,72 +116,41 @@ export class AdminDashboardService {
       this.eventsSummary(now),
     ]);
 
-    const attendances7dAuto =
-      attendances7d.find((a) => a.source === AttendanceSource.sync)?._count._all ?? 0;
-    const attendances7dManual =
-      attendances7d.find((a) => a.source === AttendanceSource.manual_admin)?._count._all ?? 0;
-
-    // Match rate = sync-attendances in the window ÷ activities ingested in the window.
-    // Not a perfect ratio (a 7d activity could match an event from earlier),
-    // but a useful health proxy: low = matcher misfires, high = clean.
-    const matchRate7dPct =
-      ingested7d > 0
-        ? Math.round((attendances7dAuto / ingested7d) * 100)
-        : null;
+    const byResult = (r: CheckinScanResult) =>
+      scans7dByResult.find((s) => s.result === r)?._count._all ?? 0;
+    const bySource = (s: AttendanceSource) =>
+      attendances7d.find((a) => a.source === s)?._count._all ?? 0;
 
     return {
       health: {
-        webhookSubscription: webhookHealth,
-        lastIngestAt: lastIngest?.ingestedAt?.toISOString() ?? null,
-        cachedActivities,
+        scanners: {
+          total: scannersTotal,
+          active: scannersActive,
+          seen7d: scannersSeen7d,
+          lastSeenAt: lastSeenDevice?.lastSeenAt?.toISOString() ?? null,
+        },
+        lastScanAt: lastScan?.scannedAt?.toISOString() ?? null,
+        totalScans,
       },
       kpis: {
         totalUsers,
         newUsers7d,
-        stravaConnected,
+        withCheckinCode,
         activeRunners7d,
         pointsInCirculation: pointsAccountSum._sum.balance ?? 0,
       },
-      stravaFlow: {
-        ingested7d,
-        attendances7dAuto,
-        attendances7dManual,
-        matchRate7dPct,
+      checkinFlow: {
+        scans7d: scans7dByResult.reduce((s, r) => s + r._count._all, 0),
+        matched7d: byResult(CheckinScanResult.matched),
+        duplicates7d: byResult(CheckinScanResult.duplicate),
+        noWindow7d: byResult(CheckinScanResult.no_window),
+        unknownCode7d: byResult(CheckinScanResult.unknown_code),
+        errors7d: byResult(CheckinScanResult.error),
+        attendances7dQr: bySource(AttendanceSource.qr_scan),
+        attendances7dManual: bySource(AttendanceSource.manual_admin),
       },
       events,
     };
-  }
-
-  private async webhookHealth(): Promise<DashboardSummary["health"]["webhookSubscription"]> {
-    const wanted = this.subscription.callbackUrl();
-    try {
-      const current = await this.subscription.getCurrent();
-      if (!current) {
-        return {
-          active: false,
-          callbackUrl: wanted,
-          subscriptionId: null,
-          registeredAt: null,
-          callbackMatches: false,
-        };
-      }
-      return {
-        active: true,
-        callbackUrl: wanted,
-        subscriptionId: current.id,
-        registeredAt: current.created_at,
-        callbackMatches: current.callback_url === wanted,
-      };
-    } catch (err) {
-      this.logger.warn(`webhook health check failed: ${(err as Error).message}`);
-      return {
-        active: false,
-        callbackUrl: wanted,
-        subscriptionId: null,
-        registeredAt: null,
-        callbackMatches: false,
-      };
-    }
   }
 
   private async activeRunnersIn(from: Date, to: Date): Promise<number> {
@@ -211,7 +189,7 @@ export class AdminDashboardService {
 
     // Last past: latest explicit event with startsAt < now. Materialized rule
     // occurrences past will exist as Event rows only if they were materialized
-    // (RSVP or matcher created them); we scan only real Event rows for this.
+    // (RSVP or check-in created them); we scan only real Event rows for this.
     const pastEvent = await this.prisma.event.findFirst({
       where: { status: EventStatus.published, startsAt: { lt: now } },
       orderBy: { startsAt: "desc" },
@@ -222,9 +200,9 @@ export class AdminDashboardService {
     // is a UUID column, so passing the rule-key to `eventAttendance.count`
     // makes Prisma blow up with "Inconsistent column data: Error creating
     // UUID". Resolve to the override Event's real UUID first; if no override
-    // exists yet, attendedCount is naturally 0 (the matcher hasn't created
-    // any attendance for this date because no backing event existed).
-    // EventInterest.eventKey is a String column, so the rule-key works there.
+    // exists yet, attendedCount is naturally 0 (nobody could check in because
+    // no backing event existed). EventInterest.eventKey is a String column,
+    // so the rule-key works there.
     const nextEventUuid = next ? await this.resolveEventUuid(next.id) : null;
     const [nextGoing, nextAttended] = next
       ? await Promise.all([

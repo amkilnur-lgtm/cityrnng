@@ -4,13 +4,13 @@ import {
   getDashboardSummary,
   type DashboardSummary,
   type SummaryEvent,
-} from "@/lib/api-admin-strava";
+} from "@/lib/api-admin-dashboard";
 
 export const metadata = { title: "Сводка · Админка · CITYRNNG" };
 
 // Server-side revalidation: page rebuilds at most once per minute when
-// re-requested. Keeps numbers fresh without hammering Prisma + Strava API
-// on every navigation.
+// re-requested. Keeps numbers fresh without hammering Prisma on every
+// navigation.
 export const revalidate = 60;
 
 const RU_MONTHS_SHORT = [
@@ -66,9 +66,9 @@ type Status = "ok" | "warn";
 
 interface HealthSignal {
   status: Status;
-  label: string;       // section title — "Уведомления Strava"
-  primary: string;     // current state — "подписка активна"
-  hint?: string;       // small grey detail — "в памяти 3 пробежки"
+  label: string;       // section title — "Сканеры на точках"
+  primary: string;     // current state — "2 активных из 3"
+  hint?: string;       // small grey detail — "на связи за неделю: 2"
   cta?: { href: string; text: string };
 }
 
@@ -76,37 +76,43 @@ function computeHealth(summary: DashboardSummary): {
   cells: HealthSignal[];
   warnCount: number;
 } {
-  const ws = summary.health.webhookSubscription;
-  const webhookOk = ws.active && ws.callbackMatches;
-  const webhookCell: HealthSignal = {
-    status: webhookOk ? "ok" : "warn",
-    label: "Уведомления Strava",
-    primary: ws.active
-      ? ws.callbackMatches
-        ? `подписка №${ws.subscriptionId} активна`
-        : `подписка №${ws.subscriptionId} — адрес устарел`
-      : "подписка не зарегистрирована",
-    hint: webhookOk ? undefined : "Strava не сможет слать новые пробежки",
-    cta: { href: "/admin/strava/webhook", text: "Управление" },
+  const sc = summary.health.scanners;
+  // Без единого активного сканера QR-отметка не работает — это и есть
+  // главный сигнал поломки новой механики.
+  const scannersOk = sc.active > 0;
+  const scannerCell: HealthSignal = {
+    status: scannersOk ? "ok" : "warn",
+    label: "Сканеры на точках",
+    primary:
+      sc.total === 0
+        ? "ни одного сканера не заведено"
+        : sc.active === 0
+          ? "все сканеры выключены"
+          : `${fmtNumber(sc.active)} ${pluralRu(sc.active, "активный", "активных")} из ${fmtNumber(sc.total)}`,
+    hint: scannersOk
+      ? sc.lastSeenAt
+        ? `на связи: ${fmtRelative(sc.lastSeenAt)}`
+        : "ещё ни разу не выходили на связь"
+      : "без сканера QR-отметка на точке не работает",
+    cta: { href: "/admin/checkin", text: "Управление" },
   };
 
-  // Информационная ячейка: «когда пришла последняя пробежка». Не алярмим
-  // на staleness — клубный сценарий: 1–2 активных юзера, в норме они
-  // бегают раз в несколько дней. Stale ingest != broken pipeline.
-  // Реальный сигнал о поломке pipeline'а — это webhook subscription (выше).
-  const ingestCell: HealthSignal = {
+  // Информационная ячейка: «когда был последний скан». Не алярмим на
+  // staleness — пробежки раз в неделю, тишина между средами это норма.
+  // Реальный сигнал о поломке — ячейка сканеров (выше).
+  const scanCell: HealthSignal = {
     status: "ok",
-    label: "Последняя пробежка",
-    primary: summary.health.lastIngestAt
-      ? `пришла ${fmtRelative(summary.health.lastIngestAt)}`
-      : "пока ничего не приходило",
+    label: "Последний скан",
+    primary: summary.health.lastScanAt
+      ? `был ${fmtRelative(summary.health.lastScanAt)}`
+      : "сканов пока не было",
     hint:
-      summary.health.cachedActivities > 0
-        ? `в базе ${fmtNumber(summary.health.cachedActivities)} ${pluralRu(summary.health.cachedActivities, "пробежка", "пробежек")}`
+      summary.health.totalScans > 0
+        ? `в журнале ${fmtNumber(summary.health.totalScans)} ${pluralRu(summary.health.totalScans, "скан", "сканов")}`
         : undefined,
   };
 
-  const cells = [webhookCell, ingestCell];
+  const cells = [scannerCell, scanCell];
   return { cells, warnCount: cells.filter((c) => c.status === "warn").length };
 }
 
@@ -118,28 +124,31 @@ function computeHealth(summary: DashboardSummary): {
 // summary always wins.
 const DEV_MOCK_SUMMARY: DashboardSummary = {
   health: {
-    webhookSubscription: {
-      active: true,
-      callbackUrl: "https://staging.cityrunning.online/api/v1/integrations/strava/webhook",
-      subscriptionId: 348729,
-      registeredAt: new Date(Date.now() - 9 * 24 * 3600 * 1000).toISOString(),
-      callbackMatches: true,
+    scanners: {
+      total: 3,
+      active: 2,
+      seen7d: 2,
+      lastSeenAt: new Date(Date.now() - 2 * 3600 * 1000).toISOString(),
     },
-    lastIngestAt: new Date(Date.now() - 2 * 3600 * 1000).toISOString(),
-    cachedActivities: 3,
+    lastScanAt: new Date(Date.now() - 2 * 3600 * 1000).toISOString(),
+    totalScans: 27,
   },
   kpis: {
     totalUsers: 4,
     newUsers7d: 1,
-    stravaConnected: 1,
+    withCheckinCode: 4,
     activeRunners7d: 1,
     pointsInCirculation: 180,
   },
-  stravaFlow: {
-    ingested7d: 3,
-    attendances7dAuto: 1,
-    attendances7dManual: 0,
-    matchRate7dPct: 33,
+  checkinFlow: {
+    scans7d: 9,
+    matched7d: 6,
+    duplicates7d: 1,
+    noWindow7d: 1,
+    unknownCode7d: 1,
+    errors7d: 0,
+    attendances7dQr: 6,
+    attendances7dManual: 1,
   },
   events: {
     next: {
@@ -206,7 +215,7 @@ function DashboardContent({
     <>
       <StatusBanner warnCount={warnCount} renderedAt={renderedAt} />
       <HealthSection cells={healthCells} />
-      <StravaFlowSection summary={summary} />
+      <CheckinFlowSection summary={summary} />
       <KpiSection summary={summary} />
       <EventsSection summary={summary} />
     </>
@@ -307,38 +316,38 @@ function HealthCell({
   );
 }
 
-// ── Strava flow (hero: засчитано) ───────────────────────────────────────
-// Match-rate (% подтянутых, что попали в события) — это developer-метрика,
-// а не оператора. У клуба пользователи бегают в течение недели много где —
-// большинство активностей НЕ попадёт в окно среды, и это нормально. Поэтому
-// hero — абсолютное число «засчитано», а match-rate показываем мелко как
-// справочное; алярмить им не алярмим.
+// ── QR check-in flow (hero: засчитано) ──────────────────────────────────
+// Hero — абсолютное число засчитанных приходов за неделю (QR + ручные).
+// Повторные сканы и сканы мимо расписания — справочные, не алярмим: бегун
+// может сканировать дважды или прийти не в окно, это штатные исходы.
+// Нераспознанные коды и ошибки — сигнал посмотреть журнал.
 
-function StravaFlowSection({ summary }: { summary: DashboardSummary }) {
-  const s = summary.stravaFlow;
-  const credited = s.attendances7dAuto + s.attendances7dManual;
-  const noData = s.ingested7d === 0;
+function CheckinFlowSection({ summary }: { summary: DashboardSummary }) {
+  const s = summary.checkinFlow;
+  const credited = s.attendances7dQr + s.attendances7dManual;
+  const noData = s.scans7d === 0 && credited === 0;
+  const suspicious = s.unknownCode7d + s.errors7d;
 
   return (
     <section>
       <Wrap className="py-8">
         <h2 className="font-mono text-[11px] font-medium uppercase tracking-[0.14em] text-muted">
-          поток Strava · за неделю
+          qr-отметки · за неделю
         </h2>
 
         {noData ? (
           <EmptyBlock
-            title="За неделю пробежки не приходили"
-            body="Это нормально, если никто из подключённых к Strava не выходил бегать. Если ждёшь чьи-то — проверь подписку на уведомления."
-            ctaHref="/admin/strava/webhook"
-            ctaText="Проверить подписку"
+            title="За неделю сканов не было"
+            body="Это нормально между пробежками. Если среда прошла, а сканов нет — проверь, что сканер на точке включён и на связи."
+            ctaHref="/admin/checkin"
+            ctaText="Сканеры и журнал"
           />
         ) : (
           <div className="mt-4 grid grid-cols-1 border-2 border-ink lg:grid-cols-[1.4fr_1fr]">
             {/* Hero — absolute count of credited runs */}
             <div className="flex flex-col gap-4 bg-paper p-6 md:p-8">
               <span className="font-mono text-[11px] font-medium uppercase tracking-[0.14em] text-muted">
-                засчитано на наших событиях
+                засчитано приходов
               </span>
               <div className="flex flex-col gap-1">
                 <span className="font-display text-[72px] font-bold leading-none tracking-[-0.03em] text-ink">
@@ -346,18 +355,21 @@ function StravaFlowSection({ summary }: { summary: DashboardSummary }) {
                 </span>
                 <span className="font-sans text-[15px] font-medium text-graphite">
                   {pluralRu(credited, "пробежка засчитана за неделю", "пробежек засчитано за неделю")}
+                  {s.attendances7dManual > 0
+                    ? ` · из них вручную: ${fmtNumber(s.attendances7dManual)}`
+                    : ""}
                 </span>
               </div>
               <p className="max-w-md text-[14px] leading-snug text-graphite">
-                Это пробежки, которые попали в окно события и засчитались в
-                баллы. Strava подтягивает все активности подряд — мимо событий
-                их в норме большинство, низкая доля попадания — не сбой.
+                Скан на точке → зачёт → баллы. Повторные сканы того же бегуна
+                и сканы вне расписания не засчитываются — это штатно, они
+                видны в журнале.
               </p>
               <Link
-                href="/admin/strava/debug"
+                href="/admin/checkin"
                 className="inline-flex w-fit items-center gap-2 border border-ink bg-paper px-4 py-2.5 font-sans text-[13px] font-semibold text-ink transition-colors hover:bg-ink hover:text-paper"
               >
-                Посмотреть диагностику
+                Журнал сканов
                 <ArrowRight />
               </Link>
             </div>
@@ -365,14 +377,22 @@ function StravaFlowSection({ summary }: { summary: DashboardSummary }) {
             {/* Supporting metrics */}
             <div className="grid grid-cols-1 border-t border-ink md:grid-cols-2 lg:border-l lg:border-ink lg:border-t-0 lg:grid-cols-1">
               <SupportCell
-                label="Подтянули из Strava"
-                value={fmtNumber(s.ingested7d)}
-                hint={pluralRu(s.ingested7d, "активность", "активностей") + " за период"}
+                label="Всего сканов"
+                value={fmtNumber(s.scans7d)}
+                hint={
+                  s.duplicates7d + s.noWindow7d > 0
+                    ? `повторы: ${fmtNumber(s.duplicates7d)} · вне расписания: ${fmtNumber(s.noWindow7d)}`
+                    : "за период"
+                }
               />
               <SupportCell
-                label="Попали в события"
-                value={s.matchRate7dPct == null ? "—" : `${s.matchRate7dPct}%`}
-                hint={`${s.attendances7dAuto} из ${s.ingested7d} активностей`}
+                label="Не распознано / ошибки"
+                value={fmtNumber(suspicious)}
+                hint={
+                  suspicious > 0
+                    ? "чужой код или сбой — глянь журнал"
+                    : "всё чисто"
+                }
                 borderTop
               />
             </div>
@@ -420,7 +440,7 @@ function SupportCell({
 
 function KpiSection({ summary }: { summary: DashboardSummary }) {
   const k = summary.kpis;
-  const stravaPct = k.totalUsers > 0 ? Math.round((k.stravaConnected / k.totalUsers) * 100) : 0;
+  const codePct = k.totalUsers > 0 ? Math.round((k.withCheckinCode / k.totalUsers) * 100) : 0;
   return (
     <section>
       <Wrap className="py-8">
@@ -434,9 +454,9 @@ function KpiSection({ summary }: { summary: DashboardSummary }) {
             sub={k.newUsers7d > 0 ? `+${k.newUsers7d} за неделю` : undefined}
           />
           <Kpi
-            label="Подключено к Strava"
-            value={fmtNumber(k.stravaConnected)}
-            sub={k.stravaConnected > 0 ? `${stravaPct}% от всех` : undefined}
+            label="С QR-кодом"
+            value={fmtNumber(k.withCheckinCode)}
+            sub={k.withCheckinCode > 0 ? `${codePct}% от всех` : undefined}
             borderLeft
           />
           <Kpi

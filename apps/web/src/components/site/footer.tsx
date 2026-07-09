@@ -54,7 +54,7 @@ export function SiteFooter() {
               <Link
                 key={link.href}
                 href={link.href}
-                className="text-[14px] text-graphite transition-colors hover:text-brand-red"
+                className="-my-1.5 py-1.5 text-[14px] text-graphite transition-colors hover:text-brand-red"
               >
                 {link.label}
               </Link>
