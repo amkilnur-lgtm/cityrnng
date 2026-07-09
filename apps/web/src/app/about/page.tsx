@@ -176,7 +176,7 @@ export default async function AboutPage() {
                     : "")
                 }
               >
-                <span className="font-display text-[40px] font-bold leading-none tracking-[-0.03em] text-muted-2">
+                <span className="font-display text-[40px] font-bold leading-none tracking-[-0.03em] text-muted">
                   {v.n}
                 </span>
                 <h3 className="type-h3">{v.title}</h3>

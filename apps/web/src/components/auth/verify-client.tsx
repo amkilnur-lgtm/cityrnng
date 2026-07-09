@@ -110,7 +110,7 @@ export function AuthVerifyClient({ token }: { token: string }) {
         onClick={confirm}
         disabled={state.kind === "verifying"}
         aria-busy={state.kind === "verifying"}
-        className="inline-flex h-14 items-center justify-center self-center border border-brand-red bg-brand-red px-8 font-sans text-[15px] font-semibold text-paper transition-colors hover:bg-brand-red-ink disabled:cursor-not-allowed disabled:border-muted-2 disabled:bg-muted-2"
+        className="inline-flex h-14 items-center justify-center self-center border border-brand-red bg-brand-red px-8 font-sans text-[15px] font-semibold text-paper transition-colors hover:bg-brand-red-ink disabled:cursor-not-allowed disabled:border-muted-2 disabled:bg-muted-2 disabled:text-graphite"
       >
         {state.kind === "verifying" ? "Заходим…" : "Войти →"}
       </button>

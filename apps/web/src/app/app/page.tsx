@@ -48,25 +48,25 @@ export default async function AppDashboardPage() {
             <div className="flex flex-wrap gap-2">
               <Link
                 href="/app/profile"
-                className="inline-flex h-10 items-center border border-ink bg-paper px-4 font-sans text-[13px] font-semibold text-ink hover:bg-ink hover:text-paper"
+                className="inline-flex h-10 items-center border border-ink bg-paper px-2.5 font-sans text-[12px] font-semibold text-ink hover:bg-ink hover:text-paper sm:px-4 sm:text-[13px]"
               >
                 Профиль
               </Link>
               <Link
                 href="/app/points"
-                className="inline-flex h-10 items-center border border-ink bg-paper px-4 font-sans text-[13px] font-semibold text-ink hover:bg-ink hover:text-paper"
+                className="inline-flex h-10 items-center border border-ink bg-paper px-2.5 font-sans text-[12px] font-semibold text-ink hover:bg-ink hover:text-paper sm:px-4 sm:text-[13px]"
               >
                 Баллы
               </Link>
               <Link
                 href="/app/rewards"
-                className="inline-flex h-10 items-center border border-ink bg-paper px-4 font-sans text-[13px] font-semibold text-ink hover:bg-ink hover:text-paper"
+                className="inline-flex h-10 items-center border border-ink bg-paper px-2.5 font-sans text-[12px] font-semibold text-ink hover:bg-ink hover:text-paper sm:px-4 sm:text-[13px]"
               >
                 Обмены
               </Link>
               <Link
                 href="/shop"
-                className="inline-flex h-10 items-center border border-ink bg-paper px-4 font-sans text-[13px] font-semibold text-ink hover:bg-ink hover:text-paper"
+                className="inline-flex h-10 items-center border border-ink bg-paper px-2.5 font-sans text-[12px] font-semibold text-ink hover:bg-ink hover:text-paper sm:px-4 sm:text-[13px]"
               >
                 Магазин
               </Link>

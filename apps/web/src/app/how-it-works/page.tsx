@@ -113,7 +113,7 @@ export default async function HowItWorksPage() {
                 }
               >
                 <span
-                  className="font-display text-[80px] font-bold leading-none tracking-[-0.04em] text-muted-2 lg:w-[140px] lg:flex-none lg:text-[120px]"
+                  className="font-display text-[80px] font-bold leading-none tracking-[-0.04em] text-muted lg:w-[140px] lg:flex-none lg:text-[120px]"
                 >
                   {s.n}
                 </span>

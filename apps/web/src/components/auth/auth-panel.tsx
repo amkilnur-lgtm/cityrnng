@@ -139,7 +139,7 @@ export function AuthPanel({
             <button
               type="button"
               onClick={() => setMode("link")}
-              className="font-mono text-[11px] font-normal normal-case tracking-normal text-muted hover:text-brand-red"
+              className="-m-2 p-2 font-mono text-[11px] font-normal normal-case tracking-normal text-muted hover:text-brand-red"
             >
               Забыли пароль?
             </button>
@@ -180,7 +180,7 @@ export function AuthPanel({
         type="submit"
         disabled={busy || !email || !password || (isRegister && !name)}
         aria-busy={busy}
-        className="inline-flex h-14 items-center justify-center border border-brand-red bg-brand-red px-6 font-sans text-[15px] font-semibold text-paper transition-colors hover:bg-brand-red-ink disabled:cursor-not-allowed disabled:border-muted-2 disabled:bg-muted-2"
+        className="inline-flex h-14 items-center justify-center border border-brand-red bg-brand-red px-6 font-sans text-[15px] font-semibold text-paper transition-colors hover:bg-brand-red-ink disabled:cursor-not-allowed disabled:border-muted-2 disabled:bg-muted-2 disabled:text-graphite"
       >
         {busy
           ? "Секунду…"
@@ -192,7 +192,7 @@ export function AuthPanel({
       <button
         type="button"
         onClick={() => setMode("link")}
-        className="self-start font-sans text-[13px] font-medium text-muted underline-offset-4 hover:text-brand-red hover:underline"
+        className="inline-flex h-11 items-center self-start font-sans text-[13px] font-medium text-muted underline-offset-4 hover:text-brand-red hover:underline"
       >
         Войти по ссылке на почту
       </button>
