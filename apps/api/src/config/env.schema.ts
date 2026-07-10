@@ -22,26 +22,6 @@ export const envSchema = z.object({
         return false;
       }
     }, "TOKEN_ENCRYPTION_KEY must be a 32-byte base64 string"),
-  STRAVA_CLIENT_ID: z.string().min(1),
-  STRAVA_CLIENT_SECRET: z.string().min(1),
-  STRAVA_REDIRECT_URI: z.string().url(),
-  // `activity:read_all` (вместо `activity:read`) даёт доступ и к приватным
-  // активностям пользователя — иначе наши клубные пробежки, помеченные у юзера
-  // как «только для меня» / «только подписчики», не попадут в API-ответ и не
-  // привяжутся к событиям. Для running-приложений это стандартный дефолт.
-  STRAVA_SCOPES: z.string().default("read,activity:read_all"),
-  /**
-   * Random shared secret echoed back to Strava during webhook verification
-   * handshake. Generate with `node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"`.
-   * Must be at least 16 chars. Same value goes into the push_subscriptions
-   * POST when we register the subscription with Strava.
-   */
-  STRAVA_WEBHOOK_VERIFY_TOKEN: z.string().min(16),
-  /**
-   * Public origin Strava posts webhooks to (e.g. https://staging.cityrunning.online).
-   * The full callback URL is built as `${origin}/api/v1/integrations/strava/webhook`.
-   */
-  STRAVA_WEBHOOK_CALLBACK_ORIGIN: z.string().url(),
   WELCOME_BONUS_POINTS: z.coerce.number().int().nonnegative().default(100),
   EVENT_ATTENDANCE_REGULAR_POINTS_FALLBACK: z.coerce.number().int().nonnegative().default(0),
   EVENT_ATTENDANCE_SPECIAL_POINTS_FALLBACK: z.coerce.number().int().nonnegative().default(0),

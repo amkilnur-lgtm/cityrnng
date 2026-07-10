@@ -19,7 +19,6 @@ export class AttendancesService {
       orderBy: { createdAt: "desc" },
       include: {
         user: { select: { id: true, email: true } },
-        externalActivity: true,
       },
     });
   }
@@ -33,7 +32,6 @@ export class AttendancesService {
       include: {
         user: { select: { id: true, email: true } },
         event: { select: { id: true, title: true, startsAt: true, type: true } },
-        externalActivity: true,
       },
     });
   }

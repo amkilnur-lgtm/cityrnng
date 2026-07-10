@@ -23,7 +23,6 @@ const SECTIONS: SidebarSection[] = [
   { href: "/admin/users", label: "Пользователи" },
   { href: "/admin/points", label: "Баллы" },
   { href: "/admin/checkin", label: "Сканеры" },
-  { href: "/admin/strava", label: "Strava" },
 ];
 
 export function AdminSidebar({ isDev }: { isDev: boolean }) {

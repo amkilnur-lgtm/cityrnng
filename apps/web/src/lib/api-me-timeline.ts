@@ -18,7 +18,6 @@ export type TimelineCell = {
   dateLabel: string;
   time: string;
   kind: TimelineCellKind;
-  km?: number;
   points?: number;
   /** True если у юзера уже есть `going` RSVP. UI показывает «✓ Я иду» вместо
    *  «Я иду →». Отдаётся бэком только для soon/today/tomorrow. */

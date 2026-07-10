@@ -13,17 +13,11 @@ import { getSiteState } from "@/lib/site-state";
 
 export const metadata = { title: "Профиль · CITYRNNG" };
 
-export default async function ProfilePage({
-  searchParams,
-}: {
-  searchParams: { strava?: string; reason?: string };
-}) {
+export default async function ProfilePage() {
   const [session, state] = await Promise.all([getSession(), getSiteState()]);
   // Real session OR dev-mock authed unlocks the page.
   if (!state.isAuthed) redirect("/auth");
 
-  const stravaFlash = searchParams.strava;
-  const stravaReason = searchParams.reason;
   // Profile data prefers real session; falls back to mock-derived view when only dev-authed.
   const profile = session?.profile ?? null;
   const email = session?.email ?? "—";
@@ -54,39 +48,6 @@ export default async function ProfilePage({
             <p className="type-lede mt-2">{email}</p>
           </Wrap>
         </section>
-
-        {stravaFlash === "connected" ? (
-          <section className="border-b border-ink bg-brand-tint/30">
-            <Wrap className="flex items-center gap-3 py-4 text-[14px]">
-              <span className="block h-2 w-2 bg-brand-red" aria-hidden />
-              <span className="font-mono text-[11px] font-medium uppercase tracking-[0.14em] text-brand-red">
-                strava подключён
-              </span>
-              <span className="text-graphite">
-                Готово — теперь пробежки засчитываются автоматически.
-              </span>
-            </Wrap>
-          </section>
-        ) : null}
-        {stravaFlash === "error" ? (
-          <section className="border-b border-ink bg-paper-2">
-            <Wrap className="flex flex-wrap items-center gap-3 py-4 text-[14px]">
-              <span className="font-mono text-[11px] font-medium uppercase tracking-[0.14em] text-brand-red-ink">
-                ошибка strava
-              </span>
-              <span className="text-graphite">
-                Не получилось подключить
-                {stravaReason ? (
-                  <>
-                    {" "}
-                    (<code className="font-mono text-[12px] text-ink">{stravaReason}</code>)
-                  </>
-                ) : null}
-                . Попробуй ещё раз.
-              </span>
-            </Wrap>
-          </section>
-        ) : null}
 
         <section className="border-b border-ink">
           <Wrap className="grid grid-cols-1 gap-8 py-12 lg:grid-cols-2 lg:py-16">

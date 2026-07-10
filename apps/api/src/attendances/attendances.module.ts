@@ -2,13 +2,12 @@ import { Module, forwardRef } from "@nestjs/common";
 import { EventsModule } from "../events/events.module";
 import { PointsModule } from "../points/points.module";
 import { AdminAttendancesController } from "./admin-attendances.controller";
-import { AttendanceMatcherService } from "./attendance-matcher.service";
 import { AttendancesService } from "./attendances.service";
 
 @Module({
   imports: [PointsModule, forwardRef(() => EventsModule)],
   controllers: [AdminAttendancesController],
-  providers: [AttendancesService, AttendanceMatcherService],
-  exports: [AttendancesService, AttendanceMatcherService],
+  providers: [AttendancesService],
+  exports: [AttendancesService],
 })
 export class AttendancesModule {}

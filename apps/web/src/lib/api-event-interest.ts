@@ -13,14 +13,14 @@ export type EventInterest = {
 
 /**
  * "Me" status for an event — going-interest (if RSVP'd) plus attendance
- * (if Strava already credited the run). Either can be null independently:
+ * (if a check-in already credited the run). Either can be null independently:
  * — RSVP'd but didn't run yet → interest!=null, attended=null
  * — Ran without RSVP-ing → interest=null, attended!=null
  * — Neither → API returns null, getMyEventStatus returns null too
  */
 export type MyEventStatus = {
   interest: EventInterest | null;
-  attended: { km: number | null; points: number | null } | null;
+  attended: { points: number | null } | null;
 };
 
 export type LocationCount = {

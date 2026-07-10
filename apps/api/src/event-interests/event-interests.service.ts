@@ -98,7 +98,7 @@ export class EventInterestsService {
 
   /**
    * Returns the current user's "me" status for an event: going-interest (if any)
-   * plus whether the user has been credited with attendance (km + points if
+   * plus whether the user has been credited with attendance (points if
    * known). Returns null when there's neither interest nor attendance.
    *
    * Attendance lookup resolves the eventKey to a real Event UUID — for
@@ -113,22 +113,20 @@ export class EventInterestsService {
     const interest = row && row.status === EventInterestStatus.going ? row : null;
 
     const eventId = await this.resolveEventId(eventKey);
-    let attended: { km: number | null; points: number | null } | null = null;
+    let attended: { points: number | null } | null = null;
     if (eventId) {
+      // Any credited attendance counts — QR scans and manual-admin included
+      // (the old source:"sync" filter hid QR check-ins from the RSVP block).
       const attendance = await this.prisma.eventAttendance.findFirst({
-        where: { userId, eventId, source: "sync" },
-        include: { externalActivity: { select: { distanceMeters: true } } },
+        where: { userId, eventId },
       });
       if (attendance) {
-        const km = attendance.externalActivity?.distanceMeters
-          ? Math.round(attendance.externalActivity.distanceMeters / 1000)
-          : null;
         const txns = await this.prisma.pointTransaction.findMany({
           where: { userId, reasonRef: attendance.id, direction: "credit" },
           select: { amount: true },
         });
         const points = txns.reduce((sum, t) => sum + t.amount, 0);
-        attended = { km, points: points > 0 ? points : null };
+        attended = { points: points > 0 ? points : null };
       }
     }
 
