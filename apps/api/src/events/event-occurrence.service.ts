@@ -221,12 +221,12 @@ export class EventOccurrenceService {
    *   - otherwise creates an Event tagged with `recurrenceRuleId` +
    *     `overridesOccurrenceAt` and a copy of the rule's locations as an
    *     EventSyncRule, so the matcher picks it up automatically.
-   *   - autoApprove=true so Strava matches credit points without manual
+   *   - autoApprove=true so check-ins credit points without manual
    *     review (consistent with how admin-created events with locations work).
    *
    * Called from two places:
    *   - EventInterestsService.markGoing when a user RSVPs to a rule occurrence
-   *   - AttendanceMatcherService when Strava activity overlaps a rule's window
+   *   - CheckinService when a QR scan lands in a rule occurrence's window
    */
   async ensureMaterializedEvent(
     ruleId: string,

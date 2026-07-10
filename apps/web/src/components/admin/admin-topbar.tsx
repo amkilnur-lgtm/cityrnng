@@ -16,7 +16,6 @@ const SECTIONS: Section[] = [
   { href: "/admin/rewards", label: "Награды" },
   { href: "/admin/users", label: "Пользователи" },
   { href: "/admin/points", label: "Баллы" },
-  { href: "/admin/strava", label: "Strava" },
 ];
 
 export function AdminTopBar({ isDev }: { isDev: boolean }) {

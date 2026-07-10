@@ -29,12 +29,12 @@ type Props = {
   myLocationId: string | null;
   /**
    * Attendance state for the current user. When set, the user has been
-   * credited for this event already (Strava match landed) — we hide the
+   * credited for this event already (check-in landed) — we hide the
    * "Отменить запись" action and show a static "Ты бежал" panel instead,
    * because attendance is a historical fact that shouldn't be undone by
    * cancelling the RSVP.
    */
-  myAttended?: { km: number | null; points: number | null } | null;
+  myAttended?: { points: number | null } | null;
   /** Per-location RSVP counts ("N идут"). */
   countsByLocation: Record<string, number>;
   /** When false, render read-only cards (guest view). */

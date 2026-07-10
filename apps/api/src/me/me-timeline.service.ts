@@ -29,8 +29,6 @@ export interface TimelineCell {
   dateLabel: string;
   time: string;
   kind: TimelineCellKind;
-  /** Distance in km, only when kind === "done" and the source activity has it. */
-  km?: number;
   /** Points credited for this attendance, only when kind === "done". */
   points?: number;
   /** True when user has a `going` EventInterest for this event. UI shows
@@ -66,7 +64,7 @@ const RU_WEEKDAYS_SHORT = ["ВС", "ПН", "ВТ", "СР", "ЧТ", "ПТ", "СБ
  *   - upcoming   — future date beyond tomorrow, no attendance
  *   - skipped    — past date, no attendance
  *
- * km/points are sourced from the actual EventAttendance + ExternalActivity
+ * points are sourced from the actual EventAttendance ledger
  * + PointTransaction when present — not from event defaults — so the card
  * reflects what was really credited.
  *
@@ -164,9 +162,6 @@ export class MeTimelineService {
             userId,
             eventId: { in: realEventIds },
           },
-          include: {
-            externalActivity: { select: { distanceMeters: true } },
-          },
         })
       : [];
     // Most recent PointTransaction per attendance.id (reasonRef = attendance id).
@@ -256,9 +251,6 @@ export class MeTimelineService {
           kind,
         };
 
-        if (attended && attended.externalActivity?.distanceMeters) {
-          cell.km = Math.round(attended.externalActivity.distanceMeters / 1000);
-        }
         if (attended) {
           const pts = pointsByAttendance.get(attended.id);
           if (pts && pts > 0) cell.points = pts;

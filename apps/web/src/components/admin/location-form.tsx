@@ -98,7 +98,7 @@ export function LocationForm({
           />
         </Field>
       </div>
-      <Field label="Радиус, метров" hint="для Strava-геофенса; пусто = не лимитируем">
+      <Field label="Радиус, метров" hint="зона точки на карте; пусто = не лимитируем">
         <input
           name="radiusMeters"
           type="number"
