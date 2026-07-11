@@ -64,19 +64,16 @@ export function PersonalDashboard({
     <section className="border-b border-ink bg-paper-2/60">
       <Wrap className="py-16 lg:py-24">
         <div className="mb-10 flex flex-col gap-3">
-          <div className="flex items-center gap-2.5">
-            <span className="h-px w-9 bg-ink" />
-            <span className="type-mono-caps">
-              {CLUB.city} · {monthLabel}
-            </span>
-          </div>
+          <span className="type-mono-caps">
+            {CLUB.city} · {monthLabel}
+          </span>
           <h2 className="type-h2">
-            Твои <em className="not-italic text-brand-red">пробежки</em>.
+            Привет, <em className="not-italic text-brand-red">{user.name}</em>.
           </h2>
           <p className="type-lede max-w-[560px]">
             {lastDone ? (
               <>
-                Последняя засчитана
+                Последняя пробежка засчитана
                 {lastDone.points ? (
                   <>
                     ,{" "}
@@ -95,7 +92,7 @@ export function PersonalDashboard({
 
         <div className="border border-ink bg-paper">
           <div className="flex items-center justify-between border-b border-ink px-5 py-4 md:px-6">
-            <span className="type-mono-caps">{monthLabel}</span>
+            <span className="type-mono-caps">{monthLabel} · твои пробежки</span>
             <span className="font-mono text-[13px] font-medium tracking-[0.04em] text-ink">
               <b className="text-brand-red">{totals.done}</b>
               <span className="text-muted">

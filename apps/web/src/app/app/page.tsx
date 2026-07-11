@@ -40,10 +40,7 @@ export default async function AppDashboardPage() {
         <CheckinQrBanner code={checkinCode} />
         <section className="border-b border-ink bg-brand-tint/30">
           <Wrap className="flex flex-col gap-3 py-6 md:flex-row md:items-center md:justify-between">
-            <p className="text-[15px] text-graphite">
-              Привет,{" "}
-              <b className="font-semibold text-ink">{state.user.name}</b>!
-            </p>
+            <span className="type-mono-caps">твой кабинет</span>
             <div className="flex flex-wrap gap-2">
               <Link
                 href="/app/profile"
