@@ -114,13 +114,21 @@ jobs:
         # external state and doesn't trigger a recreate when only its bytes
         # change. The --profile app filter scopes recreate to api+web only,
         # leaving postgres untouched.
+        # ghcr.io from the staging host intermittently fails with
+        # "TLS handshake timeout" (seen 2026-06-30, 07-08, 07-11) — pull is
+        # retried up to 3 times with a pause before giving up.
         run: |
           ssh "${{ secrets.STAGING_USER }}@${{ secrets.STAGING_HOST }}" "set -e; \
             cd /opt/cityrnng && \
             git fetch --all --prune && \
             git pull --ff-only origin main && \
             export APP_ENV_FILE=.env.staging && \
-            docker compose --env-file .env.staging --profile app pull --quiet && \
+            ok=0; \
+            for i in 1 2 3; do \
+              if docker compose --env-file .env.staging --profile app pull --quiet; then ok=1; break; fi; \
+              echo \"pull attempt \$i failed, retrying in 15s…\"; sleep 15; \
+            done; \
+            [ \$ok -eq 1 ] && \
             docker compose --env-file .env.staging --profile app up -d --force-recreate"
 
       - name: Seed (idempotent)
