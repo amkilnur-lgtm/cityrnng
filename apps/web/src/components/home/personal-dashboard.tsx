@@ -71,12 +71,12 @@ export function PersonalDashboard({
             </span>
           </div>
           <h2 className="type-h2">
-            Привет, <em className="not-italic text-brand-red">{user.name}</em>.
+            Твои <em className="not-italic text-brand-red">пробежки</em>.
           </h2>
           <p className="type-lede max-w-[560px]">
             {lastDone ? (
               <>
-                Последняя пробежка засчитана
+                Последняя засчитана
                 {lastDone.points ? (
                   <>
                     ,{" "}
@@ -88,14 +88,14 @@ export function PersonalDashboard({
                 .
               </>
             ) : (
-              <>Пока пробежек в&nbsp;этом месяце нет.</>
+              <>В&nbsp;этом месяце пока ни&nbsp;одной — среда близко.</>
             )}
           </p>
         </div>
 
         <div className="border border-ink bg-paper">
           <div className="flex items-center justify-between border-b border-ink px-5 py-4 md:px-6">
-            <span className="type-mono-caps">{monthLabel} · твои пробежки</span>
+            <span className="type-mono-caps">{monthLabel}</span>
             <span className="font-mono text-[13px] font-medium tracking-[0.04em] text-ink">
               <b className="text-brand-red">{totals.done}</b>
               <span className="text-muted">
