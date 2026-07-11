@@ -26,28 +26,15 @@ export function SiteNav({ state }: { state: SiteState }) {
   const pathname = usePathname();
   const [menuOpen, setMenuOpen] = useState(false);
 
-  // Authed users get a 2-row layout on mobile so the full pill (avatar +
-  // name + points + logout) doesn't crowd the wordmark out. Desktop stays
-  // single-row regardless.
-  const stacked = state.isAuthed;
+  // Single 70px row everywhere. On mobile the authed pill collapses to
+  // avatar + points (name lives in the initial, logout moves to the burger
+  // drawer) so the wordmark and the pill share one row without crowding.
   return (
     <nav
       aria-label="Primary"
-      className={cn(
-        "sticky top-0 z-20 border-b border-ink bg-paper",
-        stacked
-          ? "flex flex-col md:h-[70px] md:flex-row md:items-center md:justify-between md:gap-6 md:px-12"
-          : "flex h-[70px] items-center justify-between gap-6 px-6 lg:px-12",
-      )}
+      className="sticky top-0 z-20 flex h-[70px] items-center justify-between gap-3 border-b border-ink bg-paper px-4 sm:gap-6 sm:px-6 lg:px-12"
     >
-      <div
-        className={cn(
-          "flex items-center",
-          stacked
-            ? "h-[70px] justify-between gap-6 border-b border-ink px-6 md:h-auto md:flex-1 md:justify-start md:gap-8 md:border-b-0 md:px-0"
-            : "shrink-0 gap-6",
-        )}
-      >
+      <div className="flex min-w-0 shrink items-center gap-6">
         <Link
           href="/"
           aria-label={CLUB.name}
@@ -59,7 +46,7 @@ export function SiteNav({ state }: { state: SiteState }) {
             width={170}
             height={30}
             priority
-            style={{ height: 30, width: "auto" }}
+            className="h-[24px] w-auto sm:h-[30px]"
           />
           <span className="hidden font-mono text-[11px] font-medium uppercase tracking-[0.14em] text-muted md:inline">
             {CLUB.city}
@@ -84,28 +71,9 @@ export function SiteNav({ state }: { state: SiteState }) {
             );
           })}
         </div>
-
-        {stacked && (
-          <MenuButton
-            open={menuOpen}
-            onToggle={() => setMenuOpen((v) => !v)}
-          />
-        )}
       </div>
 
-      <div
-        className={cn(
-          "flex items-center gap-2",
-          stacked && "h-[70px] justify-end px-6 md:h-auto md:px-0",
-        )}
-      >
-        {!stacked && (
-          <MenuButton
-            open={menuOpen}
-            onToggle={() => setMenuOpen((v) => !v)}
-          />
-        )}
-
+      <div className="flex shrink-0 items-center gap-2">
         {state.isAuthed ? (
           <>
             {state.isPartner && <PartnerPill />}
@@ -115,6 +83,10 @@ export function SiteNav({ state }: { state: SiteState }) {
         ) : (
           <GuestCta />
         )}
+        <MenuButton
+          open={menuOpen}
+          onToggle={() => setMenuOpen((v) => !v)}
+        />
       </div>
 
       {menuOpen && (
@@ -204,6 +176,13 @@ function MobileDrawer({
             </Link>
           </li>
         )}
+        {state.isAuthed && (
+          <li className="border-b border-ink/15 md:hidden">
+            <span className="[&>button]:block [&>button]:w-full [&>button]:border-0 [&>button]:px-6 [&>button]:py-4 [&>button]:text-left [&>button]:font-sans [&>button]:text-[15px] [&>button]:font-semibold [&>button]:normal-case [&>button]:tracking-normal [&>button]:text-ink">
+              <LogoutButton />
+            </span>
+          </li>
+        )}
       </ul>
     </div>
   );
@@ -253,14 +232,18 @@ function AuthedPill({ user }: { user: { name: string; initial: string; points: n
         <span className="flex h-11 w-11 items-center justify-center bg-ink font-display text-[16px] font-bold leading-none tracking-tight text-paper">
           {user.initial}
         </span>
-        <span className="flex h-full items-center border-l border-ink px-3.5 font-sans text-[14px] font-semibold">
+        {/* Name is redundant next to the initial on a narrow screen. */}
+        <span className="hidden h-full items-center border-l border-ink px-3.5 font-sans text-[14px] font-semibold md:flex">
           {user.name}
         </span>
-        <span className="flex h-full items-center gap-1.5 border-l border-ink px-3.5 font-mono text-[13px] font-medium tracking-[0.04em] text-brand-red">
+        <span className="flex h-full items-center gap-1.5 border-l border-ink px-3 font-mono text-[13px] font-medium tracking-[0.04em] text-brand-red sm:px-3.5">
           {user.points}&nbsp;Б
         </span>
       </Link>
-      <LogoutButton />
+      {/* On mobile logout lives in the burger drawer. */}
+      <span className="hidden h-full md:flex">
+        <LogoutButton />
+      </span>
     </div>
   );
 }

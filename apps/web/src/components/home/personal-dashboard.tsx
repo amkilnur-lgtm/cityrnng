@@ -100,7 +100,10 @@ export function PersonalDashboard({
               <b className="text-brand-red">{totals.done}</b>
               <span className="text-muted">
                 {" "}
-                из {totals.total} пробежек · {totals.progressPct}%
+                из {totals.total} пробежек
+                {/* «0%» в начале месяца читается как двойка в дневнике —
+                    процент показываем только когда есть что показать. */}
+                {totals.done > 0 ? ` · ${totals.progressPct}%` : ""}
               </span>
             </span>
           </div>
@@ -207,12 +210,12 @@ function TimelineCellView({
         </span>
         {showRsvp ? (
           isGoing ? (
-            <span className="mt-1 inline-flex h-9 w-fit items-center gap-1.5 self-start border border-paper bg-ink px-3 font-sans text-[12px] font-bold tracking-tight text-paper">
-              <span aria-hidden className="font-mono text-[14px]">✓</span>
+            <span className="mt-2 inline-flex h-11 w-full items-center justify-center gap-2 border border-paper bg-ink px-4 font-sans text-[14px] font-bold tracking-tight text-paper">
+              <span aria-hidden className="font-mono text-[16px]">✓</span>
               Я иду
             </span>
           ) : (
-            <span className="mt-1 inline-flex h-9 w-fit items-center gap-1.5 self-start border border-paper bg-paper px-3 font-sans text-[12px] font-bold tracking-tight text-brand-red transition-colors hover:bg-paper-2">
+            <span className="mt-2 inline-flex h-11 w-full items-center justify-center gap-2 border border-paper bg-paper px-4 font-sans text-[14px] font-bold tracking-tight text-brand-red transition-colors hover:bg-paper-2">
               Я иду →
             </span>
           )
