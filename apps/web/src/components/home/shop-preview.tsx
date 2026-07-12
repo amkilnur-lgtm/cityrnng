@@ -44,11 +44,10 @@ export async function ShopPreview({ user }: { user: AuthedUser }) {
         <div className="mb-10 flex flex-col items-start justify-between gap-6 lg:flex-row lg:items-end">
           <div className="flex flex-col gap-3">
             <span className="type-mono-caps">магазин баллов</span>
+            {/* Балансу — одно место в секции: красная плитка ниже. Число в
+                заголовке дублировало её (и пилюлю в шапке) третий раз. */}
             <h2 className="type-h2">
-              <em className="not-italic text-brand-red">
-                {user.points}&nbsp;Б
-              </em>{" "}
-              — выбирай.
+              Накопил — <em className="not-italic text-brand-red">выбирай</em>.
             </h2>
           </div>
           <Link
