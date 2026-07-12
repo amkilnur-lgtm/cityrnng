@@ -16,6 +16,12 @@ const NAV_LINKS = [
   { href: "/journal", label: "Журнал" },
 ];
 
+/** Authed users get «Кабинет» first — /app must be reachable from any page,
+ *  not only via the (non-obvious) avatar pill. */
+function linksFor(isAuthed: boolean) {
+  return isAuthed ? [{ href: "/app", label: "Кабинет" }, ...NAV_LINKS] : NAV_LINKS;
+}
+
 function isActive(pathname: string | null, href: string): boolean {
   if (!pathname) return false;
   if (href === "/") return pathname === "/";
@@ -54,7 +60,7 @@ export function SiteNav({ state }: { state: SiteState }) {
         </Link>
 
         <div className="hidden items-center gap-8 md:flex">
-          {NAV_LINKS.map((link) => {
+          {linksFor(state.isAuthed).map((link) => {
             const active = isActive(pathname, link.href);
             return (
               <Link
@@ -136,7 +142,7 @@ function MobileDrawer({
   return (
     <div className="absolute inset-x-0 top-full border-t border-ink bg-paper md:hidden">
       <ul className="flex flex-col">
-        {NAV_LINKS.map((link) => {
+        {linksFor(state.isAuthed).map((link) => {
           const active = isActive(pathname, link.href);
           return (
             <li key={link.href} className="border-b border-ink/15">
