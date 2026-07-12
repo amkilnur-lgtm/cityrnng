@@ -83,12 +83,22 @@ export default async function LocationDetailPage({
       <main>
         <section className="border-b border-ink">
           <Wrap className="py-10 lg:py-14">
-            <Link
-              href={`/events/${encodeURIComponent(decodeURIComponent(params.id))}`}
-              className="font-mono text-[11px] font-medium uppercase tracking-[0.14em] text-muted hover:text-brand-red"
-            >
-              ← к событию
-            </Link>
+            <div className="flex flex-wrap items-center justify-between gap-3">
+              <Link
+                href={`/events/${encodeURIComponent(decodeURIComponent(params.id))}`}
+                className="font-mono text-[11px] font-medium uppercase tracking-[0.14em] text-muted hover:text-brand-red"
+              >
+                ← к событию
+              </Link>
+              {state.isAuthed ? (
+                <Link
+                  href="/app"
+                  className="font-mono text-[11px] font-medium uppercase tracking-[0.14em] text-muted hover:text-brand-red"
+                >
+                  мой кабинет →
+                </Link>
+              ) : null}
+            </div>
             <span className="type-mono-caps mt-4 block">точка старта</span>
             <h1 className="type-hero mt-3" style={{ fontSize: 48 }}>
               {detail.location.name}
@@ -258,13 +268,21 @@ export default async function LocationDetailPage({
         </section>
 
         <section>
-          <Wrap className="py-8">
+          <Wrap className="flex flex-wrap items-center justify-between gap-3 py-8">
             <Link
               href={`/events/${encodeURIComponent(decodeURIComponent(params.id))}`}
               className="font-mono text-[12px] font-medium uppercase tracking-[0.14em] text-muted hover:text-brand-red"
             >
               ← к событию
             </Link>
+            {state.isAuthed ? (
+              <Link
+                href="/app"
+                className="font-mono text-[12px] font-medium uppercase tracking-[0.14em] text-muted hover:text-brand-red"
+              >
+                мой кабинет →
+              </Link>
+            ) : null}
           </Wrap>
         </section>
       </main>

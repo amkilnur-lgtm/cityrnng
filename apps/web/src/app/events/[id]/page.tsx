@@ -115,12 +115,22 @@ export default async function EventDetailPage({
         <section className="border-b border-ink">
           <Wrap className="py-16 lg:py-24">
             <div className="flex flex-col gap-4">
-              <Link
-                href="/events"
-                className="self-start font-mono text-[11px] font-medium uppercase tracking-[0.14em] text-muted hover:text-brand-red"
-              >
-                ← Все события
-              </Link>
+              <div className="flex flex-wrap items-center justify-between gap-3">
+                <Link
+                  href="/events"
+                  className="font-mono text-[11px] font-medium uppercase tracking-[0.14em] text-muted hover:text-brand-red"
+                >
+                  ← Все события
+                </Link>
+                {state.isAuthed ? (
+                  <Link
+                    href="/app"
+                    className="font-mono text-[11px] font-medium uppercase tracking-[0.14em] text-muted hover:text-brand-red"
+                  >
+                    мой кабинет →
+                  </Link>
+                ) : null}
+              </div>
               <div className="flex flex-wrap items-center gap-3">
                 {event.type === "special" ? (
                   <Badge variant="primary">Спец</Badge>
