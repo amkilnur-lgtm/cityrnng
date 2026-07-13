@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import type { ReactNode } from "react";
 import { JetBrains_Mono, Manrope, Space_Grotesk } from "next/font/google";
 import { DevStateToggle } from "@/components/site/dev-state-toggle";
@@ -33,6 +33,18 @@ const mono = JetBrains_Mono({
 export const metadata: Metadata = {
   title: "CITYRNNG",
   description: "City running community platform",
+  manifest: "/manifest.json",
+  icons: {
+    icon: [
+      { url: "/icons/favicon-32.png", sizes: "32x32", type: "image/png" },
+      { url: "/icons/favicon-48.png", sizes: "48x48", type: "image/png" },
+    ],
+    apple: [{ url: "/icons/apple-touch-icon.png", sizes: "180x180" }],
+  },
+};
+
+export const viewport: Viewport = {
+  themeColor: "#E63025",
 };
 
 export default async function RootLayout({
