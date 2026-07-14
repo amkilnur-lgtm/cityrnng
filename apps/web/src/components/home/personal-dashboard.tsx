@@ -118,8 +118,13 @@ export function PersonalDashboard({
             </p>
           ) : (
             <div className="grid grid-cols-1 divide-y divide-ink md:grid-cols-2 md:divide-x lg:grid-cols-4 lg:divide-y-0">
-              {cells.map((cell) => (
-                <TimelineCellView key={cell.date} cell={cell} nextEvent={nextEvent} />
+              {cells.map((cell, i) => (
+                <TimelineCellView
+                  key={cell.date}
+                  cell={cell}
+                  nextEvent={nextEvent}
+                  spanClassName={trailingRowSpan(i, cells.length)}
+                />
               ))}
             </div>
           )}
@@ -150,12 +155,32 @@ export function PersonalDashboard({
   );
 }
 
+/**
+ * Stretches the last incomplete row so it doesn't leave 1-2 cards floating
+ * over a mostly-empty row — months don't always land on a multiple of the
+ * grid's column count (e.g. 5 Wednesdays in lg's 4-col grid).
+ */
+function trailingRowSpan(index: number, total: number): string {
+  const classes: string[] = [];
+  const rem4 = total % 4;
+  if (rem4 !== 0 && index >= total - rem4) {
+    if (rem4 === 1) classes.push("lg:col-span-4");
+    else if (rem4 === 2) classes.push("lg:col-span-2");
+  }
+  if (total % 2 === 1 && index === total - 1) {
+    classes.push("md:col-span-2");
+  }
+  return classes.join(" ");
+}
+
 function TimelineCellView({
   cell,
   nextEvent,
+  spanClassName = "",
 }: {
   cell: TimelineCell;
   nextEvent?: DisplayEvent;
+  spanClassName?: string;
 }) {
   // All four card kinds share a 3-row layout + min-height so the grid stays
   // visually even regardless of state.
@@ -189,7 +214,7 @@ function TimelineCellView({
     return (
       <Link
         href={`/events/${encodeURIComponent(cell.eventId)}`}
-        className={`${SHELL} bg-brand-red text-paper transition-colors hover:bg-brand-red-ink`}
+        className={`${SHELL} ${spanClassName} bg-brand-red text-paper transition-colors hover:bg-brand-red-ink`}
       >
         <div className="flex items-center gap-2">
           <span className="font-mono text-[11px] font-medium uppercase tracking-[0.14em]">
@@ -223,7 +248,7 @@ function TimelineCellView({
 
   if (cell.kind === "done") {
     return (
-      <Link href={`/events/${encodeURIComponent(cell.eventId)}`} className={`${SHELL} bg-paper text-ink transition-colors hover:bg-paper-2`}>
+      <Link href={`/events/${encodeURIComponent(cell.eventId)}`} className={`${SHELL} ${spanClassName} bg-paper text-ink transition-colors hover:bg-paper-2`}>
         <div className="flex items-center gap-2">
           <span className="font-mono text-[11px] font-medium uppercase tracking-[0.14em] text-muted">
             {cell.dateLabel}
@@ -250,7 +275,7 @@ function TimelineCellView({
     return (
       <Link
         href={`/events/${encodeURIComponent(cell.eventId)}`}
-        className={`${SHELL} bg-paper text-muted transition-colors hover:bg-paper-2`}
+        className={`${SHELL} ${spanClassName} bg-paper text-muted transition-colors hover:bg-paper-2`}
       >
         <div className="flex items-center gap-2">
           <span className="font-mono text-[11px] font-medium uppercase tracking-[0.14em] text-muted">
@@ -272,7 +297,7 @@ function TimelineCellView({
   return (
     <Link
       href={`/events/${encodeURIComponent(cell.eventId)}`}
-      className={`${SHELL} bg-paper-2 transition-colors hover:bg-paper`}
+      className={`${SHELL} ${spanClassName} bg-paper-2 transition-colors hover:bg-paper`}
     >
       <div className="flex items-center gap-2">
         <span className="font-mono text-[11px] font-medium uppercase tracking-[0.14em] text-muted">
