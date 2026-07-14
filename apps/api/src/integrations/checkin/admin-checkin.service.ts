@@ -1,17 +1,26 @@
+import { randomUUID } from "node:crypto";
 import {
   BadRequestException,
   Injectable,
   NotFoundException,
 } from "@nestjs/common";
-import { CityLocationStatus, Prisma, ScanDeviceStatus } from "@prisma/client";
+import {
+  CheckinScanResult,
+  CityLocationStatus,
+  Prisma,
+  ScanDeviceStatus,
+} from "@prisma/client";
 import { PrismaService } from "../../prisma/prisma.service";
-import { CheckinService } from "./checkin.service";
+import { CheckinService, SCAN_RESULT_MESSAGE } from "./checkin.service";
 
 const SCAN_PAGE_SIZE = 100;
 
 @Injectable()
 export class AdminCheckinService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly checkin: CheckinService,
+  ) {}
 
   async listDevices() {
     const devices = await this.prisma.scanDevice.findMany({
@@ -81,6 +90,32 @@ export class AdminCheckinService {
       data: { apiKeyHash: CheckinService.hashDeviceKey(key) },
     });
     return { id, key };
+  }
+
+  /**
+   * Runs a scan through the exact same pipeline a real device hits, using a
+   * device row picked from the admin panel instead of an `X-Device-Key`
+   * header. Lets an admin verify a scanner + a runner's code end-to-end
+   * (real attendance + points on `matched`) before the physical Pi exists.
+   */
+  async testScan(id: string, checkinCode: string) {
+    const device = await this.getDeviceOrThrow(id);
+    if (device.status !== ScanDeviceStatus.active) {
+      throw new BadRequestException({ code: "SCAN_DEVICE_DISABLED" });
+    }
+    const outcome = await this.checkin.processScan(device, {
+      code: checkinCode,
+      scanId: `admin-test-${randomUUID()}`,
+      scannedAt: new Date().toISOString(),
+    });
+    return {
+      result: outcome.result,
+      ok:
+        outcome.result === CheckinScanResult.matched ||
+        outcome.result === CheckinScanResult.duplicate,
+      idempotent: outcome.idempotent,
+      message: SCAN_RESULT_MESSAGE[outcome.result],
+    };
   }
 
   async listScans(filter: { deviceId?: string; locationId?: string }) {

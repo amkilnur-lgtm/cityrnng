@@ -9,17 +9,8 @@ import {
 } from "@nestjs/common";
 import { CheckinScanResult } from "@prisma/client";
 import { Public } from "../../auth/decorators/public.decorator";
-import { CheckinService } from "./checkin.service";
+import { CheckinService, SCAN_RESULT_MESSAGE } from "./checkin.service";
 import { ScanDto } from "./dto/scan.dto";
-
-/** Maps an internal scan result to a short status the device can act on. */
-const RESULT_MESSAGE: Record<CheckinScanResult, string> = {
-  matched: "Отметили — пробежка засчитана",
-  duplicate: "Уже отмечен сегодня",
-  no_window: "Сейчас нет открытой пробежки на этой точке",
-  unknown_code: "Код не распознан",
-  error: "Ошибка обработки, попробуйте ещё раз",
-};
 
 /**
  * Endpoint a runbase QR scanner (Raspberry Pi) posts scans to. Authenticated
@@ -49,7 +40,7 @@ export class CheckinController {
         outcome.result === CheckinScanResult.matched ||
         outcome.result === CheckinScanResult.duplicate,
       idempotent: outcome.idempotent,
-      message: RESULT_MESSAGE[outcome.result],
+      message: SCAN_RESULT_MESSAGE[outcome.result],
     };
   }
 }

@@ -4,7 +4,10 @@ import { useState, useTransition } from "react";
 import {
   rotateScanDeviceKeyAction,
   setScanDeviceStatusAction,
+  testScanDeviceAction,
 } from "@/app/admin/checkin/actions";
+
+const OK_RESULTS = new Set(["matched", "duplicate"]);
 
 export function ScanDeviceRowActions({
   id,
@@ -16,6 +19,11 @@ export function ScanDeviceRowActions({
   const [pending, startTransition] = useTransition();
   const [newKey, setNewKey] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [testCode, setTestCode] = useState("");
+  const [testResult, setTestResult] = useState<
+    { ok: boolean; message: string } | null
+  >(null);
+  const [testPending, startTestTransition] = useTransition();
 
   function toggleStatus() {
     setError(null);
@@ -34,6 +42,15 @@ export function ScanDeviceRowActions({
       const res = await rotateScanDeviceKeyAction(id);
       if (res.ok) setNewKey(res.key);
       else setError(res.message);
+    });
+  }
+
+  function runTestScan() {
+    setTestResult(null);
+    startTestTransition(async () => {
+      const res = await testScanDeviceAction(id, testCode);
+      if (res.ok) setTestResult({ ok: OK_RESULTS.has(res.result), message: res.message });
+      else setTestResult({ ok: false, message: res.message });
     });
   }
 
@@ -57,6 +74,34 @@ export function ScanDeviceRowActions({
           ключ
         </button>
       </div>
+      <div className="flex flex-wrap items-center justify-end gap-2">
+        <input
+          type="text"
+          value={testCode}
+          onChange={(e) => setTestCode(e.target.value)}
+          placeholder="checkin-код бегуна"
+          disabled={status !== "active"}
+          className="h-8 w-40 border border-ink/40 bg-paper px-2 font-mono text-[11px] outline-none c3-focus disabled:opacity-50"
+        />
+        <button
+          type="button"
+          onClick={runTestScan}
+          disabled={testPending || status !== "active" || !testCode.trim()}
+          className="border border-ink/40 px-3 py-1.5 font-mono text-[11px] uppercase tracking-[0.12em] text-muted hover:border-ink hover:text-ink disabled:opacity-50"
+        >
+          {testPending ? "проверяем…" : "тест-скан"}
+        </button>
+      </div>
+      {testResult ? (
+        <span
+          className={
+            "max-w-[220px] text-right text-[11px] " +
+            (testResult.ok ? "text-ink" : "text-brand-red-ink")
+          }
+        >
+          {testResult.message}
+        </span>
+      ) : null}
       {newKey ? (
         <div className="flex flex-col items-end gap-1">
           <span className="font-mono text-[10px] uppercase tracking-[0.12em] text-brand-red">

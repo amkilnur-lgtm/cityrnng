@@ -19,6 +19,7 @@ import { AdminCheckinService } from "./admin-checkin.service";
 import {
   CreateScanDeviceDto,
   ListScansQuery,
+  TestScanDto,
   UpdateScanDeviceDto,
 } from "./dto/admin-device.dto";
 
@@ -57,6 +58,15 @@ export class AdminCheckinController {
   @HttpCode(HttpStatus.OK)
   rotateKey(@Param("id", new ParseUUIDPipe()) id: string) {
     return this.admin.rotateKey(id);
+  }
+
+  @Post(":id/test-scan")
+  @HttpCode(HttpStatus.OK)
+  testScan(
+    @Param("id", new ParseUUIDPipe()) id: string,
+    @Body() dto: TestScanDto,
+  ) {
+    return this.admin.testScan(id, dto.checkinCode);
   }
 
   @Get("scans")

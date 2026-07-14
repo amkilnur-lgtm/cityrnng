@@ -68,6 +68,38 @@ export async function setScanDeviceStatusAction(
   }
 }
 
+type TestScanResult =
+  | { ok: true; result: string; message: string }
+  | { ok: false; message: string };
+
+/** Runs a scan through the real pipeline using the device's stored key —
+ * lets an admin verify the flow without physical hardware. */
+export async function testScanDeviceAction(
+  id: string,
+  checkinCode: string,
+): Promise<TestScanResult> {
+  const headers = authHeaders();
+  if (!headers) return { ok: false, message: "Нет access-токена." };
+  const code = checkinCode.trim();
+  if (!code) return { ok: false, message: "Введи checkin-код." };
+  try {
+    const res = await fetch(
+      `${API_BASE_URL}/admin/scan-devices/${id}/test-scan`,
+      {
+        method: "POST",
+        headers,
+        body: JSON.stringify({ checkinCode: code }),
+      },
+    );
+    if (!res.ok) return { ok: false, message: `Ошибка (${res.status}).` };
+    const data = (await res.json()) as { result: string; message: string };
+    revalidatePath("/admin/checkin");
+    return { ok: true, result: data.result, message: data.message };
+  } catch {
+    return { ok: false, message: "Сеть недоступна." };
+  }
+}
+
 export async function rotateScanDeviceKeyAction(
   id: string,
 ): Promise<KeyResult> {
