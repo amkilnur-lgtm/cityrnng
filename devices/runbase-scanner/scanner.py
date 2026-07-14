@@ -24,6 +24,13 @@ Feedback:
   - Console line + terminal bell on every result. Optional GPIO buzzer/LED if
     `gpiozero` is available and pins are configured.
 
+Wi-Fi setup QR:
+  - A scan starting with `WIFI:` (the standard "share Wi-Fi as QR" format —
+    generate one on the admin's hidden /admin/checkin/wifi-qr page, or from a
+    phone's own Wi-Fi settings) is never sent to the check-in API. It's
+    joined locally via `nmcli device wifi connect` instead — lets a scanner
+    change networks with no keyboard/monitor attached.
+
 Config resolution order (later wins): built-in defaults -> config.ini ->
 environment variables (CITYRNNG_*). See config.example.ini.
 """
@@ -34,6 +41,7 @@ import configparser
 import json
 import os
 import queue
+import subprocess
 import sys
 import threading
 import time
@@ -236,21 +244,27 @@ def read_codes_hid(cfg: dict):
             sys.exit("hid_device set but python-evdev is not installed (pip install evdev)")
         dev = InputDevice(device)
         dev.grab()  # take exclusive control so codes don't leak to the console
-        keymap = _evdev_keymap()
+        unshifted, shifted = _evdev_keymaps()
         buf = ""
+        shift = False
         for ev in dev.read_loop():
             if ev.type != ecodes.EV_KEY:
                 continue
             data = categorize(ev)
+            key = ecodes.KEY[data.scancode]
+            if key in ("KEY_LEFTSHIFT", "KEY_RIGHTSHIFT"):
+                shift = data.keystate != data.key_up
+                continue
             if data.keystate != data.key_down:
                 continue
-            key = ecodes.KEY[data.scancode]
             if key == "KEY_ENTER":
                 if buf:
                     yield buf
                 buf = ""
-            elif key in keymap:
-                buf += keymap[key]
+            else:
+                table = shifted if shift else unshifted
+                if key in table:
+                    buf += table[key]
     else:
         for line in sys.stdin:
             code = line.strip()
@@ -258,11 +272,94 @@ def read_codes_hid(cfg: dict):
                 yield code
 
 
-def _evdev_keymap() -> dict:
-    m = {f"KEY_{c}": c for c in "ABCDEFGHIJKLMNOPQRSTUVWXYZ"}
-    m.update({f"KEY_{d}": d for d in "0123456789"})
-    m["KEY_MINUS"] = "-"
-    return m
+def _evdev_keymaps() -> tuple[dict, dict]:
+    """Full US-layout maps (unshifted, shifted). A checkin code (digits +
+    uppercase A-Z + `-`) decodes the same as before — those chars only need
+    Shift for the letters, which a compliant HID scanner always sends. The
+    fuller table additionally lets a WIFI: config QR (mixed case, punctuation)
+    come through intact instead of being silently dropped."""
+    unshifted = {f"KEY_{c}": c.lower() for c in "ABCDEFGHIJKLMNOPQRSTUVWXYZ"}
+    shifted = {f"KEY_{c}": c for c in "ABCDEFGHIJKLMNOPQRSTUVWXYZ"}
+    digit_shift = {
+        "1": "!", "2": "@", "3": "#", "4": "$", "5": "%",
+        "6": "^", "7": "&", "8": "*", "9": "(", "0": ")",
+    }
+    for d in "0123456789":
+        unshifted[f"KEY_{d}"] = d
+        shifted[f"KEY_{d}"] = digit_shift[d]
+    punctuation = {
+        "KEY_MINUS": ("-", "_"),
+        "KEY_EQUAL": ("=", "+"),
+        "KEY_LEFTBRACE": ("[", "{"),
+        "KEY_RIGHTBRACE": ("]", "}"),
+        "KEY_SEMICOLON": (";", ":"),
+        "KEY_APOSTROPHE": ("'", '"'),
+        "KEY_GRAVE": ("`", "~"),
+        "KEY_BACKSLASH": ("\\", "|"),
+        "KEY_COMMA": (",", "<"),
+        "KEY_DOT": (".", ">"),
+        "KEY_SLASH": ("/", "?"),
+        "KEY_SPACE": (" ", " "),
+    }
+    for key, (lo, hi) in punctuation.items():
+        unshifted[key] = lo
+        shifted[key] = hi
+    return unshifted, shifted
+
+
+def parse_wifi_qr(code: str) -> dict | None:
+    """Parse a `WIFI:T:<WPA|nopass>;S:<ssid>;P:<password>;;` payload (the
+    same MECARD-style escaping phones use for "share Wi-Fi as QR": a
+    backslash escapes `\\`, `;`, `,`, `:`). Returns None if `code` isn't this
+    format or has no SSID."""
+    if not code.startswith("WIFI:"):
+        return None
+    body = code[len("WIFI:"):]
+    fields: dict[str, str] = {}
+    key = None
+    buf: list[str] = []
+    i, n = 0, len(body)
+    while i < n:
+        c = body[i]
+        if c == "\\" and i + 1 < n:
+            buf.append(body[i + 1])
+            i += 2
+            continue
+        if c == ":" and key is None:
+            key = "".join(buf)
+            buf = []
+        elif c == ";":
+            if key is not None:
+                fields[key] = "".join(buf)
+            key = None
+            buf = []
+        else:
+            buf.append(c)
+        i += 1
+    ssid = fields.get("S")
+    if not ssid:
+        return None
+    return {"ssid": ssid, "password": fields.get("P", ""), "auth": fields.get("T", "WPA")}
+
+
+def apply_wifi_qr(parsed: dict) -> tuple[bool, str]:
+    """Joins the Wi-Fi network named in a scanned config QR via nmcli. Args
+    are passed as a list (never through a shell) — ssid/password come from
+    an untrusted physical QR code."""
+    ssid = parsed["ssid"]
+    password = parsed["password"]
+    open_network = parsed["auth"].strip().lower() == "nopass"
+    cmd = ["nmcli", "device", "wifi", "connect", ssid]
+    if not open_network and password:
+        cmd += ["password", password]
+    try:
+        result = subprocess.run(cmd, capture_output=True, text=True, timeout=30)
+    except Exception as exc:  # noqa: BLE001 — surface any failure as a scan result
+        return False, f"nmcli не запустился: {exc}"
+    if result.returncode == 0:
+        return True, f"Wi-Fi настроен: {ssid}"
+    detail = (result.stderr or result.stdout).strip()
+    return False, f"Wi-Fi: ошибка nmcli — {detail or result.returncode}"
 
 
 def read_codes_camera(cfg: dict):
@@ -307,6 +404,11 @@ def main() -> None:
         for code in reader(cfg):
             if len(code) < min_len:
                 fb.signal(False, f"too short, ignored: {code!r}")
+                continue
+            wifi = parse_wifi_qr(code)
+            if wifi is not None:
+                ok, msg = apply_wifi_qr(wifi)
+                fb.signal(ok, msg)
                 continue
             sender.submit(Scan(code=code, scanId=str(uuid.uuid4()), scannedAt=now_iso()))
     except KeyboardInterrupt:

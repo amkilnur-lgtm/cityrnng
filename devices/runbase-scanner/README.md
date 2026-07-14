@@ -71,6 +71,20 @@ sudo systemctl enable --now runbase-scanner
 journalctl -u runbase-scanner -f
 ```
 
+## Setting Wi-Fi with no keyboard/monitor
+
+The scanner recognizes a `WIFI:T:WPA;S:<ssid>;P:<password>;;` QR (the same
+format phones generate under Settings → Wi-Fi → Share) and joins that network
+via `nmcli` instead of sending it to check-in. Two ways to make one:
+
+- The admin's hidden page `/admin/checkin/wifi-qr` — SSID/password never
+  leave the browser, nothing is sent to our server.
+- A phone's own "share this Wi-Fi as a QR" feature (iOS 11+/Android 10+).
+
+Just scan it with the runbase scanner (HID or camera mode both work). Needs
+the scanner's Linux user in the `netdev` group — Raspberry Pi OS's default
+`pi`/first-user account already is.
+
 ## Configuration
 
 All keys live in `config.ini` `[scanner]` (see `config.example.ini`) and can be
