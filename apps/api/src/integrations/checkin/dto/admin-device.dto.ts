@@ -39,3 +39,11 @@ export class ListScansQuery {
   @IsUUID()
   locationId?: string;
 }
+
+/** Admin-triggered scan for testing a device before/without real hardware. */
+export class TestScanDto {
+  @IsString()
+  @MinLength(1)
+  @MaxLength(256)
+  checkinCode!: string;
+}

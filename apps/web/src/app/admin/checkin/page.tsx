@@ -78,7 +78,12 @@ export default async function AdminCheckinPage() {
 
       <section className="border-b border-ink">
         <Wrap className="py-8">
-          <h2 className="type-h3 mb-4">Сканеры</h2>
+          <h2 className="type-h3 mb-1">Сканеры</h2>
+          <p className="mb-4 max-w-2xl text-[13px] leading-[1.5] text-graphite">
+            «Тест-скан» в строке устройства прогоняет checkin-код бегуна через
+            тот же путь, что и реальная малина — без физического сканера. Свой
+            код бегун найдёт в&nbsp;<code className="font-mono">/app/profile</code>.
+          </p>
           {devices.length === 0 ? (
             <Empty text="Сканеров пока нет — создай первый формой выше." />
           ) : (

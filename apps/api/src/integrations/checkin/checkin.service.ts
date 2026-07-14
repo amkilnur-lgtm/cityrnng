@@ -18,6 +18,15 @@ import type { ScanDto } from "./dto/scan.dto";
 const DAY_MS = 86_400_000;
 const MAX_SERIALIZATION_RETRIES = 3;
 
+/** Maps an internal scan result to a short status a device (or admin test) can act on. */
+export const SCAN_RESULT_MESSAGE: Record<CheckinScanResult, string> = {
+  matched: "Отметили — пробежка засчитана",
+  duplicate: "Уже отмечен сегодня",
+  no_window: "Сейчас нет открытой пробежки на этой точке",
+  unknown_code: "Код не распознан",
+  error: "Ошибка обработки, попробуйте ещё раз",
+};
+
 export interface ScanOutcome {
   result: CheckinScanResult;
   /** True when this exact scan (deviceId+scanId) was already processed before. */
