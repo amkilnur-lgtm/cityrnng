@@ -2,6 +2,7 @@
 
 import { useState, useTransition } from "react";
 import {
+  deleteScanDeviceAction,
   rotateScanDeviceKeyAction,
   setScanDeviceStatusAction,
   testScanDeviceAction,
@@ -11,12 +12,15 @@ const OK_RESULTS = new Set(["matched", "duplicate"]);
 
 export function ScanDeviceRowActions({
   id,
+  label,
   status,
 }: {
   id: string;
+  label: string;
   status: "active" | "disabled";
 }) {
   const [pending, startTransition] = useTransition();
+  const [deletePending, startDeleteTransition] = useTransition();
   const [newKey, setNewKey] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [testCode, setTestCode] = useState("");
@@ -42,6 +46,22 @@ export function ScanDeviceRowActions({
       const res = await rotateScanDeviceKeyAction(id);
       if (res.ok) setNewKey(res.key);
       else setError(res.message);
+    });
+  }
+
+  function remove() {
+    if (
+      !confirm(
+        `Удалить сканер «${label}»? Журнал сканов по нему удалится безвозвратно. Если нужно просто отключить — используй «выключить».`,
+      )
+    )
+      return;
+    setError(null);
+    startDeleteTransition(async () => {
+      const res = await deleteScanDeviceAction(id);
+      if (!res.ok) setError(res.message);
+      // On success the row disappears on its own — revalidatePath refetches
+      // the list server-side.
     });
   }
 
@@ -72,6 +92,14 @@ export function ScanDeviceRowActions({
           className="border border-ink/40 px-3 py-1.5 font-mono text-[11px] uppercase tracking-[0.12em] text-muted hover:border-brand-red hover:text-brand-red disabled:opacity-50"
         >
           ключ
+        </button>
+        <button
+          type="button"
+          onClick={remove}
+          disabled={deletePending}
+          className="border border-ink/40 px-3 py-1.5 font-mono text-[11px] uppercase tracking-[0.12em] text-muted hover:border-brand-red hover:bg-brand-red hover:text-paper disabled:opacity-50"
+        >
+          {deletePending ? "удаляем…" : "удалить"}
         </button>
       </div>
       <div className="flex flex-wrap items-center justify-end gap-2">

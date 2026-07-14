@@ -1,6 +1,7 @@
 import {
   Body,
   Controller,
+  Delete,
   Get,
   HttpCode,
   HttpStatus,
@@ -52,6 +53,12 @@ export class AdminCheckinController {
     @Body() dto: UpdateScanDeviceDto,
   ) {
     return this.admin.updateDevice(id, dto);
+  }
+
+  @Delete(":id")
+  @HttpCode(HttpStatus.NO_CONTENT)
+  deleteDevice(@Param("id", new ParseUUIDPipe()) id: string) {
+    return this.admin.deleteDevice(id);
   }
 
   @Post(":id/rotate-key")

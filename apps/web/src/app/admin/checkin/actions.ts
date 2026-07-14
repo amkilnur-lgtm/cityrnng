@@ -48,6 +48,22 @@ export async function createScanDeviceAction(
   }
 }
 
+export async function deleteScanDeviceAction(id: string): Promise<OkResult> {
+  const headers = authHeaders();
+  if (!headers) return { ok: false, message: "Нет access-токена." };
+  try {
+    const res = await fetch(`${API_BASE_URL}/admin/scan-devices/${id}`, {
+      method: "DELETE",
+      headers,
+    });
+    if (!res.ok) return { ok: false, message: `Ошибка (${res.status}).` };
+    revalidatePath("/admin/checkin");
+    return { ok: true };
+  } catch {
+    return { ok: false, message: "Сеть недоступна." };
+  }
+}
+
 export async function setScanDeviceStatusAction(
   id: string,
   status: "active" | "disabled",

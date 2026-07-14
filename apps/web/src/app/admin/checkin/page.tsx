@@ -127,7 +127,11 @@ export default async function AdminCheckinPage() {
                       </Td>
                       <Td mono>{d.lastSeenAt ? fmt(d.lastSeenAt) : "—"}</Td>
                       <Td className="text-right">
-                        <ScanDeviceRowActions id={d.id} status={d.status} />
+                        <ScanDeviceRowActions
+                          id={d.id}
+                          label={d.label}
+                          status={d.status}
+                        />
                       </Td>
                     </tr>
                   ))}

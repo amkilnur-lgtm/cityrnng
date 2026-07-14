@@ -1,5 +1,6 @@
 "use client";
 
+import { useEffect, useRef } from "react";
 import { useFormState, useFormStatus } from "react-dom";
 import { createScanDeviceAction } from "@/app/admin/checkin/actions";
 
@@ -11,9 +12,19 @@ export function ScanDeviceCreateForm({
   locations: LocationOption[];
 }) {
   const [state, formAction] = useFormState(createScanDeviceAction, undefined);
+  const formRef = useRef<HTMLFormElement>(null);
+
+  // Clear the fields after a successful create — otherwise the button stays
+  // enabled with the same values loaded, and a stray second click silently
+  // creates a duplicate device with no extra confirmation.
+  useEffect(() => {
+    if (state?.ok) {
+      formRef.current?.reset();
+    }
+  }, [state]);
 
   return (
-    <form action={formAction} className="flex flex-col gap-4">
+    <form ref={formRef} action={formAction} className="flex flex-col gap-4">
       <div className="grid grid-cols-1 gap-4 md:grid-cols-[1fr_1fr]">
         <label className="flex flex-col gap-1.5">
           <span className="type-label">Точка сбора</span>
