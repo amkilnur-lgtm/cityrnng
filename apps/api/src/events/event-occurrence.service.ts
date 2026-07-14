@@ -129,7 +129,11 @@ export class EventOccurrenceService {
     if (startsAt < rule.startsFromDate) {
       throw new NotFoundException({ code: "EVENT_NOT_FOUND" });
     }
-    if (rule.endsAtDate && startsAt > rule.endsAtDate) {
+    // Compare by calendar day, not exact instant — endsAtDate is always
+    // stored as UTC midnight, but startsAt carries the rule's timeOfDay, so
+    // an evening occurrence on the last valid day would otherwise look
+    // "past" its own end date and 404 (see fix in listInRange for the twin bug).
+    if (rule.endsAtDate && this.dayOnly(startsAt) > rule.endsAtDate) {
       throw new NotFoundException({ code: "EVENT_NOT_FOUND" });
     }
 
@@ -476,7 +480,14 @@ export class EventOccurrenceService {
     // Materialize each rule's occurrences within window, replacing with override when present
     for (const rule of rules) {
       let cursor = this.firstOccurrenceOnOrAfter(rule, from);
-      const ruleEnd = rule.endsAtDate && rule.endsAtDate < to ? rule.endsAtDate : to;
+      // endsAtDate is stored as UTC midnight, but cursor carries the rule's
+      // timeOfDay — push the boundary to the end of that calendar day so an
+      // evening occurrence on the last valid date isn't excluded (a rule
+      // ending "today" produced zero cells for today's own occurrence).
+      const ruleEnd =
+        rule.endsAtDate && rule.endsAtDate < to
+          ? new Date(rule.endsAtDate.getTime() + DAY_MS - 1)
+          : to;
       while (cursor <= ruleEnd) {
         const key = this.overrideKey(rule.id, this.dayOnly(cursor));
         const override = overrides.get(key);
