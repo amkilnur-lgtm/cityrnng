@@ -81,6 +81,14 @@ export class AdminCheckinService {
     return { ok: true };
   }
 
+  /** Hard delete — cascades to the device's scan journal (`checkin_scans`).
+   * Use `updateDevice(id, { status: "disabled" })` instead to retire a
+   * device while keeping its history. */
+  async deleteDevice(id: string) {
+    await this.getDeviceOrThrow(id);
+    await this.prisma.scanDevice.delete({ where: { id } });
+  }
+
   /** Issues a new key, invalidating the old one. Returned once. */
   async rotateKey(id: string) {
     await this.getDeviceOrThrow(id);
