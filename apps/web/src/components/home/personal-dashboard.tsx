@@ -117,54 +117,53 @@ export function PersonalDashboard({
               На этот месяц пока нет событий — ждём расписание.
             </p>
           ) : (
-            // -mt-px/-ml-px + overflow-hidden clip each cell's outermost
-            // top/left border so the grid's own edges stay flush with the
-            // card, leaving only the inter-cell dividers visible.
-            <div className="overflow-hidden">
-              <div className="-ml-px -mt-px grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4">
-                {cells.map((cell) => (
-                  <TimelineCellView
-                    key={cell.date}
-                    cell={cell}
-                    nextEvent={nextEvent}
+            // Gridlines via gap-px over an ink-coloured container: every cell
+            // (all opaque) sits in a 1px gap lattice, so dividers are real
+            // whole-pixel gaps — no negative-margin/border tricks that land
+            // column edges on fractional pixels and drift out of line with
+            // the KPI row's divider below.
+            <div className="grid grid-cols-1 gap-px bg-ink md:grid-cols-2 lg:grid-cols-4">
+              {cells.map((cell) => (
+                <TimelineCellView
+                  key={cell.date}
+                  cell={cell}
+                  nextEvent={nextEvent}
+                />
+              ))}
+              {/* Calendar-style fillers: pad the ragged last row with empty
+                  muted slots so every row keeps full gridlines — without
+                  them the tail would expose the ink backdrop as a dark void.
+                  Visibility is per-breakpoint: lg (4 cols) needs (4-N%4)%4
+                  fillers, md (2 cols) one only when N is odd, 1-col never. */}
+              {Array.from(
+                { length: (4 - (cells.length % 4)) % 4 },
+                (_, i) => (
+                  <div
+                    key={`filler-${i}`}
+                    aria-hidden
+                    className={
+                      "min-h-[7.25rem] bg-paper-2 " +
+                      (cells.length % 2 === 1 && i === 0
+                        ? "hidden md:block"
+                        : "hidden lg:block")
+                    }
                   />
-                ))}
-                {/* Calendar-style fillers: pad the ragged last row with empty
-                    muted slots so every row keeps full gridlines — without
-                    them the cells bordering the tail lose their bottom/right
-                    dividers and the corner reads as a broken void. Visibility
-                    is per-breakpoint: lg (4 cols) needs (4 - N%4)%4 fillers,
-                    md (2 cols) needs one only when N is odd, 1-col never. */}
-                {Array.from(
-                  { length: (4 - (cells.length % 4)) % 4 },
-                  (_, i) => (
-                    <div
-                      key={`filler-${i}`}
-                      aria-hidden
-                      className={
-                        "min-h-[7.25rem] border-l border-t border-ink bg-paper-2/40 " +
-                        (cells.length % 2 === 1 && i === 0
-                          ? "hidden md:block"
-                          : "hidden lg:block")
-                      }
-                    />
-                  ),
-                )}
-              </div>
+                ),
+              )}
             </div>
           )}
 
-          <div className="grid grid-cols-2 divide-ink border-t border-ink md:divide-x">
+          {/* Same gap-px lattice as the timeline grid above — its centre gap
+              lands at the exact same (W-1)/2 spot as the grid's middle column
+              boundary, so the two dividers form one continuous line. */}
+          <div className="grid grid-cols-2 gap-px border-t border-ink bg-ink">
             {[
               { k: "Пробежек", v: `${totals.done}`, s: `за ${monthLabel}` },
               { k: "Баллов", v: `${totalPoints}`, s: `за ${monthLabel}` },
-            ].map((kpi, i) => (
+            ].map((kpi) => (
               <div
                 key={kpi.k}
-                className={
-                  "flex flex-col gap-1 px-5 py-4 md:px-6 md:py-5" +
-                  (i % 2 !== 0 ? " border-l border-ink md:border-l-0" : "")
-                }
+                className="flex flex-col gap-1 bg-paper px-5 py-4 md:px-6 md:py-5"
               >
                 <span className="type-mono-caps">{kpi.k}</span>
                 <span className="font-display text-[24px] font-bold leading-none tracking-[-0.02em] text-ink">
@@ -188,13 +187,10 @@ function TimelineCellView({
   nextEvent?: DisplayEvent;
 }) {
   // All four card kinds share a 3-row layout + min-height so the grid stays
-  // visually even regardless of state. Each cell carries its own top+left
-  // ink border; the grid wrapper clips the outermost of those (first row's
-  // top, first column's left) so only inter-cell dividers show — this draws
-  // correct separators for ANY cell count, including a ragged last row,
-  // where `divide-*` leaves gaps.
+  // visually even regardless of state. Dividers come from the parent's
+  // gap-px/bg-ink lattice, so every cell MUST paint an opaque background.
   const SHELL =
-    "flex h-full min-h-[7.25rem] flex-col gap-2 border-l border-t border-ink px-5 py-5 md:px-6";
+    "flex h-full min-h-[7.25rem] flex-col gap-2 px-5 py-5 md:px-6";
 
   const isSpecial = cell.eventType === "special";
   const SpecialBadge = isSpecial ? (
