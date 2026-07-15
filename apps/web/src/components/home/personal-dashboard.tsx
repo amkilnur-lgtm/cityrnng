@@ -129,6 +129,27 @@ export function PersonalDashboard({
                     nextEvent={nextEvent}
                   />
                 ))}
+                {/* Calendar-style fillers: pad the ragged last row with empty
+                    muted slots so every row keeps full gridlines — without
+                    them the cells bordering the tail lose their bottom/right
+                    dividers and the corner reads as a broken void. Visibility
+                    is per-breakpoint: lg (4 cols) needs (4 - N%4)%4 fillers,
+                    md (2 cols) needs one only when N is odd, 1-col never. */}
+                {Array.from(
+                  { length: (4 - (cells.length % 4)) % 4 },
+                  (_, i) => (
+                    <div
+                      key={`filler-${i}`}
+                      aria-hidden
+                      className={
+                        "min-h-[7.25rem] border-l border-t border-ink bg-paper-2/40 " +
+                        (cells.length % 2 === 1 && i === 0
+                          ? "hidden md:block"
+                          : "hidden lg:block")
+                      }
+                    />
+                  ),
+                )}
               </div>
             </div>
           )}
