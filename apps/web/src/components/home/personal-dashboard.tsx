@@ -117,15 +117,19 @@ export function PersonalDashboard({
               На этот месяц пока нет событий — ждём расписание.
             </p>
           ) : (
-            <div className="grid grid-cols-1 divide-y divide-ink md:grid-cols-2 md:divide-x lg:grid-cols-4 lg:divide-y-0">
-              {cells.map((cell, i) => (
-                <TimelineCellView
-                  key={cell.date}
-                  cell={cell}
-                  nextEvent={nextEvent}
-                  spanClassName={trailingRowSpan(i, cells.length)}
-                />
-              ))}
+            // -mt-px/-ml-px + overflow-hidden clip each cell's outermost
+            // top/left border so the grid's own edges stay flush with the
+            // card, leaving only the inter-cell dividers visible.
+            <div className="overflow-hidden">
+              <div className="-ml-px -mt-px grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4">
+                {cells.map((cell) => (
+                  <TimelineCellView
+                    key={cell.date}
+                    cell={cell}
+                    nextEvent={nextEvent}
+                  />
+                ))}
+              </div>
             </div>
           )}
 
@@ -155,37 +159,21 @@ export function PersonalDashboard({
   );
 }
 
-/**
- * Stretches the last incomplete row so it doesn't leave 1-2 cards floating
- * over a mostly-empty row — months don't always land on a multiple of the
- * grid's column count (e.g. 5 Wednesdays in lg's 4-col grid).
- */
-function trailingRowSpan(index: number, total: number): string {
-  const classes: string[] = [];
-  const rem4 = total % 4;
-  if (rem4 !== 0 && index >= total - rem4) {
-    if (rem4 === 1) classes.push("lg:col-span-4");
-    else if (rem4 === 2) classes.push("lg:col-span-2");
-  }
-  if (total % 2 === 1 && index === total - 1) {
-    classes.push("md:col-span-2");
-  }
-  return classes.join(" ");
-}
-
 function TimelineCellView({
   cell,
   nextEvent,
-  spanClassName = "",
 }: {
   cell: TimelineCell;
   nextEvent?: DisplayEvent;
-  spanClassName?: string;
 }) {
   // All four card kinds share a 3-row layout + min-height so the grid stays
-  // visually even regardless of state.
+  // visually even regardless of state. Each cell carries its own top+left
+  // ink border; the grid wrapper clips the outermost of those (first row's
+  // top, first column's left) so only inter-cell dividers show — this draws
+  // correct separators for ANY cell count, including a ragged last row,
+  // where `divide-*` leaves gaps.
   const SHELL =
-    "flex h-full min-h-[7.25rem] flex-col gap-2 px-5 py-5 md:px-6";
+    "flex h-full min-h-[7.25rem] flex-col gap-2 border-l border-t border-ink px-5 py-5 md:px-6";
 
   const isSpecial = cell.eventType === "special";
   const SpecialBadge = isSpecial ? (
@@ -214,7 +202,7 @@ function TimelineCellView({
     return (
       <Link
         href={`/events/${encodeURIComponent(cell.eventId)}`}
-        className={`${SHELL} ${spanClassName} bg-brand-red text-paper transition-colors hover:bg-brand-red-ink`}
+        className={`${SHELL} bg-brand-red text-paper transition-colors hover:bg-brand-red-ink`}
       >
         <div className="flex items-center gap-2">
           <span className="font-mono text-[11px] font-medium uppercase tracking-[0.14em]">
@@ -248,7 +236,7 @@ function TimelineCellView({
 
   if (cell.kind === "done") {
     return (
-      <Link href={`/events/${encodeURIComponent(cell.eventId)}`} className={`${SHELL} ${spanClassName} bg-paper text-ink transition-colors hover:bg-paper-2`}>
+      <Link href={`/events/${encodeURIComponent(cell.eventId)}`} className={`${SHELL} bg-paper text-ink transition-colors hover:bg-paper-2`}>
         <div className="flex items-center gap-2">
           <span className="font-mono text-[11px] font-medium uppercase tracking-[0.14em] text-muted">
             {cell.dateLabel}
@@ -275,7 +263,7 @@ function TimelineCellView({
     return (
       <Link
         href={`/events/${encodeURIComponent(cell.eventId)}`}
-        className={`${SHELL} ${spanClassName} bg-paper text-muted transition-colors hover:bg-paper-2`}
+        className={`${SHELL} bg-paper text-muted transition-colors hover:bg-paper-2`}
       >
         <div className="flex items-center gap-2">
           <span className="font-mono text-[11px] font-medium uppercase tracking-[0.14em] text-muted">
@@ -297,7 +285,7 @@ function TimelineCellView({
   return (
     <Link
       href={`/events/${encodeURIComponent(cell.eventId)}`}
-      className={`${SHELL} ${spanClassName} bg-paper-2 transition-colors hover:bg-paper`}
+      className={`${SHELL} bg-paper-2 transition-colors hover:bg-paper`}
     >
       <div className="flex items-center gap-2">
         <span className="font-mono text-[11px] font-medium uppercase tracking-[0.14em] text-muted">
