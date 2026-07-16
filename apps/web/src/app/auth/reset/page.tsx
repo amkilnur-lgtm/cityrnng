@@ -1,0 +1,51 @@
+import Link from "next/link";
+import { redirect } from "next/navigation";
+import { ResetPasswordForm } from "@/components/auth/reset-password-form";
+import { Wrap } from "@/components/site/wrap";
+import { getSession } from "@/lib/session";
+
+export const metadata = { title: "Новый пароль · CITYRNNG" };
+
+export default async function AuthResetPage({
+  searchParams,
+}: {
+  searchParams: { token?: string };
+}) {
+  const session = await getSession();
+  if (session) {
+    redirect(session.roles?.includes("partner") ? "/partner" : "/app");
+  }
+
+  const token = searchParams.token;
+  if (!token) {
+    return (
+      <main className="flex min-h-screen items-center">
+        <Wrap className="flex max-w-xl flex-col gap-6 py-16 text-center">
+          <span className="type-mono-caps">ссылка не найдена</span>
+          <h1 className="type-h2">
+            В&nbsp;ссылке нет{" "}
+            <em className="not-italic text-brand-red">токена</em>.
+          </h1>
+          <p className="text-[15px] text-graphite">
+            Похоже, ты&nbsp;открыл обрезанную ссылку. Запроси сброс пароля
+            ещё&nbsp;раз.
+          </p>
+          <Link
+            href="/auth?reset=1"
+            className="inline-flex h-12 items-center self-center border border-ink bg-paper px-5 font-sans text-[14px] font-semibold text-ink hover:bg-ink hover:text-paper"
+          >
+            ← Запросить сброс
+          </Link>
+        </Wrap>
+      </main>
+    );
+  }
+
+  return (
+    <main className="flex min-h-screen items-center">
+      <Wrap className="flex max-w-xl flex-col items-center gap-6 py-16">
+        <ResetPasswordForm token={token} />
+      </Wrap>
+    </main>
+  );
+}

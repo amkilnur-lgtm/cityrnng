@@ -217,13 +217,21 @@ model UserRole {
   @@map("user_roles")
 }
 
+enum LoginChallengePurpose {
+  login
+  password_reset
+}
+
 model LoginChallenge {
-  id         String    @id @default(uuid()) @db.Uuid
+  id         String                @id @default(uuid()) @db.Uuid
   email      String
-  tokenHash  String    @unique @map("token_hash")
-  expiresAt  DateTime  @map("expires_at")
-  consumedAt DateTime? @map("consumed_at")
-  createdAt  DateTime  @default(now()) @map("created_at")
+  tokenHash  String                @unique @map("token_hash")
+  /// What the one-time token authorizes. A `login` token can't be spent on a
+  /// password reset and vice-versa — they're issued and consumed by purpose.
+  purpose    LoginChallengePurpose @default(login)
+  expiresAt  DateTime              @map("expires_at")
+  consumedAt DateTime?             @map("consumed_at")
+  createdAt  DateTime              @default(now()) @map("created_at")
 
   @@index([email])
   @@map("login_challenges")

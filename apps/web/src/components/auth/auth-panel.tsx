@@ -2,8 +2,9 @@
 
 import { useState } from "react";
 import { AuthRequestForm } from "@/components/auth/request-form";
+import { AuthResetRequestForm } from "@/components/auth/reset-request-form";
 
-type Mode = "login" | "register" | "link";
+type Mode = "login" | "register" | "link" | "reset";
 
 const INPUT =
   "h-14 border border-ink bg-paper px-4 font-sans text-[15px] text-ink outline-none c3-focus placeholder:text-muted focus:bg-brand-tint/40";
@@ -15,7 +16,7 @@ function errorMessage(code: string | undefined, fallback: string): string {
     case "AUTH_INVALID_CREDENTIALS":
       return "Неверная почта или пароль.";
     case "NO_PASSWORD_SET":
-      return "У этого аккаунта ещё нет пароля. Войди по ссылке на почту — потом задашь пароль в профиле.";
+      return "У этого аккаунта ещё нет пароля. Задай его по ссылке на почту.";
     default:
       return fallback;
   }
@@ -26,7 +27,7 @@ export function AuthPanel({
   initialMode = "login",
 }: {
   initialEmail?: string;
-  initialMode?: "login" | "register";
+  initialMode?: "login" | "register" | "reset";
 }) {
   const [mode, setMode] = useState<Mode>(initialMode);
   const [email, setEmail] = useState(initialEmail);
@@ -34,14 +35,14 @@ export function AuthPanel({
   const [name, setName] = useState("");
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [offerLink, setOfferLink] = useState(false);
+  const [offerReset, setOfferReset] = useState(false);
 
   async function submit(e: React.FormEvent) {
     e.preventDefault();
     if (busy) return;
     setBusy(true);
     setError(null);
-    setOfferLink(false);
+    setOfferReset(false);
 
     const path = mode === "register" ? "/api/auth/register" : "/api/auth/login";
     const body =
@@ -59,7 +60,7 @@ export function AuthPanel({
       };
       if (!res.ok) {
         setError(errorMessage(payload.code, payload.message ?? "Что-то пошло не так."));
-        if (payload.code === "NO_PASSWORD_SET") setOfferLink(true);
+        if (payload.code === "NO_PASSWORD_SET") setOfferReset(true);
         setBusy(false);
         return;
       }
@@ -76,6 +77,21 @@ export function AuthPanel({
     return (
       <div className="flex max-w-[480px] flex-col gap-5">
         <AuthRequestForm initialEmail={email} />
+        <button
+          type="button"
+          onClick={() => setMode("login")}
+          className="self-start font-sans text-[14px] font-medium text-ink underline-offset-4 hover:text-brand-red hover:underline"
+        >
+          ← Вход по паролю
+        </button>
+      </div>
+    );
+  }
+
+  if (mode === "reset") {
+    return (
+      <div className="flex max-w-[480px] flex-col gap-5">
+        <AuthResetRequestForm initialEmail={email} />
         <button
           type="button"
           onClick={() => setMode("login")}
@@ -138,7 +154,7 @@ export function AuthPanel({
           {!isRegister ? (
             <button
               type="button"
-              onClick={() => setMode("link")}
+              onClick={() => setMode("reset")}
               className="-m-2 p-2 font-mono text-[11px] font-normal normal-case tracking-normal text-muted hover:text-brand-red"
             >
               Забыли пароль?
@@ -164,13 +180,13 @@ export function AuthPanel({
           className="flex flex-col gap-2 border border-brand-red bg-brand-tint/50 px-3 py-2 text-[13px] text-brand-red-ink"
         >
           <span>{error}</span>
-          {offerLink ? (
+          {offerReset ? (
             <button
               type="button"
-              onClick={() => setMode("link")}
+              onClick={() => setMode("reset")}
               className="self-start font-semibold underline underline-offset-4"
             >
-              Войти по ссылке на почту →
+              Задать пароль по почте →
             </button>
           ) : null}
         </div>

@@ -3,6 +3,7 @@ import { ConfigService } from "@nestjs/config";
 import type { Env } from "../config/env.schema";
 import { EMAIL_PROVIDER, type EmailProvider } from "./email.types";
 import { buildMagicLinkEmail } from "./templates/magic-link";
+import { buildPasswordResetEmail } from "./templates/password-reset";
 
 /**
  * High-level façade over the active EmailProvider. Centralises template
@@ -36,6 +37,30 @@ export class EmailService {
     } catch (err) {
       this.logger.error(
         `Failed to send magic-link to ${opts.email}: ${(err as Error).message}`,
+      );
+      throw err;
+    }
+  }
+
+  async sendPasswordReset(opts: {
+    email: string;
+    token: string;
+    ttlMinutes: number;
+  }): Promise<void> {
+    const baseUrl = this.config.get("WEB_BASE_URL", { infer: true });
+    const url = `${baseUrl.replace(/\/$/, "")}/auth/reset?token=${encodeURIComponent(
+      opts.token,
+    )}`;
+    const message = buildPasswordResetEmail({
+      to: opts.email,
+      url,
+      ttlMinutes: opts.ttlMinutes,
+    });
+    try {
+      await this.provider.send(message);
+    } catch (err) {
+      this.logger.error(
+        `Failed to send password-reset to ${opts.email}: ${(err as Error).message}`,
       );
       throw err;
     }
