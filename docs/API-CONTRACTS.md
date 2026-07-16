@@ -57,6 +57,40 @@ Response `200 OK`:
 }
 ```
 
+### `POST /api/v1/auth/request-password-reset`
+
+Инициирует сброс пароля: если почта принадлежит аккаунту — создаёт `login_challenge` c `purpose = password_reset` и шлёт письмо со ссылкой на `/auth/reset?token=…`. Для неизвестной почты возвращает **тот же** ответ без отправки письма (защита от перечисления пользователей — ответ и тайминг неотличимы). Throttle 3/60s. В dev (`AUTH_DEV_RETURN_TOKEN=true`) возвращает открытый токен.
+
+Request:
+
+```json
+{ "email": "user@example.com" }
+```
+
+Response `202 Accepted`:
+
+```json
+{
+  "ok": true,
+  "expiresAt": "2026-07-16T18:32:00.000Z",
+  "devToken": "<plaintext-token, only when AUTH_DEV_RETURN_TOKEN=true>"
+}
+```
+
+### `POST /api/v1/auth/reset-password`
+
+Потребляет одноразовый `password_reset`-токен, ставит новый пароль, **отзывает все активные сессии** пользователя (сброс = выход со всех устройств) и стартует новую сессию — так пользователь сразу залогинен на вкладке, где сбрасывал. Токен одноразовый и не взаимозаменяем с login-токеном (несовпадение `purpose` → тот же `AUTH_INVALID_TOKEN`). Throttle 10/60s.
+
+Request:
+
+```json
+{ "token": "opaque-token", "newPassword": "min-8-chars" }
+```
+
+Response `200 OK`: та же форма, что у `verify-login` (`accessToken` + `refreshToken` + `user`).
+
+Ошибки: `401 AUTH_INVALID_TOKEN` — токен неизвестен / истёк / уже использован / не того назначения; `400` — пароль короче 8 символов.
+
 ## 3. Profile
 
 ### `GET /api/v1/me`

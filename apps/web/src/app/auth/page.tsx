@@ -11,7 +11,7 @@ export const metadata = { title: "Вход · CITYRNNG" };
 export default async function AuthPage({
   searchParams,
 }: {
-  searchParams?: { email?: string; tab?: string };
+  searchParams?: { email?: string; tab?: string; reset?: string };
 }) {
   const session = await getSession();
   if (session) {
@@ -90,7 +90,13 @@ export default async function AuthPage({
         <section className="flex flex-col justify-center p-8 md:p-12 lg:p-16">
           <AuthPanel
             initialEmail={initialEmail}
-            initialMode={searchParams?.tab === "register" ? "register" : "login"}
+            initialMode={
+              searchParams?.reset === "1"
+                ? "reset"
+                : searchParams?.tab === "register"
+                  ? "register"
+                  : "login"
+            }
           />
         </section>
       </Wrap>

@@ -8,6 +8,8 @@ import { LogoutDto } from "./dto/logout.dto";
 import { RefreshLoginDto } from "./dto/refresh-login.dto";
 import { RegisterDto } from "./dto/register.dto";
 import { RequestLoginDto } from "./dto/request-login.dto";
+import { RequestPasswordResetDto } from "./dto/request-password-reset.dto";
+import { ResetPasswordDto } from "./dto/reset-password.dto";
 import { VerifyLoginDto } from "./dto/verify-login.dto";
 
 @Controller("auth")
@@ -27,6 +29,25 @@ export class AuthController {
   @HttpCode(HttpStatus.OK)
   verifyLogin(@Body() dto: VerifyLoginDto, @Req() req: Request) {
     return this.auth.verifyLogin(dto.token, {
+      userAgent: req.headers["user-agent"],
+      ipAddress: req.ip,
+    });
+  }
+
+  @Public()
+  @Throttle({ default: { limit: 3, ttl: 60_000 } })
+  @Post("request-password-reset")
+  @HttpCode(HttpStatus.ACCEPTED)
+  requestPasswordReset(@Body() dto: RequestPasswordResetDto) {
+    return this.auth.requestPasswordReset(dto.email);
+  }
+
+  @Public()
+  @Throttle({ default: { limit: 10, ttl: 60_000 } })
+  @Post("reset-password")
+  @HttpCode(HttpStatus.OK)
+  resetPassword(@Body() dto: ResetPasswordDto, @Req() req: Request) {
+    return this.auth.resetPassword(dto.token, dto.newPassword, {
       userAgent: req.headers["user-agent"],
       ipAddress: req.ip,
     });
