@@ -9,6 +9,14 @@ import { LoginChallengeService } from "./login-challenge.service";
 import { TokensService, hashRefresh } from "./tokens.service";
 import type { Env } from "../config/env.schema";
 
+/**
+ * How long after a refresh token is rotated we still accept it as a benign
+ * concurrent use (issuing a fresh session) instead of a reuse/expiry failure.
+ * Covers parallel navigations/prefetches racing the single-use rotation;
+ * kept short so a genuinely leaked token has a tiny replay window.
+ */
+const REFRESH_REUSE_GRACE_MS = 15_000;
+
 export interface RequestLoginResult {
   ok: true;
   expiresAt: Date;
@@ -225,7 +233,33 @@ export class AuthService {
       },
     });
 
-    if (!session || session.status !== "active") {
+    if (!session) {
+      throw new UnauthorizedException({ code: "AUTH_INVALID_REFRESH" });
+    }
+
+    // Reuse grace: refresh tokens rotate single-use, but the client fires
+    // refreshes concurrently (parallel navigations/prefetches all carry the
+    // same RT). Only one wins the rotation; the rest arrive with a just-
+    // revoked token. Rather than 401 → cookie-clear → surprise logout, a
+    // token revoked within the grace window is treated as a benign race and
+    // gets a fresh session. Outside the window a revoked token is a genuine
+    // reuse/expiry and still fails.
+    if (session.status === "revoked") {
+      const revokedAgo = session.revokedAt
+        ? Date.now() - session.revokedAt.getTime()
+        : Number.POSITIVE_INFINITY;
+      if (revokedAgo < REFRESH_REUSE_GRACE_MS) {
+        const gUser = session.user;
+        return this.startSession(
+          gUser.id,
+          gUser.email,
+          rolesOf(gUser),
+          meta,
+        );
+      }
+      throw new UnauthorizedException({ code: "AUTH_INVALID_REFRESH" });
+    }
+    if (session.status !== "active") {
       throw new UnauthorizedException({ code: "AUTH_INVALID_REFRESH" });
     }
     if (session.expiresAt.getTime() <= Date.now()) {

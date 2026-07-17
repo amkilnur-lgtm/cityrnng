@@ -41,6 +41,16 @@ export async function middleware(req: NextRequest) {
 
   if (!rt) return NextResponse.next();
 
+  // Never rotate tokens for a speculative prefetch. Next.js prefetches soon-
+  // to-be-visited routes (link hover/viewport), and those requests hit this
+  // middleware too — a destructive single-use refresh fired by a prefetch
+  // (often several in parallel) revokes the RT the real navigation still
+  // carries, which is the main cause of intermittent "logged out" surprises.
+  const isPrefetch =
+    req.headers.get("next-router-prefetch") === "1" ||
+    req.headers.get("purpose") === "prefetch";
+  if (isPrefetch) return NextResponse.next();
+
   const expectedRole = expectedRoleFor(req.nextUrl.pathname);
   const lacksExpectedRole =
     expectedRole !== null &&
@@ -60,12 +70,17 @@ export async function middleware(req: NextRequest) {
     });
 
     if (!resp.ok) {
-      // Refresh failed — likely revoked/expired. Clear cookies so the
-      // user lands as a guest instead of looping with a dead token.
-      const cleared = NextResponse.next();
-      cleared.cookies.delete(AT_COOKIE);
-      cleared.cookies.delete(RT_COOKIE);
-      return cleared;
+      // Only a 401 means the token is genuinely dead (revoked/expired) —
+      // clear cookies so the user lands as a guest instead of looping. A
+      // 5xx / transient error must NOT nuke a valid session; fall through
+      // and let the still-present cookies be retried next request.
+      if (resp.status === 401) {
+        const cleared = NextResponse.next();
+        cleared.cookies.delete(AT_COOKIE);
+        cleared.cookies.delete(RT_COOKIE);
+        return cleared;
+      }
+      return NextResponse.next();
     }
 
     const data = (await resp.json()) as {
