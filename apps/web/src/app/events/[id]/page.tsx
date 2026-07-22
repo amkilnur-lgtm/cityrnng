@@ -116,20 +116,20 @@ export default async function EventDetailPage({
           <Wrap className="py-16 lg:py-24">
             <div className="flex flex-col gap-4">
               <div className="flex flex-wrap items-center justify-between gap-3">
-                <Link
-                  href="/events"
-                  className="font-mono text-[11px] font-medium uppercase tracking-[0.14em] text-muted hover:text-brand-red"
-                >
-                  ← Все события
-                </Link>
                 {state.isAuthed ? (
                   <Link
                     href="/app"
                     className="font-mono text-[11px] font-medium uppercase tracking-[0.14em] text-muted hover:text-brand-red"
                   >
-                    мой кабинет →
+                    ← мой кабинет
                   </Link>
                 ) : null}
+                <Link
+                  href="/events"
+                  className="ml-auto font-mono text-[11px] font-medium uppercase tracking-[0.14em] text-muted hover:text-brand-red"
+                >
+                  Все события →
+                </Link>
               </div>
               <div className="flex flex-wrap items-center gap-3">
                 {event.type === "special" ? (
