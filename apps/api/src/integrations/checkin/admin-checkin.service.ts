@@ -137,6 +137,7 @@ export class AdminCheckinService {
       take: SCAN_PAGE_SIZE,
       include: {
         device: { select: { label: true } },
+        scannedBy: { select: { email: true } },
         location: { select: { name: true } },
         user: { select: { email: true, profile: { select: { displayName: true } } } },
         event: { select: { title: true, startsAt: true } },
@@ -147,7 +148,12 @@ export class AdminCheckinService {
       result: s.result,
       scannedAt: s.scannedAt,
       receivedAt: s.receivedAt,
-      deviceLabel: s.device.label,
+      // Device scan → the device label; leader manual scan → "Лидер: email".
+      deviceLabel: s.device
+        ? s.device.label
+        : s.scannedBy
+          ? `Лидер: ${s.scannedBy.email}`
+          : "—",
       locationName: s.location.name,
       checkinCode: s.checkinCode,
       runner: s.user

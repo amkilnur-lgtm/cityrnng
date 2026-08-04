@@ -15,6 +15,7 @@ const COOKIE_MAX_AGE_SEC = 60 * 60 * 24 * 30; // 30 days — actual lifetime is 
 function expectedRoleFor(pathname: string): string | null {
   if (pathname === "/partner" || pathname.startsWith("/partner/")) return "partner";
   if (pathname === "/admin" || pathname.startsWith("/admin/")) return "admin";
+  if (pathname === "/leader" || pathname.startsWith("/leader/")) return "leader";
   return null;
 }
 

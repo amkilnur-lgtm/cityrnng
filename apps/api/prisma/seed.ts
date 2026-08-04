@@ -11,6 +11,7 @@ const ROLES: ReadonlyArray<{ code: string; name: string }> = [
   { code: "runner", name: "Runner" },
   { code: "admin", name: "Admin" },
   { code: "partner", name: "Partner" },
+  { code: "leader", name: "Leader" },
 ];
 
 /**

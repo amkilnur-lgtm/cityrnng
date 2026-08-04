@@ -6,11 +6,12 @@ import {
   revokeRoleAction,
 } from "@/app/admin/users/actions";
 
-type RoleCode = "admin" | "partner";
+type RoleCode = "admin" | "partner" | "leader";
 
 const LABEL: Record<RoleCode, string> = {
   admin: "Admin",
   partner: "Partner",
+  leader: "Leader",
 };
 
 export function UserRoleToggle({

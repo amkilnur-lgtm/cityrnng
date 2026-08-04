@@ -170,6 +170,7 @@ model User {
   partnerMemberships       PartnerMember[]       @relation("PartnerMemberUser")
   createdPartnerMembers    PartnerMember[]       @relation("PartnerMemberCreatedBy")
   checkinScans             CheckinScan[]         @relation("CheckinScanUser")
+  leaderScans              CheckinScan[]         @relation("CheckinScanLeader")
   createdScanDevices       ScanDevice[]          @relation("ScanDeviceCreatedBy")
 
   @@map("users")
@@ -425,11 +426,17 @@ model ScanDevice {
 /// when the scan didn't resolve (unknown code, no open window, duplicate).
 model CheckinScan {
   id           String            @id @default(uuid()) @db.Uuid
-  deviceId     String            @map("device_id") @db.Uuid
+  /// The device that sent the scan. Null for a manual scan made by a leader
+  /// from their phone (see scannedByUserId) instead of a fixed runbase device.
+  deviceId     String?           @map("device_id") @db.Uuid
   locationId   String            @map("location_id") @db.Uuid
   /// Client-generated id from the device, unique per device. Lets an offline
-  /// buffer re-send safely without creating duplicate attendances.
-  scanId       String            @map("scan_id")
+  /// buffer re-send safely without creating duplicate attendances. Null for
+  /// leader manual scans (no offline buffer; double-credit is already blocked
+  /// by EventAttendance's unique + one-per-day guard).
+  scanId       String?           @map("scan_id")
+  /// The leader who made a manual scan, when deviceId is null. Audit trail.
+  scannedByUserId String?        @map("scanned_by_user_id") @db.Uuid
   /// Raw code string read off the QR/fob — kept even when it matches no user.
   checkinCode  String            @map("checkin_code")
   userId       String?           @map("user_id") @db.Uuid
@@ -441,11 +448,12 @@ model CheckinScan {
   scannedAt    DateTime          @map("scanned_at")
   receivedAt   DateTime          @default(now()) @map("received_at")
 
-  device     ScanDevice       @relation(fields: [deviceId], references: [id], onDelete: Cascade)
-  location   CityLocation     @relation(fields: [locationId], references: [id], onDelete: Restrict)
-  user       User?            @relation("CheckinScanUser", fields: [userId], references: [id], onDelete: SetNull)
-  event      Event?           @relation(fields: [eventId], references: [id], onDelete: SetNull)
-  attendance EventAttendance? @relation(fields: [attendanceId], references: [id], onDelete: SetNull)
+  device       ScanDevice?      @relation(fields: [deviceId], references: [id], onDelete: Cascade)
+  location     CityLocation     @relation(fields: [locationId], references: [id], onDelete: Restrict)
+  user         User?            @relation("CheckinScanUser", fields: [userId], references: [id], onDelete: SetNull)
+  scannedBy    User?            @relation("CheckinScanLeader", fields: [scannedByUserId], references: [id], onDelete: SetNull)
+  event        Event?           @relation(fields: [eventId], references: [id], onDelete: SetNull)
+  attendance   EventAttendance? @relation(fields: [attendanceId], references: [id], onDelete: SetNull)
 
   @@unique([deviceId, scanId])
   @@index([locationId, scannedAt])
