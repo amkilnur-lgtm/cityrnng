@@ -414,6 +414,20 @@ Response `201`:
 - `REDEMPTION_NOT_FOUND`, `REDEMPTION_NOT_ACTIVE`, `REDEMPTION_EXPIRED`, `REWARD_CODE_GENERATION_FAILED`
 - `POINTS_INSUFFICIENT`
 
+## 13.5 Leader — ручная отметка на точке
+
+Кабинет лидера: отметка прихода бегунов с телефона, когда на точке нет
+фиксированного сканера. Все эндпоинты требуют роль `leader` (`RolesGuard`
+читает JWT; web-middleware освежает токен на пути `/leader`, чтобы свежевыданная
+роль подхватилась без релогина). Зачёт идёт по тому же пути, что и устройство
+(`CheckinService`), но записывается с `scanned_by_user_id` (аудит), `device_id`
+= null. Дубль-зачёт исключён `EventAttendance @@unique([eventId,userId])` +
+one-per-day, поэтому повторный тап — безобидный `duplicate`.
+
+- `GET /api/v1/leader/locations` — активные точки сбора (`{id, name, city, venue}`).
+- `POST /api/v1/leader/checkin` — тело `{ locationId, code }`. Резолвит открытое окно на точке и начисляет зачёт. Ответ `{ result, ok, message }`, где `result` ∈ {`matched`,`duplicate`,`no_window`,`unknown_code`,`error`}, `ok` = true для `matched`/`duplicate`. Ошибки: `LOCATION_NOT_ACTIVE`.
+- `GET /api/v1/leader/checkin/recent?locationId=<uuid>` — последние 20 сканов на точке (лента): `{id, result, scannedAt, checkinCode, runnerName, byLeader}`.
+
 ## 14. Error format
 
 ```json

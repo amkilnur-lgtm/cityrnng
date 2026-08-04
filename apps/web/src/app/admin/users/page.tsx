@@ -45,7 +45,7 @@ export default async function AdminUsersPage({
             </h1>
             <p className="type-lede max-w-2xl">
               Магик-линк создаёт runner-аккаунт автоматически. Здесь можно
-              вручную назначить роли admin или partner. Снять{" "}
+              вручную назначить роли admin, partner или leader. Снять{" "}
               <code className="font-mono text-[14px] text-ink">runner</code>{" "}
               нельзя — это базовая роль каждого.
             </p>
@@ -130,6 +130,11 @@ export default async function AdminUsersPage({
                               userId={u.id}
                               role="partner"
                               active={userRoles.includes("partner")}
+                            />
+                            <UserRoleToggle
+                              userId={u.id}
+                              role="leader"
+                              active={userRoles.includes("leader")}
                             />
                           </div>
                         </Td>

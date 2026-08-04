@@ -88,15 +88,60 @@ export class CheckinService {
       return this.toOutcome(prior, true);
     }
 
+    const outcome = await this.resolveAndRecord({
+      locationId: device.locationId,
+      code: dto.code,
+      scannedAt,
+      deviceId: device.id,
+      scanId: dto.scanId,
+    });
+    await this.touchDevice(device.id);
+    return outcome;
+  }
+
+  /**
+   * Credit a scan a leader made manually from their phone (no fixed device).
+   * Same resolution + crediting path as a device scan, but authenticated by
+   * the leader's session upstream and recorded with scannedByUserId for audit.
+   * No offline idempotency: double-credit is already blocked by the
+   * EventAttendance unique + one-per-day guard, so a re-tap is a harmless
+   * `duplicate`.
+   */
+  async creditLeaderScan(input: {
+    locationId: string;
+    code: string;
+    leaderId: string;
+  }): Promise<ScanOutcome> {
+    return this.resolveAndRecord({
+      locationId: input.locationId,
+      code: input.code,
+      scannedAt: new Date(),
+      scannedByUserId: input.leaderId,
+    });
+  }
+
+  /**
+   * Shared core: resolve the runner by code + the open occurrence at the
+   * location, credit an approved attendance + points, and persist a
+   * CheckinScan audit row. Used by both the device and the leader path.
+   */
+  private async resolveAndRecord(params: {
+    locationId: string;
+    code: string;
+    scannedAt: Date;
+    deviceId?: string;
+    scanId?: string;
+    scannedByUserId?: string;
+  }): Promise<ScanOutcome> {
     const user = await this.prisma.user.findUnique({
-      where: { checkinCode: dto.code },
+      where: { checkinCode: params.code },
       select: { id: true },
     });
 
     // Only resolve an occurrence when we have a user — keeps logs clean and
     // avoids materializing an Event for an unknown code.
     const event = user
-      ? await this.occurrences.findOpenCheckinOccurrence(device.locationId, scannedAt)
+      ? await this.occurrences.findOpenCheckinOccurrence(params.locationId, params.scannedAt)
       : null;
 
     let result: CheckinScanResult;
@@ -114,30 +159,33 @@ export class CheckinService {
           ? CheckinScanResult.matched
           : CheckinScanResult.duplicate;
       } catch (err) {
+        const who = params.deviceId
+          ? `device=${params.deviceId}`
+          : `leader=${params.scannedByUserId}`;
         this.logger.error(
-          `Scan processing failed for device=${device.id} user=${user.id}: ${(err as Error).message}`,
+          `Scan processing failed for ${who} user=${user.id}: ${(err as Error).message}`,
         );
         result = CheckinScanResult.error;
       }
     }
 
     const scan = await this.recordScan({
-      device,
-      dto,
-      scannedAt,
+      ...params,
       userId: user?.id ?? null,
       eventId: event?.id ?? null,
       attendanceId,
       result,
     });
-    await this.touchDevice(device.id);
     return this.toOutcome(scan, false);
   }
 
   private async recordScan(args: {
-    device: ScanDevice;
-    dto: ScanDto;
+    locationId: string;
+    code: string;
     scannedAt: Date;
+    deviceId?: string;
+    scanId?: string;
+    scannedByUserId?: string;
     userId: string | null;
     eventId: string | null;
     attendanceId: string | null;
@@ -146,10 +194,11 @@ export class CheckinService {
     try {
       return await this.prisma.checkinScan.create({
         data: {
-          deviceId: args.device.id,
-          locationId: args.device.locationId,
-          scanId: args.dto.scanId,
-          checkinCode: args.dto.code,
+          deviceId: args.deviceId ?? null,
+          locationId: args.locationId,
+          scanId: args.scanId ?? null,
+          scannedByUserId: args.scannedByUserId ?? null,
+          checkinCode: args.code,
           userId: args.userId,
           eventId: args.eventId,
           attendanceId: args.attendanceId,
@@ -160,14 +209,16 @@ export class CheckinService {
     } catch (err) {
       // Race: a concurrent delivery of the same (deviceId, scanId) won the
       // unique. Re-read and return the persisted row so the caller still gets
-      // a coherent outcome.
+      // a coherent outcome. Only possible on the device path (both present).
       if (
+        args.deviceId &&
+        args.scanId &&
         err instanceof Prisma.PrismaClientKnownRequestError &&
         err.code === "P2002"
       ) {
         const winner = await this.prisma.checkinScan.findUnique({
           where: {
-            deviceId_scanId: { deviceId: args.device.id, scanId: args.dto.scanId },
+            deviceId_scanId: { deviceId: args.deviceId, scanId: args.scanId },
           },
         });
         if (winner) return winner;

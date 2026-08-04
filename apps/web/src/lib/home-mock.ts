@@ -6,6 +6,7 @@ export type AuthedState = {
   isAuthed: true;
   isAdmin?: boolean;
   isPartner?: boolean;
+  isLeader?: boolean;
   user: AuthedUser;
 };
 export type SiteState = GuestState | AuthedState;
