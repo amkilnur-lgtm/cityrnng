@@ -154,7 +154,12 @@ export class CheckinService {
     } else {
       try {
         const outcome = await this.createAttendanceAndAward(user.id, event);
-        attendanceId = outcome.attendanceId;
+        // CheckinScan.attendanceId is unique — only the scan that CREATED the
+        // attendance may reference it. A duplicate (attendance already existed)
+        // records with a null link, else the second scan collides on the
+        // unique and the insert throws (was a latent 500 on any re-scan whose
+        // idempotency key differed — e.g. every leader re-tap).
+        attendanceId = outcome.created ? outcome.attendanceId : null;
         result = outcome.created
           ? CheckinScanResult.matched
           : CheckinScanResult.duplicate;
