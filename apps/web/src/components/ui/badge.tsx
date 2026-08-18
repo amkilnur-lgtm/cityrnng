@@ -4,10 +4,10 @@ import { cn } from "@/lib/utils";
 
 /**
  * C3 · Светлый badge / tag primitive.
- * Mono uppercase, 1px border, no radius.
+ * Mono uppercase, 1px border, pill-rounded (warm language).
  */
 const badgeVariants = cva(
-  "inline-flex items-center gap-1 px-2 py-[3px] rounded-none border text-[11px] font-mono font-medium uppercase tracking-[0.12em] whitespace-nowrap",
+  "inline-flex items-center gap-1 px-2.5 py-[3px] rounded-full border text-[11px] font-mono font-medium uppercase tracking-[0.12em] whitespace-nowrap",
   {
     variants: {
       variant: {

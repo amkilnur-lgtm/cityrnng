@@ -38,7 +38,7 @@ export function SiteNav({ state }: { state: SiteState }) {
   return (
     <nav
       aria-label="Primary"
-      className="sticky top-0 z-20 flex h-[70px] items-center justify-between gap-3 border-b border-ink bg-paper px-4 sm:gap-6 sm:px-6 lg:px-12"
+      className="sticky top-0 z-20 flex h-[70px] items-center justify-between gap-3 border-b border-line/10 bg-paper px-4 shadow-[0_1px_0_rgba(28,24,19,0.04)] sm:gap-6 sm:px-6 lg:px-12"
     >
       <div className="flex min-w-0 shrink items-center gap-6">
         <Link
@@ -252,25 +252,27 @@ function GuestCta() {
 
 function AuthedPill({ user }: { user: { name: string; initial: string; points: number } }) {
   return (
-    <div className="flex h-11 items-center border border-ink text-ink">
+    <div className="flex items-center gap-2">
       <Link
         href="/app"
         aria-label="Мой профиль"
-        className="flex h-full items-center hover:bg-paper-2"
+        className="flex items-center gap-2"
       >
-        <span className="flex h-11 w-11 items-center justify-center bg-ink font-display text-[16px] font-bold leading-none tracking-tight text-paper">
+        {/* Round friendly account chip (not a toolbar square). */}
+        <span className="flex h-9 w-9 items-center justify-center rounded-full bg-ink font-display text-[15px] font-bold leading-none text-paper">
           {user.initial}
         </span>
-        {/* Name is redundant next to the initial on a narrow screen. */}
-        <span className="hidden h-full items-center border-l border-ink px-3.5 font-sans text-[14px] font-semibold md:flex">
+        <span className="hidden font-sans text-[14px] font-semibold text-ink md:inline">
           {user.name}
         </span>
-        <span className="flex h-full items-center gap-1.5 border-l border-ink px-3 font-mono text-[13px] font-medium tracking-[0.04em] text-brand-red sm:px-3.5">
+        {/* Points → warm marigold pill (red is reserved for "today" now). */}
+        <span className="inline-flex h-9 items-center gap-1.5 rounded-full bg-brand-yellow-tint px-3 font-mono text-[13px] font-semibold tracking-[0.04em] text-[#8A6D00]">
+          <span aria-hidden className="h-2 w-2 rounded-full bg-brand-yellow" />
           {user.points}&nbsp;Б
         </span>
       </Link>
       {/* On mobile logout lives in the burger drawer. */}
-      <span className="hidden h-full md:flex">
+      <span className="hidden md:flex">
         <LogoutButton />
       </span>
     </div>
