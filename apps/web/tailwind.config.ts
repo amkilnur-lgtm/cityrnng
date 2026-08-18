@@ -23,6 +23,8 @@ const config: Config = {
           red: "hsl(var(--brand-red) / <alpha-value>)",
           "red-ink": "hsl(var(--brand-red-ink) / <alpha-value>)",
           tint: "hsl(var(--brand-tint) / <alpha-value>)",
+          yellow: "hsl(var(--brand-yellow) / <alpha-value>)",
+          "yellow-tint": "hsl(var(--brand-yellow-tint) / <alpha-value>)",
         },
       },
       fontFamily: {
