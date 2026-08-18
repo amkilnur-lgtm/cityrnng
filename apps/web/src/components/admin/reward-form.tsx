@@ -17,6 +17,7 @@ type Defaults = {
   costPoints?: number;
   badge?: string | null;
   status?: "active" | "archived";
+  fulfillmentType?: "verify" | "promo_pool";
   validFrom?: string | null;
   validUntil?: string | null;
   capacity?: number | null;
@@ -146,16 +147,34 @@ export function RewardForm({
           />
         </Field>
       </div>
-      <Field label="Статус">
-        <select
-          name="status"
-          defaultValue={defaults?.status ?? "active"}
-          className="h-11 border border-ink bg-paper px-3 font-sans text-[14px] outline-none c3-focus"
-        >
-          <option value="active">active</option>
-          <option value="archived">archived</option>
-        </select>
-      </Field>
+      <div className="grid grid-cols-1 gap-5 md:grid-cols-2">
+        <Field label="Статус">
+          <select
+            name="status"
+            defaultValue={defaults?.status ?? "active"}
+            className="h-11 border border-ink bg-paper px-3 font-sans text-[14px] outline-none c3-focus"
+          >
+            <option value="active">active</option>
+            <option value="archived">archived</option>
+          </select>
+        </Field>
+        <Field label="Тип выдачи" hint="как получают награду">
+          <select
+            name="fulfillmentType"
+            defaultValue={defaults?.fulfillmentType ?? "verify"}
+            className="h-11 border border-ink bg-paper px-3 font-sans text-[14px] outline-none c3-focus"
+          >
+            <option value="verify">Товар — подтверждение у партнёра</option>
+            <option value="promo_pool">Промокод — из списка</option>
+          </select>
+        </Field>
+      </div>
+      {defaults?.fulfillmentType === "promo_pool" ? null : (
+        <p className="-mt-2 text-[12px] text-muted">
+          Для «Промокод»: сохрани награду, затем на&nbsp;странице
+          редактирования вставь список промокодов.
+        </p>
+      )}
 
       <p
         role="alert"

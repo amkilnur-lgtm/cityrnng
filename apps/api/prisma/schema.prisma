@@ -130,6 +130,20 @@ enum RewardStatus {
   archived
 }
 
+/// How a redeemed reward is fulfilled.
+enum RewardFulfillmentType {
+  /// We generate a code; partner staff verify it in /partner (default, legacy).
+  verify
+  /// A partner-supplied promo code is dispensed from a pre-loaded pool; the
+  /// runner shows it as a QR and the partner's own POS validates it.
+  promo_pool
+}
+
+enum PromoCodeStatus {
+  available
+  assigned
+}
+
 enum RedemptionStatus {
   active
   used
@@ -638,6 +652,9 @@ model Reward {
   /// Optional badge text — "новинка", "до 31 мая", etc.
   badge       String?
   status      RewardStatus @default(active)
+  /// How a redemption is fulfilled — our verify code (default) or a promo
+  /// code dispensed from the reward's pre-loaded pool (see PromoCode).
+  fulfillmentType RewardFulfillmentType @default(verify) @map("fulfillment_type")
   validFrom   DateTime?    @map("valid_from")
   validUntil  DateTime?    @map("valid_until")
   /// Optional capacity limit (null = unlimited).
@@ -651,10 +668,31 @@ model Reward {
   partner     Partner      @relation(fields: [partnerId], references: [id], onDelete: Cascade)
   createdBy   User         @relation("RewardCreatedBy", fields: [createdById], references: [id])
   redemptions Redemption[]
+  promoCodes  PromoCode[]
 
   @@index([partnerId])
   @@index([status])
   @@map("rewards")
+}
+
+/// A partner-supplied promo code in a reward's pool (fulfillmentType =
+/// promo_pool). One is atomically dispensed to a redemption on redeem.
+model PromoCode {
+  id           String          @id @default(uuid()) @db.Uuid
+  rewardId     String          @map("reward_id") @db.Uuid
+  code         String
+  status       PromoCodeStatus @default(available)
+  /// Set when dispensed. One code ↔ one redemption.
+  redemptionId String?         @unique @map("redemption_id") @db.Uuid
+  assignedAt   DateTime?       @map("assigned_at")
+  createdAt    DateTime        @default(now()) @map("created_at")
+
+  reward     Reward      @relation(fields: [rewardId], references: [id], onDelete: Cascade)
+  redemption Redemption? @relation(fields: [redemptionId], references: [id], onDelete: SetNull)
+
+  @@unique([rewardId, code])
+  @@index([rewardId, status])
+  @@map("promo_codes")
 }
 
 model Redemption {
@@ -680,6 +718,8 @@ model Redemption {
   user             User             @relation("RedemptionUser", fields: [userId], references: [id], onDelete: Restrict)
   reward           Reward           @relation(fields: [rewardId], references: [id], onDelete: Restrict)
   pointTransaction PointTransaction @relation(fields: [pointTxnId], references: [id], onDelete: Restrict)
+  /// Set for promo_pool rewards — the dispensed partner code (code mirrors it).
+  promoCode        PromoCode?
 
   @@index([userId, createdAt(sort: Desc)])
   @@index([rewardId, status])

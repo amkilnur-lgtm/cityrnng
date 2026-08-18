@@ -29,6 +29,9 @@ function parseBody(form: FormData) {
     costPoints: cost ? Number(cost) : undefined,
     badge: form.get("badge") ? String(form.get("badge")).trim() : undefined,
     status: (form.get("status") ?? "active") as "active" | "archived",
+    fulfillmentType: (form.get("fulfillmentType") ?? "verify") as
+      | "verify"
+      | "promo_pool",
     validFrom: form.get("validFrom")
       ? String(form.get("validFrom")).trim()
       : undefined,
@@ -37,6 +40,61 @@ function parseBody(form: FormData) {
       : undefined,
     capacity: cap ? Number(cap) : undefined,
   };
+}
+
+export type PromoStats = { available: number; assigned: number; total: number };
+
+export async function getPromoStatsAction(rewardId: string): Promise<PromoStats | null> {
+  const headers = authHeaders();
+  if (!headers) return null;
+  try {
+    const res = await fetch(`${API_BASE_URL}/admin/rewards/${rewardId}/promo-codes`, {
+      headers,
+      cache: "no-store",
+    });
+    if (!res.ok) return null;
+    return (await res.json()) as PromoStats;
+  } catch {
+    return null;
+  }
+}
+
+export async function addPromoCodesAction(
+  rewardId: string,
+  text: string,
+): Promise<
+  | { ok: true; added: number; skipped: number; available: number; total: number }
+  | { ok: false; message: string }
+> {
+  const headers = authHeaders();
+  if (!headers) return { ok: false, message: "Нет access-токена." };
+  if (!text.trim()) return { ok: false, message: "Вставь список промокодов." };
+  try {
+    const res = await fetch(`${API_BASE_URL}/admin/rewards/${rewardId}/promo-codes`, {
+      method: "POST",
+      headers,
+      body: JSON.stringify({ text }),
+    });
+    const p = (await res.json().catch(() => ({}))) as {
+      added?: number;
+      skipped?: number;
+      available?: number;
+      total?: number;
+      message?: string;
+      code?: string;
+    };
+    if (!res.ok) return { ok: false, message: p.message ?? p.code ?? `HTTP ${res.status}` };
+    revalidatePath(`/admin/rewards/${rewardId}`);
+    return {
+      ok: true,
+      added: p.added ?? 0,
+      skipped: p.skipped ?? 0,
+      available: p.available ?? 0,
+      total: p.total ?? 0,
+    };
+  } catch {
+    return { ok: false, message: "API недоступен." };
+  }
 }
 
 export async function createRewardAction(

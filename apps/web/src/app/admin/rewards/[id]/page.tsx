@@ -1,9 +1,10 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
+import { PromoPoolPanel } from "@/components/admin/promo-pool-panel";
 import { RewardForm } from "@/components/admin/reward-form";
 import { Wrap } from "@/components/site/wrap";
 import { listAdminPartners, listAdminRewards } from "@/lib/api-admin";
-import { updateRewardAction } from "../actions";
+import { getPromoStatsAction, updateRewardAction } from "../actions";
 
 export const metadata = { title: "Награда · Admin · CITYRNNG" };
 
@@ -20,6 +21,10 @@ export default async function EditRewardPage({
   if (!reward) notFound();
 
   const boundUpdate = updateRewardAction.bind(null, params.id);
+  const promoStats =
+    reward.fulfillmentType === "promo_pool"
+      ? (await getPromoStatsAction(params.id)) ?? { available: 0, assigned: 0, total: 0 }
+      : null;
 
   return (
     <main>
@@ -52,12 +57,19 @@ export default async function EditRewardPage({
               costPoints: reward.costPoints,
               badge: reward.badge,
               status: reward.status,
+              fulfillmentType: reward.fulfillmentType,
               validFrom: reward.validFrom,
               validUntil: reward.validUntil,
               capacity: reward.capacity,
             }}
             submitLabel="Сохранить"
           />
+
+          {promoStats ? (
+            <div className="mt-8">
+              <PromoPoolPanel rewardId={params.id} initial={promoStats} />
+            </div>
+          ) : null}
         </Wrap>
       </section>
     </main>

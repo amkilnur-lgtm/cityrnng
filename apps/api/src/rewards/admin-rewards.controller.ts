@@ -15,6 +15,7 @@ import { CurrentUser } from "../auth/decorators/current-user.decorator";
 import { Roles } from "../auth/decorators/roles.decorator";
 import { ROLE_ADMIN, type AuthenticatedUser } from "../auth/types";
 import { AddPartnerMemberDto } from "./dto/add-partner-member.dto";
+import { AddPromoCodesDto } from "./dto/add-promo-codes.dto";
 import { CancelRedemptionDto } from "./dto/cancel-redemption.dto";
 import { CreatePartnerDto } from "./dto/create-partner.dto";
 import { CreateRewardDto } from "./dto/create-reward.dto";
@@ -107,6 +108,23 @@ export class AdminRewardsController {
     @Body() dto: UpdateRewardDto,
   ) {
     return this.rewards.update(id, dto);
+  }
+
+  // Promo-code pool (promo_pool rewards)
+
+  @Get("rewards/:id/promo-codes")
+  promoStats(@Param("id", new ParseUUIDPipe()) id: string) {
+    return this.rewards.promoStats(id);
+  }
+
+  @Post("rewards/:id/promo-codes")
+  @HttpCode(HttpStatus.OK)
+  addPromoCodes(
+    @Param("id", new ParseUUIDPipe()) id: string,
+    @Body() dto: AddPromoCodesDto,
+  ) {
+    const codes = dto.text.split(/[\n,;]+/);
+    return this.rewards.addPromoCodes(id, codes);
   }
 
   // Redemptions (list / verify / cancel)

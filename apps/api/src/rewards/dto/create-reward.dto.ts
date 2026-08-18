@@ -11,7 +11,7 @@ import {
   Min,
   MinLength,
 } from "class-validator";
-import { RewardStatus } from "@prisma/client";
+import { RewardFulfillmentType, RewardStatus } from "@prisma/client";
 
 const SLUG_REGEX = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
 
@@ -47,6 +47,10 @@ export class CreateRewardDto {
   @IsOptional()
   @IsEnum(RewardStatus)
   status?: RewardStatus;
+
+  @IsOptional()
+  @IsEnum(RewardFulfillmentType)
+  fulfillmentType?: RewardFulfillmentType;
 
   @IsOptional()
   @IsDateString()
