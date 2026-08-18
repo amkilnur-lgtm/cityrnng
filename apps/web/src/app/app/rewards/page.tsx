@@ -1,8 +1,14 @@
+import Image from "next/image";
 import Link from "next/link";
 import { redirect } from "next/navigation";
-import { SiteFooter } from "@/components/site/footer";
+import QRCode from "qrcode";
+import {
+  RedemptionTicket,
+  type TicketView,
+} from "@/components/app/redemption-ticket";
 import { SiteNav } from "@/components/site/nav";
 import { Wrap } from "@/components/site/wrap";
+import { CLUB } from "@/lib/club";
 import {
   MY_REDEMPTIONS,
   PARTNERS as MOCK_PARTNERS,
@@ -13,59 +19,21 @@ import { listMyRedemptions, type ApiRedemption } from "@/lib/api-rewards";
 import { getSession } from "@/lib/session";
 import { getSiteState } from "@/lib/site-state";
 
-export const metadata = { title: "Мои обмены · CITYRNNG" };
+export const metadata = { title: "Мои купоны · CITYRNNG" };
 
-type RedemptionStatus = "active" | "used" | "expired" | "cancelled";
-
-type RedemptionView = {
-  id: string;
-  status: RedemptionStatus;
-  code: string;
-  costPoints: number;
-  createdAt: string;
-  expiresAt: string | null;
-  usedAt: string | null;
-  rewardTitle: string;
-  partnerName: string;
-  partnerLocations: string[];
-};
-
-const STATUS_LABEL: Record<RedemptionStatus, string> = {
-  active: "Активен",
-  used: "Использован",
-  expired: "Истёк",
-  cancelled: "Отменён",
-};
-
-const STATUS_TONE: Record<RedemptionStatus, string> = {
-  active: "text-brand-red",
-  used: "text-muted",
-  expired: "text-muted",
-  cancelled: "text-muted",
+const STATUS_LABEL: Record<TicketView["status"], string> = {
+  active: "активен",
+  used: "использован",
+  expired: "истёк",
+  cancelled: "отменён",
 };
 
 function fmtDate(iso: string) {
-  return new Date(iso).toLocaleDateString("ru-RU", {
-    day: "2-digit",
-    month: "short",
-  });
+  return new Date(iso).toLocaleDateString("ru-RU", { day: "2-digit", month: "short" });
 }
 
-function fmtDateTime(iso: string) {
-  const d = new Date(iso);
-  const date = d.toLocaleDateString("ru-RU", {
-    day: "2-digit",
-    month: "short",
-  });
-  const time = d.toLocaleTimeString("ru-RU", {
-    hour: "2-digit",
-    minute: "2-digit",
-  });
-  return `${date} · ${time}`;
-}
-
-function fromApi(r: ApiRedemption): RedemptionView {
-  const fallbackPartner = (MOCK_PARTNERS as Record<string, { locations: string[] }>)[
+function fromApi(r: ApiRedemption): TicketView {
+  const fallback = (MOCK_PARTNERS as Record<string, { locations: string[] }>)[
     r.reward.partner.slug
   ];
   return {
@@ -75,14 +43,13 @@ function fromApi(r: ApiRedemption): RedemptionView {
     costPoints: r.costPoints,
     createdAt: r.createdAt,
     expiresAt: r.expiresAt,
-    usedAt: r.usedAt,
     rewardTitle: r.reward.title,
     partnerName: r.reward.partner.name,
-    partnerLocations: fallbackPartner?.locations ?? [],
+    partnerLocations: fallback?.locations ?? [],
   };
 }
 
-function fromMock(r: MockRedemption): RedemptionView {
+function fromMock(r: MockRedemption): TicketView {
   const reward = MOCK_REWARDS.find((x) => x.slug === r.rewardSlug);
   const partner = reward
     ? (MOCK_PARTNERS as Record<string, { name: string; locations: string[] }>)[
@@ -96,7 +63,6 @@ function fromMock(r: MockRedemption): RedemptionView {
     costPoints: r.costPoints,
     createdAt: r.createdAt,
     expiresAt: r.expiresAt ?? null,
-    usedAt: r.usedAt ?? null,
     rewardTitle: reward?.title ?? "Награда удалена",
     partnerName: partner?.name ?? "—",
     partnerLocations: partner?.locations ?? [],
@@ -108,216 +74,127 @@ export default async function MyRewardsPage() {
   if (!state.isAuthed) redirect("/auth");
 
   const session = await getSession();
-  // Real session → API (may legitimately be empty).
-  // Dev-mock authed (no session) → fall back to MY_REDEMPTIONS so UI is testable.
-  const redemptions: RedemptionView[] = session
+  const redemptions: TicketView[] = session
     ? (await listMyRedemptions()).map(fromApi)
     : MY_REDEMPTIONS.map(fromMock);
 
   const active = redemptions.filter((r) => r.status === "active");
   const past = redemptions.filter((r) => r.status !== "active");
 
+  // Real scannable QR for each active coupon (server-rendered SVG).
+  const svgs = new Map<string, string>();
+  await Promise.all(
+    active.map(async (r) => {
+      svgs.set(
+        r.id,
+        await QRCode.toString(r.code, {
+          type: "svg",
+          margin: 1,
+          errorCorrectionLevel: "M",
+          color: { dark: "#000000", light: "#ffffff" },
+        }),
+      );
+    }),
+  );
+
   return (
     <>
       <SiteNav state={state} />
-      <main>
-        <section className="border-b border-ink">
-          <Wrap className="py-12 lg:py-16">
-            <Link
-              href="/app"
-              className="self-start font-mono text-[11px] font-medium uppercase tracking-[0.14em] text-muted hover:text-brand-red"
-            >
-              ← Дашборд
-            </Link>
-            <span className="type-mono-caps mt-4 block">мои обмены</span>
-            <h1 className="type-h2">
-              {active.length > 0 ? (
-                <>
-                  <em className="not-italic text-brand-red">
-                    {active.length}{" "}
-                    {active.length === 1
-                      ? "активный"
-                      : active.length < 5
-                        ? "активных"
-                        : "активных"}
-                  </em>{" "}
-                  код
-                  {active.length === 1 ? "" : active.length < 5 ? "а" : "ов"}.
-                </>
-              ) : (
-                <>Ни одного активного обмена пока.</>
-              )}
-            </h1>
-            <p className="type-lede mt-2 max-w-xl">
-              Покажи QR в&nbsp;кофейне-партнёре — бариста сканирует
-              и&nbsp;отдаёт позицию.
-            </p>
-          </Wrap>
-        </section>
+      <main className="bg-paper">
+        <Wrap className="flex flex-col gap-2 py-8">
+          <Link
+            href="/app"
+            className="self-start font-mono text-[11px] font-medium uppercase tracking-[0.14em] text-muted hover:text-brand-red"
+          >
+            ← Кабинет
+          </Link>
+          <span className="type-mono-caps mt-2">мои купоны</span>
+          <h1 className="type-h2">
+            {active.length > 0 ? (
+              <>
+                Готовы к&nbsp;<em className="not-italic text-brand-red">обмену</em>&nbsp;🎟️
+              </>
+            ) : (
+              <>Копи баллы&nbsp;<em className="not-italic text-brand-red">на кофе</em></>
+            )}
+          </h1>
+          <p className="type-lede max-w-xl">
+            Покажи QR на&nbsp;кассе партнёра — бариста отсканирует и&nbsp;отдаст позицию.
+          </p>
+        </Wrap>
 
         {active.length > 0 ? (
-          <section className="border-b border-ink">
-            <Wrap className="py-12 lg:py-16">
-              <div className="mb-6 flex flex-col gap-2">
-                <span className="type-mono-caps">активные</span>
-                <h2 className="type-h2">
-                  Готовы к&nbsp;
-                  <em className="not-italic text-brand-red">обмену</em>.
-                </h2>
-              </div>
-              <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
-                {active.map((r) => (
-                  <RedemptionCard key={r.id} redemption={r} />
-                ))}
-              </div>
-            </Wrap>
-          </section>
-        ) : null}
-
-        <section className="border-b border-ink">
-          <Wrap className="py-12 lg:py-16">
-            <div className="mb-6 flex flex-col gap-2">
-              <span className="type-mono-caps">история</span>
-              <h2 className="type-h2">
-                {past.length > 0
-                  ? "Использованные и истёкшие"
-                  : "Историй обменов пока нет"}
-              </h2>
+          <Wrap className="pb-8">
+            <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
+              {active.map((r) => (
+                <RedemptionTicket key={r.id} ticket={r} svg={svgs.get(r.id) ?? ""} />
+              ))}
             </div>
-
-            {past.length === 0 ? (
-              <p className="text-[15px] text-graphite">
-                Когда обменяешь баллы — появится здесь.
-              </p>
-            ) : (
-              <ul className="flex flex-col border border-ink">
-                {past.map((r, idx) => (
-                  <li
-                    key={r.id}
-                    className={
-                      "flex flex-col gap-2 p-5 md:flex-row md:items-center md:justify-between md:p-6" +
-                      (idx > 0 ? " border-t border-ink/15" : "")
-                    }
-                  >
-                    <PastRow redemption={r} />
-                  </li>
-                ))}
-              </ul>
-            )}
           </Wrap>
-        </section>
-      </main>
-      <SiteFooter />
-    </>
-  );
-}
-
-function RedemptionCard({ redemption }: { redemption: RedemptionView }) {
-  const expires = redemption.expiresAt ? fmtDate(redemption.expiresAt) : null;
-  const partnerSubtitle =
-    redemption.partnerLocations.length > 0
-      ? `${redemption.partnerName} · ${redemption.partnerLocations.join(", ")}`
-      : redemption.partnerName;
-
-  return (
-    <article className="grid grid-cols-1 border border-ink md:grid-cols-[1fr_180px]">
-      <div className="flex flex-col gap-3 border-b border-ink p-5 md:border-b-0 md:border-r md:p-6">
-        <div className="flex items-center gap-2">
-          <span className="block h-2 w-2 animate-pulse bg-brand-red" />
-          <span className={`type-mono-caps ${STATUS_TONE[redemption.status]}`}>
-            {STATUS_LABEL[redemption.status]}
-          </span>
-        </div>
-        <h3 className="type-h3">{redemption.rewardTitle}</h3>
-        <p className="text-[13px] text-graphite">{partnerSubtitle}</p>
-        <dl className="mt-auto flex flex-col gap-1.5 text-[12px]">
-          <div className="flex justify-between border-t border-ink/15 pt-2">
-            <dt className="text-muted">Списано</dt>
-            <dd className="font-mono text-ink">
-              −{redemption.costPoints}&nbsp;Б
-            </dd>
-          </div>
-          {expires ? (
-            <div className="flex justify-between">
-              <dt className="text-muted">Действует до</dt>
-              <dd className="font-mono text-ink">{expires}</dd>
+        ) : (
+          <Wrap className="pb-8">
+            <div className="flex flex-col items-center gap-4 rounded-3xl bg-brand-yellow-tint p-8 text-center">
+              <Image
+                src="/brand/character.png"
+                alt=""
+                width={96}
+                height={96}
+                className="h-24 w-24 object-contain"
+              />
+              <p className="max-w-sm text-[15px] leading-[1.55] text-graphite">
+                Пока ни&nbsp;одного купона. Набегай баллы&nbsp;— и&nbsp;меняй их
+                на&nbsp;кофе у&nbsp;партнёров. В&nbsp;следующий раз!&nbsp;👟
+              </p>
+              <Link
+                href="/shop"
+                className="inline-flex h-11 items-center rounded-full bg-ink px-5 font-sans text-[14px] font-semibold text-paper hover:bg-brand-red"
+              >
+                Смотреть награды →
+              </Link>
             </div>
-          ) : null}
-          <div className="flex justify-between">
-            <dt className="text-muted">Получен</dt>
-            <dd className="font-mono text-ink">
-              {fmtDate(redemption.createdAt)}
-            </dd>
-          </div>
-        </dl>
-      </div>
+          </Wrap>
+        )}
 
-      <div className="flex flex-col items-center justify-center gap-3 bg-paper-2 p-5 md:p-6">
-        <QrPlaceholder code={redemption.code} />
-        <span className="font-mono text-[18px] font-semibold tracking-[0.2em] text-ink">
-          {redemption.code}
-        </span>
-        <span className="font-mono text-[10px] uppercase tracking-[0.14em] text-muted">
-          код для бариста
-        </span>
-      </div>
-    </article>
-  );
-}
+        {past.length > 0 ? (
+          <Wrap className="pb-12">
+            <span className="type-mono-caps mb-3 block">история</span>
+            <ul className="flex flex-col divide-y divide-ink/10 overflow-hidden rounded-3xl bg-paper-2">
+              {past.map((r) => (
+                <li
+                  key={r.id}
+                  className="flex items-center justify-between gap-3 px-5 py-3.5"
+                >
+                  <div className="flex flex-col gap-0.5">
+                    <span className="font-mono text-[10px] uppercase tracking-[0.14em] text-muted">
+                      {STATUS_LABEL[r.status]}
+                    </span>
+                    <span className="text-[14px] font-medium text-ink">
+                      {r.rewardTitle}
+                      <span className="text-muted"> · {r.partnerName}</span>
+                    </span>
+                  </div>
+                  <span className="shrink-0 text-right font-mono text-[12px] text-muted">
+                    −{r.costPoints}&nbsp;Б
+                    <br />
+                    {fmtDate(r.createdAt)}
+                  </span>
+                </li>
+              ))}
+            </ul>
+          </Wrap>
+        ) : null}
+      </main>
 
-function PastRow({ redemption }: { redemption: RedemptionView }) {
-  return (
-    <>
-      <div className="flex flex-col gap-1">
-        <div className="flex items-center gap-2">
-          <span className={`type-mono-caps ${STATUS_TONE[redemption.status]}`}>
-            {STATUS_LABEL[redemption.status]}
+      <footer className="bg-paper">
+        <Wrap className="flex flex-wrap items-center justify-between gap-3 border-t border-line/10 py-6 text-[12px] text-muted">
+          <span className="font-mono uppercase tracking-[0.14em]">
+            {CLUB.name} · {CLUB.city}
           </span>
-          <span className="font-mono text-[11px] tracking-[0.14em] text-muted">
-            {redemption.code}
-          </span>
-        </div>
-        <span className="text-[15px] font-medium text-ink">
-          {redemption.rewardTitle}
-          <span className="text-muted"> · {redemption.partnerName}</span>
-        </span>
-      </div>
-      <div className="flex flex-col text-right md:items-end">
-        <span className="font-mono text-[14px] font-medium text-ink">
-          −{redemption.costPoints}&nbsp;Б
-        </span>
-        <span className="font-mono text-[11px] tracking-[0.04em] text-muted">
-          {redemption.usedAt
-            ? `использован ${fmtDateTime(redemption.usedAt)}`
-            : `получен ${fmtDate(redemption.createdAt)}`}
-        </span>
-      </div>
+          <Link href="/app" className="hover:text-brand-red">
+            ← Кабинет
+          </Link>
+        </Wrap>
+      </footer>
     </>
-  );
-}
-
-/**
- * Visual stub — looks QR-shaped, isn't scannable. The 6-char code below
- * is what the bartender actually types; backend issues a real QR endpoint
- * later if scanning becomes a desired flow.
- */
-function QrPlaceholder({ code }: { code: string }) {
-  const seed = Array.from(code).reduce((s, c) => s + c.charCodeAt(0), 0);
-  const cells: boolean[] = [];
-  for (let i = 0; i < 49; i++) {
-    cells.push(((seed * (i + 1) * 31) % 7) > 3);
-  }
-  return (
-    <div
-      aria-hidden
-      className="grid h-32 w-32 grid-cols-7 grid-rows-7 gap-px border border-ink p-1"
-    >
-      {cells.map((on, i) => (
-        <span
-          key={i}
-          className={on ? "bg-ink" : "bg-paper"}
-        />
-      ))}
-    </div>
   );
 }

@@ -4,7 +4,12 @@ import {
   Injectable,
   NotFoundException,
 } from "@nestjs/common";
-import { PartnerStatus, Prisma, RewardStatus } from "@prisma/client";
+import {
+  PartnerStatus,
+  Prisma,
+  PromoCodeStatus,
+  RewardStatus,
+} from "@prisma/client";
 import { PrismaService } from "../prisma/prisma.service";
 import { CreateRewardDto } from "./dto/create-reward.dto";
 import { UpdateRewardDto } from "./dto/update-reward.dto";
@@ -74,6 +79,7 @@ export class RewardsService {
           costPoints: dto.costPoints,
           badge: dto.badge,
           status: dto.status ?? RewardStatus.active,
+          fulfillmentType: dto.fulfillmentType,
           validFrom: dto.validFrom ? new Date(dto.validFrom) : null,
           validUntil: dto.validUntil ? new Date(dto.validUntil) : null,
           capacity: dto.capacity,
@@ -112,6 +118,7 @@ export class RewardsService {
           costPoints: dto.costPoints,
           badge: dto.badge,
           status: dto.status,
+          fulfillmentType: dto.fulfillmentType,
           validFrom: dto.validFrom ? new Date(dto.validFrom) : undefined,
           validUntil: dto.validUntil ? new Date(dto.validUntil) : undefined,
           capacity: dto.capacity,
@@ -124,6 +131,41 @@ export class RewardsService {
       }
       throw err;
     }
+  }
+
+  /** Pool stats for a promo_pool reward. */
+  async promoStats(rewardId: string) {
+    await this.getByIdOrThrow(rewardId);
+    const [available, assigned] = await Promise.all([
+      this.prisma.promoCode.count({
+        where: { rewardId, status: PromoCodeStatus.available },
+      }),
+      this.prisma.promoCode.count({
+        where: { rewardId, status: PromoCodeStatus.assigned },
+      }),
+    ]);
+    return { available, assigned, total: available + assigned };
+  }
+
+  /**
+   * Bulk-load partner promo codes into a reward's pool. Codes are trimmed,
+   * de-duplicated within the batch, and inserted skipping any already present
+   * (unique on [rewardId, code]) — safe to re-paste a partly-loaded list.
+   */
+  async addPromoCodes(rewardId: string, rawCodes: string[]) {
+    await this.getByIdOrThrow(rewardId);
+    const codes = [
+      ...new Set(rawCodes.map((c) => c.trim()).filter((c) => c.length > 0)),
+    ];
+    if (codes.length === 0) {
+      throw new BadRequestException({ code: "PROMO_CODES_EMPTY" });
+    }
+    const result = await this.prisma.promoCode.createMany({
+      data: codes.map((code) => ({ rewardId, code })),
+      skipDuplicates: true,
+    });
+    const stats = await this.promoStats(rewardId);
+    return { added: result.count, skipped: codes.length - result.count, ...stats };
   }
 }
 

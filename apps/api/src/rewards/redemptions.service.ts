@@ -12,7 +12,9 @@ import {
   PointDirection,
   PointReasonType,
   Prisma,
+  PromoCodeStatus,
   RedemptionStatus,
+  RewardFulfillmentType,
   RewardStatus,
 } from "@prisma/client";
 import { PointsService } from "../points/points.service";
@@ -101,6 +103,18 @@ export class RedemptionsService {
       throw new ForbiddenException({ code: "REWARD_SOLD_OUT" });
     }
 
+    // Promo-pool rewards are limited by their pool: no free code = sold out.
+    // Cheap pre-flight; the transaction re-claims atomically below.
+    const isPromoPool = reward.fulfillmentType === RewardFulfillmentType.promo_pool;
+    if (isPromoPool) {
+      const available = await this.prisma.promoCode.count({
+        where: { rewardId: reward.id, status: PromoCodeStatus.available },
+      });
+      if (available === 0) {
+        throw new ForbiddenException({ code: "REWARD_SOLD_OUT" });
+      }
+    }
+
     // Idempotency-on-retry: derive a stable key per request when client
     // doesn't supply one. We pass the same key to PointsService.post which
     // already deduplicates on its idempotencyKey column.
@@ -143,36 +157,78 @@ export class RedemptionsService {
         tx,
       );
 
-      // Code generation with retry on collision
       let createdRedemption = null;
-      for (let attempt = 0; attempt < CODE_RETRIES; attempt++) {
-        const code = generateCode();
-        try {
-          createdRedemption = await tx.redemption.create({
-            data: {
-              userId: opts.userId,
-              rewardId: reward.id,
-              costPoints: reward.costPoints,
-              status: RedemptionStatus.active,
-              code,
-              pointTxnId: txn.id,
-              expiresAt: new Date(Date.now() + DEFAULT_EXPIRY_MS),
-            },
-            include: { reward: { include: { partner: true } } },
-          });
-          break;
-        } catch (err) {
-          if (
-            err instanceof Prisma.PrismaClientKnownRequestError &&
-            err.code === "P2002" &&
-            String(err.meta?.target ?? "").includes("code")
-          ) {
-            this.logger.warn(`Code collision on redemption (attempt ${attempt + 1})`);
-            continue;
+
+      if (isPromoPool) {
+        // Atomically claim one free partner code. FOR UPDATE SKIP LOCKED lets
+        // concurrent redeems each grab a different code without blocking or
+        // handing the same code to two runners.
+        const claimed = await tx.$queryRaw<{ id: string; code: string }[]>(
+          Prisma.sql`
+            SELECT "id", "code" FROM "promo_codes"
+            WHERE "reward_id" = ${reward.id}::uuid AND "status" = 'available'
+            ORDER BY "created_at" ASC
+            FOR UPDATE SKIP LOCKED
+            LIMIT 1
+          `,
+        );
+        if (claimed.length === 0) {
+          // Pool drained between pre-flight and now.
+          throw new ForbiddenException({ code: "REWARD_SOLD_OUT" });
+        }
+        const promo = claimed[0]!;
+        createdRedemption = await tx.redemption.create({
+          data: {
+            userId: opts.userId,
+            rewardId: reward.id,
+            costPoints: reward.costPoints,
+            status: RedemptionStatus.active,
+            code: promo.code,
+            pointTxnId: txn.id,
+            expiresAt: new Date(Date.now() + DEFAULT_EXPIRY_MS),
+          },
+          include: { reward: { include: { partner: true } } },
+        });
+        await tx.promoCode.update({
+          where: { id: promo.id },
+          data: {
+            status: PromoCodeStatus.assigned,
+            redemptionId: createdRedemption.id,
+            assignedAt: new Date(),
+          },
+        });
+      } else {
+        // verify-type: generate our own code, retry on the (rare) collision.
+        for (let attempt = 0; attempt < CODE_RETRIES; attempt++) {
+          const code = generateCode();
+          try {
+            createdRedemption = await tx.redemption.create({
+              data: {
+                userId: opts.userId,
+                rewardId: reward.id,
+                costPoints: reward.costPoints,
+                status: RedemptionStatus.active,
+                code,
+                pointTxnId: txn.id,
+                expiresAt: new Date(Date.now() + DEFAULT_EXPIRY_MS),
+              },
+              include: { reward: { include: { partner: true } } },
+            });
+            break;
+          } catch (err) {
+            if (
+              err instanceof Prisma.PrismaClientKnownRequestError &&
+              err.code === "P2002" &&
+              String(err.meta?.target ?? "").includes("code")
+            ) {
+              this.logger.warn(`Code collision on redemption (attempt ${attempt + 1})`);
+              continue;
+            }
+            throw err;
           }
-          throw err;
         }
       }
+
       if (!createdRedemption) {
         throw new ConflictException({ code: "REWARD_CODE_GENERATION_FAILED" });
       }

@@ -127,6 +127,7 @@ export type AdminReward = {
   costPoints: number;
   badge: string | null;
   status: "active" | "archived";
+  fulfillmentType: "verify" | "promo_pool";
   validFrom: string | null;
   validUntil: string | null;
   capacity: number | null;
